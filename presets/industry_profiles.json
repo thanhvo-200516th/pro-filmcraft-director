@@ -1,0 +1,631 @@
+{
+  "schema_version": "7.0.0",
+  "purpose": "Universal Studio Director v7.0 — 8 Flagship Industry Skins with CRI/Color Locks, 134-Glyph Vietnamese NFC Font Pairings, Acoustic/ASMR Profiles, SFX Allow/Ban Ledgers, Hard Veto Guards, and 100% Backward-Compatible v1.0 Legacy Profile Keys.",
+  "flagship_8_skins": [
+    "luxury_skincare",
+    "dental_clinic",
+    "nail_hair_salon",
+    "tactile_review",
+    "course_edtech",
+    "personal_brand",
+    "cinematic_vlog",
+    "b2b_saas_realestate"
+  ],
+  "legacy_aliases": {
+    "ecom": "tactile_review",
+    "beauty_spa": "luxury_skincare",
+    "real_estate": "b2b_saas_realestate",
+    "tech_saas": "b2b_saas_realestate",
+    "education": "course_edtech"
+  },
+  "profiles": {
+    "luxury_skincare": {
+      "id": "luxury_skincare",
+      "label": "Mỹ phẩm & Skincare Cao cấp (Luxury Skincare & Cosmetics)",
+      "core_intent": "conversion_and_desire",
+      "narrative_arc": "Sensory_BAB",
+      "asl_sec": [2.2, 3.8],
+      "pattern_interrupt_sec": [2.6, 4.2],
+      "show_dont_tell_mix": { "proof": 0.55, "contrast": 0.25, "expand": 0.20 },
+      "fonts": {
+        "primary": "Be Vietnam Pro",
+        "secondary": "Playfair Display",
+        "accent": "SVN-Aaron Script",
+        "mono": "JetBrains Mono"
+      },
+      "colors": {
+        "bg": "#141215",
+        "light_bg": "#FAFAFA",
+        "soft_bg": "#FAF6F2",
+        "text": "#FAFAFA",
+        "text_on_light": "#1C1917",
+        "accent": "#F5C451",
+        "champagne_gold": "#F5C451",
+        "rose_gold": "#E29587",
+        "alabaster": "#FAFAFA"
+      },
+      "color_grade_mood": "luminous_porcelain_skin_hue_locked",
+      "asmr_isolation_support": true,
+      "bgm_genre": "Minimalist Luxury R&B / Ethereal Felt Piano / Tactile ASMR",
+      "bgm_bpm": [78, 102],
+      "allowed_sfx": [
+        "water_droplet_asmr",
+        "glass_pipette_clink",
+        "cream_swirl_foley",
+        "silk_brush_sweep",
+        "soft_chime_lock",
+        "velvet_air_whoosh"
+      ],
+      "banned_sfx": [
+        "glitch",
+        "cyber_whoosh",
+        "metal_scrape",
+        "harsh_buzzer",
+        "arcade_coin",
+        "heavy_industrial_slam"
+      ],
+      "motion_intensity": "medium_velvet",
+      "preferred_atomics": ["editorial_blur_in", "smooth_push_in", "slide_up_mask_reveal", "text_behind_subject"],
+      "recommended_formats": [
+        "clinical_aesthetic_before_after",
+        "pas_bab_ecom_conversion",
+        "tactile_review_testing",
+        "expert_talking_head"
+      ],
+      "hard_veto_guards": {
+        "skin_tone_hue_guard": true,
+        "warm_film_burn_veto": true,
+        "plastic_bevel_veto": true,
+        "asmr_isolation_support": true,
+        "macro_product_safebox_lock": true
+      }
+    },
+    "dental_clinic": {
+      "id": "dental_clinic",
+      "label": "Nha khoa & Phòng khám Thẩm mỹ Y khoa (Dental & Clinical Aesthetic)",
+      "core_intent": "clinical_trust_booking",
+      "narrative_arc": "Clinical_Before_After_Proof",
+      "asl_sec": [2.0, 3.6],
+      "pattern_interrupt_sec": [2.4, 4.0],
+      "show_dont_tell_mix": { "proof": 0.65, "contrast": 0.25, "expand": 0.10 },
+      "fonts": {
+        "primary": "Be Vietnam Pro",
+        "secondary": "Montserrat Static",
+        "accent": "Playfair Display",
+        "mono": "JetBrains Mono"
+      },
+      "colors": {
+        "bg": "#0F172A",
+        "light_bg": "#FAFAFA",
+        "text": "#FAFAFA",
+        "text_on_light": "#0F172A",
+        "accent": "#0EA5E9",
+        "porcelain": "#FAFAFA",
+        "clinical_ice_blue": "#0EA5E9",
+        "mint": "#14B8A6",
+        "navy": "#0F172A"
+      },
+      "color_grade_mood": "cri100_neutral_d65_enamel_pure",
+      "bgm_genre": "Clean Acoustic Minimal / Warm Clinical Ambient / Calm Modern Pulse",
+      "bgm_bpm": [82, 106],
+      "allowed_sfx": [
+        "clean_glass_chime",
+        "soft_air_swell",
+        "ui_precision_click",
+        "gentle_shimmer",
+        "subtle_sub_pulse"
+      ],
+      "banned_sfx": [
+        "bone_crack",
+        "drill",
+        "metal_scrape",
+        "glitch",
+        "horror_riser",
+        "harsh_snap"
+      ],
+      "motion_intensity": "clean_precision",
+      "preferred_atomics": ["smooth_push_in", "split_card_16_9", "slide_up_mask_reveal", "editorial_blur_in"],
+      "recommended_formats": [
+        "clinical_aesthetic_before_after",
+        "expert_talking_head",
+        "spatial_vfx_clone_storefront_tour",
+        "pas_bab_ecom_conversion"
+      ],
+      "hard_veto_guards": {
+        "cri100_tooth_gum_lock": true,
+        "warm_lut_veto": true,
+        "warm_film_burn_veto": true,
+        "mouth_enamel_safebox_lock": true,
+        "claim_gate_r200": true
+      }
+    },
+    "nail_hair_salon": {
+      "id": "nail_hair_salon",
+      "label": "Nail / Hair Salon / Spa Thẩm mỹ (Nail, Hair & Boutique Spa)",
+      "core_intent": "booking_and_style_showcase",
+      "narrative_arc": "Transformation_BAB",
+      "asl_sec": [1.8, 3.2],
+      "pattern_interrupt_sec": [2.2, 3.6],
+      "show_dont_tell_mix": { "contrast": 0.50, "proof": 0.40, "expand": 0.10 },
+      "fonts": {
+        "primary": "Be Vietnam Pro",
+        "secondary": "SVN-Aaron Script",
+        "accent": "Playfair Display",
+        "script": "SVN-Aaron Script"
+      },
+      "colors": {
+        "bg": "#1A1311",
+        "soft_bg": "#FDF8F5",
+        "text": "#FAFAFA",
+        "text_on_light": "#291D1A",
+        "accent": "#F4A6B8",
+        "blush_rose": "#F4A6B8",
+        "mocha": "#6D4C41",
+        "champagne_gold": "#F5C451"
+      },
+      "color_grade_mood": "lifted_ velvet_shadows_true_swatch",
+      "bgm_genre": "Trendy Chill R&B / Boutique Lounge / French Cafe Pop",
+      "bgm_bpm": [88, 114],
+      "allowed_sfx": [
+        "camera_shutter_soft",
+        "sparkle_twinkle",
+        "silk_whoosh",
+        "scissor_snick_clean",
+        "ui_bubble_soft",
+        "uv_lamp_chime"
+      ],
+      "banned_sfx": [
+        "metal_scrape",
+        "drill",
+        "glitch",
+        "cyber_whoosh",
+        "heavy_industrial_slam"
+      ],
+      "motion_intensity": "medium_smooth",
+      "preferred_atomics": ["smooth_push_in", "editorial_blur_in", "pill_unroll_y", "slide_up_mask_reveal"],
+      "recommended_formats": [
+        "clinical_aesthetic_before_after",
+        "spatial_vfx_clone_storefront_tour",
+        "cinematic_vlog_storytelling",
+        "pas_bab_ecom_conversion"
+      ],
+      "hard_veto_guards": {
+        "hand_nail_safebox_lock": true,
+        "shadow_crush_veto": true,
+        "neon_oversaturation_veto": true
+      }
+    },
+    "tactile_review": {
+      "id": "tactile_review",
+      "label": "Review Đa Ngành & Unbox Thực Tế (Tactile Multi-Niche Review)",
+      "core_intent": "verdict_and_affiliate_conversion",
+      "narrative_arc": "Hook_Test_ProsCons_Verdict",
+      "asl_sec": [1.2, 2.2],
+      "pattern_interrupt_sec": [1.5, 2.6],
+      "show_dont_tell_mix": { "proof": 0.65, "contrast": 0.25, "expand": 0.10 },
+      "fonts": {
+        "primary": "DFVN West West Condensed",
+        "secondary": "Be Vietnam Pro",
+        "accent": "Montserrat Static",
+        "mono": "JetBrains Mono"
+      },
+      "colors": {
+        "bg": "#111318",
+        "text": "#FAFAFA",
+        "accent": "#FACC15",
+        "pros": "#4ADE80",
+        "cons": "#FF4D5E",
+        "score": "#FACC15"
+      },
+      "color_grade_mood": "natural_crisp_true_texture",
+      "bgm_genre": "Crisp Funky Percussive / Upbeat Indie Pop / Groove Hop",
+      "bgm_bpm": [108, 126],
+      "allowed_sfx": [
+        "tactile_tap_foley",
+        "box_unseal_crisp",
+        "ui_score_ding",
+        "card_flip_snap",
+        "whoosh_short_snap",
+        "stamp_verdict_thud"
+      ],
+      "banned_sfx": [
+        "long_cinematic_braam",
+        "washed_reverb_gong",
+        "horror_drone"
+      ],
+      "motion_intensity": "high_tactile",
+      "preferred_atomics": ["punch_in_jump", "pill_unroll_y", "polarity_flip", "split_card_16_9"],
+      "recommended_formats": [
+        "tactile_review_testing",
+        "fast_paced_listicle_top_n",
+        "pas_bab_ecom_conversion"
+      ],
+      "hard_veto_guards": {
+        "sensory_asmr_break": true,
+        "food_cold_tint_veto": true,
+        "verdict_honesty_lock": true
+      }
+    },
+    "course_edtech": {
+      "id": "course_edtech",
+      "label": "Bán Khóa Học / Coaching / Lead-Magnet (Course, EdTech & Info-Product)",
+      "core_intent": "lead_magnet_and_enrollment",
+      "narrative_arc": "Myth_Framework_Deliverable_CTA",
+      "asl_sec": [1.8, 3.4],
+      "pattern_interrupt_sec": [2.2, 3.8],
+      "contrast_breathing_sec": [12, 15],
+      "show_dont_tell_mix": { "expand": 0.45, "proof": 0.40, "contrast": 0.15 },
+      "fonts": {
+        "primary": "Be Vietnam Pro",
+        "secondary": "DFVN West West Condensed",
+        "accent": "Playfair Display",
+        "mono": "JetBrains Mono"
+      },
+      "colors": {
+        "bg": "#0B0F19",
+        "light_bg": "#EEF4EA",
+        "text": "#FAFAFA",
+        "text_on_light": "#111827",
+        "accent": "#F5B932",
+        "cta_emerald": "#2EE86E",
+        "pain_coral": "#FF4D5E"
+      },
+      "color_grade_mood": "editorial_high_clarity_polarity",
+      "bgm_genre": "Focused Momentum Pulse / Modern Editorial Lo-Fi / Smart Synth",
+      "bgm_bpm": [92, 115],
+      "allowed_sfx": [
+        "ui_pop_bubble",
+        "page_turn_crisp",
+        "marker_highlight_swipe",
+        "sub_impact_soft",
+        "keyboard_clack_micro",
+        "unlock_chime"
+      ],
+      "banned_sfx": [
+        "arcade_jackpot_horn",
+        "cheap_cartoon_boing",
+        "meme_airhorn",
+        "harsh_static_glitch"
+      ],
+      "motion_intensity": "medium_structured",
+      "preferred_atomics": ["slide_up_mask_reveal", "polarity_flip", "pill_unroll_y", "text_behind_subject"],
+      "recommended_formats": [
+        "course_lead_magnet_funnel",
+        "tutorial_ui_walkthrough",
+        "expert_talking_head",
+        "fast_paced_listicle_top_n"
+      ],
+      "hard_veto_guards": {
+        "contrast_breathing_sec": [12, 15],
+        "require_tangible_3d_deliverable": true,
+        "rvm_comment_rain_enabled": true
+      }
+    },
+    "personal_brand": {
+      "id": "personal_brand",
+      "label": "Personal Brand / Chuyên gia (@__dviet)",
+      "core_intent": "trust",
+      "narrative_arc": "Contrarian",
+      "asl_sec": [2.5, 4.0],
+      "pattern_interrupt_sec": [3.0, 4.5],
+      "min_clean_breathing_ratio": 0.20,
+      "show_dont_tell_mix": { "expand": 0.5, "proof": 0.3, "contrast": 0.2 },
+      "fonts": {
+        "primary": "Be Vietnam Pro",
+        "secondary": "Playfair Display",
+        "accent": "DFVN West West Condensed",
+        "script": "SVN-Aaron Script",
+        "mono": "JetBrains Mono"
+      },
+      "colors": {
+        "bg": "#111111",
+        "polarity_light": "#EEF4EA",
+        "text": "#FAFAFA",
+        "text_on_light": "#111827",
+        "accent": "#8C6CFF",
+        "cream": "#FDFBE0",
+        "jewel_emerald": "#2EE86E",
+        "jewel_amber": "#F5B932",
+        "jewel_amethyst": "#8C6CFF",
+        "jewel_sapphire": "#38BDF8",
+        "pain_ruby": "#FF4D5E"
+      },
+      "color_grade_mood": "cinematic_kodak_warm_skin",
+      "bgm_genre": "Lo-fi / Minimalist Ambient Beats",
+      "bgm_bpm": [80, 105],
+      "allowed_sfx": [
+        "whoosh_velvet_low",
+        "sub_thump_clean",
+        "paper_texture_rustle",
+        "ui_snap_click",
+        "camera_focus_tick",
+        "soft_riser_breath"
+      ],
+      "banned_sfx": [
+        "cheap_cartoon_boing",
+        "meme_airhorn",
+        "harsh_metal_screech",
+        "overused_vine_boom"
+      ],
+      "motion_intensity": "medium_editorial",
+      "preferred_atomics": ["text_behind_subject", "slide_up_mask_reveal", "polarity_flip", "micro_handheld_drift"],
+      "recommended_formats": [
+        "expert_talking_head",
+        "course_lead_magnet_funnel",
+        "cinematic_vlog_storytelling",
+        "fast_paced_listicle_top_n"
+      ],
+      "hard_veto_guards": {
+        "4_act_semantic_jewel_palette": true,
+        "dual_rail_9_16": true,
+        "cranial_exclusion_lock": true,
+        "min_clean_breathing_ratio": 0.20
+      }
+    },
+    "cinematic_vlog": {
+      "id": "cinematic_vlog",
+      "label": "Vlog Short Điện Ảnh / Hậu Trường Xưởng (Cinematic Vlog & Craft BTS)",
+      "core_intent": "emotional_resonance_and_affinity",
+      "narrative_arc": "Story_Moment_Reflection",
+      "asl_sec": [2.4, 5.2],
+      "pattern_interrupt_sec": [3.2, 6.0],
+      "show_dont_tell_mix": { "expand": 0.65, "contrast": 0.20, "proof": 0.15 },
+      "fonts": {
+        "primary": "Playfair Display",
+        "secondary": "Be Vietnam Pro",
+        "accent": "SVN-Aaron Script",
+        "mono": "JetBrains Mono"
+      },
+      "colors": {
+        "bg": "#14110F",
+        "text": "#F8F5EE",
+        "accent": "#EAB308",
+        "kodak_warm_gold": "#EAB308",
+        "tungsten_cream": "#FAF3E0",
+        "halation_coral": "#E06D53"
+      },
+      "color_grade_mood": "kodak_warm_film_organic",
+      "bgm_genre": "Indie Acoustic / Warm Vinyl Lo-Fi / Felt Piano & Cello",
+      "bgm_bpm": [72, 98],
+      "allowed_sfx": [
+        "35mm_shutter_click",
+        "vinyl_crackle_subtle",
+        "ambient_room_foley",
+        "footstep_wood_soft",
+        "tape_reel_start",
+        "breath_swell_organic"
+      ],
+      "banned_sfx": [
+        "ui_pop",
+        "glitch",
+        "cyber_whoosh",
+        "laser_zap",
+        "arcade_ding"
+      ],
+      "motion_intensity": "low_organic_breath",
+      "preferred_atomics": ["smooth_push_in", "editorial_blur_in", "micro_handheld_drift"],
+      "recommended_formats": [
+        "cinematic_vlog_storytelling",
+        "spatial_vfx_clone_storefront_tour",
+        "expert_talking_head"
+      ],
+      "hard_veto_guards": {
+        "emotion_51_self_veto": true,
+        "keep_ambient_room_tone": true,
+        "ui_card_clutter_veto": true
+      }
+    },
+    "b2b_saas_realestate": {
+      "id": "b2b_saas_realestate",
+      "label": "B2B / Agency / SaaS / Bất động sản (Enterprise SaaS, Agency & Real Estate)",
+      "core_intent": "qualified_leadgen_and_demo",
+      "narrative_arc": "Bottleneck_Architecture_ROI_Proof",
+      "asl_sec": [2.0, 3.8],
+      "pattern_interrupt_sec": [2.2, 4.0],
+      "show_dont_tell_mix": { "proof": 0.65, "contrast": 0.25, "expand": 0.10 },
+      "fonts": {
+        "primary": "Montserrat Static",
+        "secondary": "Be Vietnam Pro",
+        "accent": "DFVN West West Condensed",
+        "mono": "JetBrains Mono"
+      },
+      "colors": {
+        "bg": "#0B0F19",
+        "light_bg": "#F1F5F9",
+        "text": "#FAFAFA",
+        "text_on_light": "#0F172A",
+        "accent": "#38BDF8",
+        "gold": "#F4C40C",
+        "verified_emerald": "#4ADE80"
+      },
+      "color_grade_mood": "architectural_clean_dark_slate_and_gold",
+      "bgm_genre": "Architectural Ambient / Precision Synth Pulse / Modern Executive Minimal",
+      "bgm_bpm": [95, 118],
+      "allowed_sfx": [
+        "ui_glass_tap",
+        "whoosh_clean_architectural",
+        "sub_lock_precision",
+        "data_tick_mono",
+        "blueprint_unfold",
+        "soft_chord_resolve"
+      ],
+      "banned_sfx": [
+        "cartoon_pop",
+        "glitch_chaos",
+        "meme_sfx",
+        "sloppy_vinyl_scratch"
+      ],
+      "motion_intensity": "medium_crisp_architectural",
+      "preferred_atomics": ["split_card_16_9", "polarity_flip", "pill_unroll_y", "smooth_push_in"],
+      "recommended_formats": [
+        "tutorial_ui_walkthrough",
+        "spatial_vfx_clone_storefront_tour",
+        "faceless_motion_explainer",
+        "expert_talking_head"
+      ],
+      "hard_veto_guards": {
+        "claim_gate_r200": true,
+        "isometric_3d_ui_enabled": true,
+        "planar_wall_tracking": true
+      }
+    },
+    "ecom": {
+      "legacy_alias": true,
+      "maps_to_v7_skin": "tactile_review",
+      "label": "E-commerce / Bán hàng / Ads",
+      "core_intent": "conversion",
+      "narrative_arc": "PAS",
+      "asl_sec": [1.5, 2.5],
+      "pattern_interrupt_sec": [1.8, 3.0],
+      "show_dont_tell_mix": { "proof": 0.7, "contrast": 0.3, "expand": 0.0 },
+      "fonts": {
+        "primary": "DFVN West West Condensed",
+        "secondary": "Be Vietnam Pro",
+        "accent": "Montserrat Static"
+      },
+      "colors": {
+        "bg": "#111111",
+        "text": "#FAFAFA",
+        "accent": "#FFD600",
+        "alert": "#E51A1A",
+        "pros": "#4ADE80",
+        "cons": "#FF4D5E",
+        "score": "#FACC15"
+      },
+      "color_grade_mood": "vibrant_high_contrast",
+      "bgm_genre": "Upbeat Pop / Funky Bass",
+      "bgm_bpm": [110, 128],
+      "allowed_sfx": ["whoosh_short_snap", "ui_pop_bubble", "tactile_tap_foley", "box_unseal_crisp"],
+      "banned_sfx": ["long_cinematic_braam", "horror_drone"],
+      "motion_intensity": "high",
+      "preferred_atomics": ["pill_unroll_y", "punch_in_jump", "polarity_flip", "flicker_strobe_pop"],
+      "hard_veto_guards": {
+        "sensory_asmr_break": true,
+        "food_cold_tint_veto": true,
+        "verdict_honesty_lock": true
+      }
+    },
+    "beauty_spa": {
+      "legacy_alias": true,
+      "maps_to_v7_skin": "luxury_skincare",
+      "label": "Làm đẹp / Spa / Nail / Skincare",
+      "core_intent": "booking",
+      "narrative_arc": "BAB",
+      "asl_sec": [2.0, 3.5],
+      "pattern_interrupt_sec": [2.5, 4.0],
+      "show_dont_tell_mix": { "contrast": 0.5, "proof": 0.5, "expand": 0.0 },
+      "fonts": {
+        "primary": "Be Vietnam Pro",
+        "secondary": "SVN-Aaron Script",
+        "accent": "Montserrat Static"
+      },
+      "colors": {
+        "bg": "#111111",
+        "text": "#FAFAFA",
+        "accent": "#F4C40C",
+        "soft_bg": "#FDFBE0",
+        "champagne_gold": "#F5C451",
+        "rose_gold": "#E29587"
+      },
+      "color_grade_mood": "soft_creamy_skin_safe",
+      "bgm_genre": "Lo-fi R&B / Chill House / ASMR",
+      "bgm_bpm": [85, 110],
+      "allowed_sfx": ["water_droplet_asmr", "silk_brush_sweep", "soft_chime_lock", "sparkle_twinkle"],
+      "banned_sfx": ["glitch", "cyber_whoosh", "metal_scrape", "drill"],
+      "motion_intensity": "medium_smooth",
+      "preferred_atomics": ["editorial_blur_in", "smooth_push_in", "slide_up_mask_reveal", "pill_unroll_y"],
+      "hard_veto_guards": {
+        "skin_tone_hue_guard": true,
+        "warm_film_burn_veto": true,
+        "plastic_bevel_veto": true,
+        "hand_nail_safebox_lock": true,
+        "shadow_crush_veto": true
+      }
+    },
+    "real_estate": {
+      "legacy_alias": true,
+      "maps_to_v7_skin": "b2b_saas_realestate",
+      "label": "Bất động sản / Nội thất / Kiến trúc",
+      "core_intent": "leadgen",
+      "narrative_arc": "PAS",
+      "asl_sec": [2.5, 4.2],
+      "pattern_interrupt_sec": [2.5, 4.5],
+      "show_dont_tell_mix": { "proof": 0.65, "expand": 0.25, "contrast": 0.1 },
+      "fonts": {
+        "primary": "Montserrat Static",
+        "secondary": "SVN-Aaron Script",
+        "accent": "DFVN West West Condensed"
+      },
+      "colors": { "bg": "#111111", "text": "#FAFAFA", "accent": "#00E5FF", "gold": "#F4C40C" },
+      "color_grade_mood": "architectural_warm_natural",
+      "bgm_genre": "Luxury Ambient / Cinematic Pulse",
+      "bgm_bpm": [90, 112],
+      "allowed_sfx": ["whoosh_clean_architectural", "blueprint_unfold", "sub_lock_precision", "ui_glass_tap"],
+      "banned_sfx": ["cartoon_pop", "glitch_chaos", "meme_sfx"],
+      "motion_intensity": "medium_cinematic",
+      "preferred_atomics": ["split_card_16_9", "text_behind_subject", "whip_zoom_blur", "smooth_push_in"],
+      "hard_veto_guards": {
+        "claim_gate_r200": true,
+        "isometric_3d_ui_enabled": true,
+        "planar_wall_tracking": true
+      }
+    },
+    "tech_saas": {
+      "legacy_alias": true,
+      "maps_to_v7_skin": "b2b_saas_realestate",
+      "label": "Công nghệ / SaaS / AI",
+      "core_intent": "trial",
+      "narrative_arc": "Contrarian",
+      "asl_sec": [1.8, 3.0],
+      "pattern_interrupt_sec": [2.0, 3.5],
+      "show_dont_tell_mix": { "proof": 0.6, "contrast": 0.4, "expand": 0.0 },
+      "fonts": {
+        "primary": "Montserrat Static",
+        "secondary": "Be Vietnam Pro",
+        "accent": "DFVN West West Condensed"
+      },
+      "colors": { "bg": "#0B0F19", "text": "#FAFAFA", "accent": "#00E5FF", "neon": "#A3FF12" },
+      "color_grade_mood": "cool_clean_dark_accent",
+      "bgm_genre": "Modern Tech / Synth Pulse",
+      "bgm_bpm": [100, 122],
+      "allowed_sfx": ["ui_glass_tap", "data_tick_mono", "sub_lock_precision", "whoosh_clean_architectural"],
+      "banned_sfx": ["cartoon_pop", "meme_sfx", "sloppy_vinyl_scratch"],
+      "motion_intensity": "high_crisp",
+      "preferred_atomics": ["polarity_flip", "pill_unroll_y", "punch_in_jump", "ghost_trail"],
+      "hard_veto_guards": {
+        "claim_gate_r200": true,
+        "isometric_3d_ui_enabled": true,
+        "planar_wall_tracking": true
+      }
+    },
+    "education": {
+      "legacy_alias": true,
+      "maps_to_v7_skin": "course_edtech",
+      "label": "Giáo dục / Podcast / Chia sẻ chuyên sâu",
+      "core_intent": "comprehension",
+      "narrative_arc": "DeepValue",
+      "asl_sec": [3.0, 6.0],
+      "pattern_interrupt_sec": [3.5, 6.5],
+      "contrast_breathing_sec": [12, 15],
+      "show_dont_tell_mix": { "expand": 0.6, "proof": 0.4, "contrast": 0.0 },
+      "fonts": {
+        "primary": "Be Vietnam Pro",
+        "secondary": "Montserrat Static",
+        "accent": "SVN-Aaron Script"
+      },
+      "colors": { "bg": "#111111", "text": "#FAFAFA", "accent": "#F4C40C", "cream": "#FDFBE0" },
+      "color_grade_mood": "neutral_clean_high_readability",
+      "bgm_genre": "Minimalist Electronic / Soft Jazz",
+      "bgm_bpm": [80, 100],
+      "allowed_sfx": ["page_turn_crisp", "marker_highlight_swipe", "ui_pop_bubble", "unlock_chime"],
+      "banned_sfx": ["arcade_jackpot_horn", "cheap_cartoon_boing", "meme_airhorn"],
+      "motion_intensity": "low_clean",
+      "preferred_atomics": ["smooth_push_in", "editorial_blur_in", "polarity_flip", "slide_up_mask_reveal"],
+      "hard_veto_guards": {
+        "contrast_breathing_sec": [12, 15],
+        "require_tangible_3d_deliverable": true,
+        "rvm_comment_rain_enabled": true
+      }
+    }
+  }
+}

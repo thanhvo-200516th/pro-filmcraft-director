@@ -1,0 +1,31 @@
+# Python bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / JS caches
+node_modules/
+npm-debug.log*
+
+# OS & Editor junk
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Local env, secrets & scratch outputs
+.env
+.env.*
+scratch/
+tmp/
+*.tmp
+*.fcproj
+*.mp4
+*.mov
+*.wav
+*.npz
+*.npy

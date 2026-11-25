@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "aspect_ratios": {
+    "9:16": {
+      "width": 1080,
+      "height": 1920,
+      "platforms": ["TikTok", "Instagram Reels", "YouTube Shorts"],
+      "dead_zones_px": { "top": [0, 220], "bottom": [1460, 1920], "left": [0, 60], "right": [920, 1080] },
+      "core_safe_box_px": { "x_min": 60, "x_max": 920, "y_min": 240, "y_max": 1440 },
+      "eye_target_y_px": [480, 720],
+      "subtitle_y_px": [1220, 1420],
+      "hero_text_upper_y_px": [260, 520],
+      "hero_text_lower_y_px": [960, 1200]
+    },
+    "16:9": {
+      "width": 1920,
+      "height": 1080,
+      "platforms": ["YouTube", "LinkedIn", "Web"],
+      "dead_zones_px": { "top": [0, 60], "bottom": [930, 1080], "left": [0, 120], "right": [1800, 1920] },
+      "core_safe_box_px": { "x_min": 120, "x_max": 1800, "y_min": 80, "y_max": 920 },
+      "eye_target_y_px": [300, 420],
+      "subtitle_y_px": [820, 920],
+      "hero_text_left_x_px": [140, 800],
+      "hero_text_right_x_px": [1120, 1780]
+    },
+    "4:5": {
+      "width": 1080,
+      "height": 1350,
+      "platforms": ["Instagram Feed", "Facebook Feed"],
+      "dead_zones_px": { "top": [0, 90], "bottom": [1180, 1350], "left": [0, 60], "right": [1020, 1080] },
+      "core_safe_box_px": { "x_min": 60, "x_max": 1020, "y_min": 100, "y_max": 1170 },
+      "eye_target_y_px": [350, 520],
+      "subtitle_y_px": [1020, 1150],
+      "hero_text_upper_y_px": [120, 320],
+      "hero_text_lower_y_px": [850, 1020]
+    }
+  }
+}

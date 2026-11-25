@@ -1,0 +1,1032 @@
+{
+  "schema_version": "7.1.0",
+  "purpose": "Universal Studio Director v7.1 Catalog: 8 Backward-Compatible Director Archetypes upgraded with 60fps Animated Web-Cinema Kinetic Typography Plates (web_plate_builder.render_kinetic_typo_batch -> kt01..kt12 prores4444/qtrle RGBA .mov synced to words_tl.json syllable onsets; ZERO static mode='still' Hero PNG stamps, ZERO PIL/OpenCV 3D plastic bevels), Swash-Initial Hybrid Vietnamese NFC safety, Gate 3C Anti-Template Choreography Vetoes, Dual-Rail 9:16 + Cranial Lock (Sub-layer Feather = 29, 0px hard stroke), Dual Chromatic Policy (color_world_polarity + semantic_4act_jewel), 14 Native-Frame Micro-Bridges (45,582-frame @__dviet forensics), 3-Lane Render Orchestration (A/B/C), and Orthogonal 10x8 Format-Skin Routing & HARD VETO Safety Guards.",
+  "render_lanes_v70": {
+    "lane_a_nle_native": {
+      "id": "A",
+      "engine": "FilmCraft .fcproj (wgpu native V1-V8 / A1-A8)",
+      "responsibilities": [
+        "Real-time 0f hard cuts, bimodal C7 vocal J-cuts, 13f rack-focus hidden cuts, and C² air-cushion camera keyframes",
+        "RVM foreground alpha sandwiching with Sub-layer Feather Mask = 29 and 0px hard stroke",
+        "Whisper G2 (Y >= 1360) and curated S01..S18 subtext groups in Unicode NFC",
+        "meta.bgm_stops -inf dB silence vacuums, 7 Organic Foley SFX micro-sync (R217), and -16/-14 LUFS BS.1770-4 mastering"
+      ]
+    },
+    "lane_b_web_cinema_plates": {
+      "id": "B",
+      "engine": "scripts/tools/web_plate_builder.py (Headless Chrome HTML5/CSS3/SVG @2x DPR -> 2160x3840 supersampled to 1080x1920 @ 60fps)",
+      "output_formats": ["prores4444_yuva444p10le_60fps_mov", "qtrle_rgba_60fps_mov"],
+      "hero_kinetic_mandate_v71": "ALL Hero & Secondary display typography MUST be scheduled via typography_composer.plan_dviet_kinetic_beat_schedule(...) and rendered as 60fps animated .mov (prores4444 / qtrle RGBA) via web_plate_builder.render_kinetic_typo_batch (kt01..kt12) synced to exact words_tl.json syllable onsets (Δf = 8..16f @ 60fps) — NEVER static mode='still' .png stamps!",
+      "permanent_prohibitions": [
+        "PERMANENT BAN on static mode='still' .png Hero/Secondary typography stamps (STATIC_HERO_PNG_STAMP — Gate 3C HARD VETO)",
+        "PERMANENT BAN on PIL/OpenCV raster 3D bevel extrusion (NO_PIL_PLASTIC_BEVEL)",
+        "PERMANENT BAN on flat cv2/ImageDraw boxed sticker geometry (NO_FLAT_RASTER_BOX)",
+        "PERMANENT BAN on hard cartoon stroke outlines (hard_stroke_px == 0 mandatory)",
+        "PERMANENT BAN on '— ALL CAPS KICKER' spam (0.0% in @__dviet) and duplicate frosted pill badges"
+      ],
+      "responsibilities": [
+        "60fps syllable-locked kinetic typography (.mov prores4444/qtrle RGBA via render_kinetic_typo_batch across kt01..kt12: 0.78 kiss leading, Feather=29 + Swash-Initial Hybrid [0] ℒ/𝒩/𝒬/ℋ/ℳ + [1..n] NFC italic, gap-bridge word blooms, mist evaporation, cranial SVG <textPath> arcs, and directional glow echoes)",
+        "60fps animated Frosted Bento glass UI steps, 3D skewed Polaroid trios, isometric 3D prompt browsers, 1:2.8 clinical Before/After plates, SVG vector flowcharts, and KPI delta receipts"
+      ]
+    },
+    "lane_c_hyperframes_effectcraft": {
+      "id": "C",
+      "engine": "dviet_motion_canvas_engine.py / HyperFrames / EffectCraft (.ecproj)",
+      "responsibilities": [
+        "Deterministic 60fps full-screen living motion stages (timeline_playhead, concentric_lock_lab, giant_numeral_3d_ui, bento_kinetic_matrix)",
+        "19f Mirror-Tile Whip -> 3D UI perspective handoffs and multi-phase WebGL/GSAP choreography"
+      ]
+    }
+  },
+  "dual_rail_9_16_safe_placement": {
+    "canvas_px": [1080, 1920],
+    "cranial_lock": {
+      "enabled": true,
+      "max_face_eye_hair_overlap_pct": 0.0,
+      "rule": "0% glyph, badge, or card overlap with speaker face, eye_band, mouth_band, or hair crown"
+    },
+    "rails": {
+      "upper_editorial_stage": {
+        "y_range_px": [220, 520],
+        "x_safe_px": [80, 1000],
+        "usage": "Clean architectural headroom strictly above hair crown, or open 2/3 negative wall when speaker is framed at 1/3 (X ~ 320 or 760)"
+      },
+      "chest_tactile_rail": {
+        "y_range_px": [960, 1340],
+        "x_safe_px": [90, 990],
+        "rvm_hand_over_text": true,
+        "sub_layer_feather_px": 29,
+        "hard_stroke_px": 0,
+        "usage": "Tactile sternum/chest rail sandwiched behind RVM gesturing hands/forearms with 29px feather mask and 0px hard stroke"
+      },
+      "whisper_g2_sub_rail": {
+        "y_range_px": [1360, 1460],
+        "max_font_pt": 30,
+        "ruling": "R209"
+      }
+    }
+  },
+  "chromatic_policies_v70": {
+    "color_world_polarity": {
+      "description": "1 cohesive Color World per video (55%-100% Primary Signature Hue + 0%-45% Pain/Contrast Hue) + 1-3 Full-Screen Dark <-> #EEF4EA/#FAFAFA Polarity Flips.",
+      "primary_hue_share": [0.55, 1.00],
+      "secondary_contrast_hue_share": [0.00, 0.45],
+      "forbid_swamp_green_wall_skin_cast": true,
+      "rainbow_hue_soup_fail_buckets": 5
+    },
+    "semantic_4act_jewel": {
+      "description": "4-Act Emotional Jewel Palette on crisp #FAFAFA / #F8FAFC light surfaces (or clean neutral studio plates) with #0F172A dark ink. Allows chapter-scoped multi-color jewel accents across 4 narrative acts without intra-sentence neon rainbow soup.",
+      "canvas_light_default": "#FAFAFA",
+      "body_ink_default": "#0F172A",
+      "acts": {
+        "act_1_hook_curiosity": { "name": "Deep Emerald / Teal", "hex": "#059669", "alt_hex": "#0D9488" },
+        "act_2_mechanism_logic": { "name": "Royal Sapphire / Cobalt", "hex": "#2563EB", "alt_hex": "#1D4ED8" },
+        "act_3_friction_myth_pain": { "name": "Crimson Ruby / Rose", "hex": "#E11D48", "alt_hex": "#BE123C" },
+        "act_4_resolution_proof_cta": { "name": "Burnished Amber / Gold", "hex": "#D97706", "alt_hex": "#B45309" }
+      },
+      "max_jewel_hues_per_beat": 1,
+      "max_jewel_acts_per_video": 4,
+      "forbid_intra_phrase_rainbow_soup": true
+    },
+    "multi_hue_6": {
+      "description": "Legacy opt-in <= 42% per-hue semantic contrast rotation (enabled only when explicitly requested).",
+      "opt_in_only": true,
+      "max_single_hue_share": 0.42
+    }
+  },
+  "micro_bridges_v70": {
+    "player3_air_cushion_20f": {
+      "frames_60fps": 20,
+      "frames_30fps": 10,
+      "curve": "cubic-bezier(0.16, 1.0, 0.30, 1.0)",
+      "spec": "72% displacement in first 6f + 28% asymptotic air-cushion settle across 14f (ds/dt != 0 at f=0)"
+    },
+    "rack_focus_13f": {
+      "frames_60fps": 13,
+      "frames_30fps": 6,
+      "split_60fps": [5, 8],
+      "spec": "5f pre-cut optical defocus (0->18px + 1.055x push) -> 0f hidden cut at peak blur -> 8f snap-focus settle (18->0px)"
+    },
+    "persistent_text_bridge_11f": {
+      "pre_cut_frames_60fps": 2,
+      "post_cut_frames_60fps": 11,
+      "spec": "Hero/anchor Web-Cinema plate enters 2f before V1 cut or holds +11f across cut at locked (X,Y) to anchor viewer fovea"
+    },
+    "exposure_bloom_3f": {
+      "frames_60fps": 3,
+      "peak_ev": 0.38,
+      "spec": "1f highlight-shoulder bloom rise (+0.38 EV on luma > 0.65) + 2f exponential settle without full-frame flashbang"
+    },
+    "optical_flow_morph_6f": {
+      "frames_60fps": [5, 6],
+      "max_head_pose_delta_deg": 12.0,
+      "spec": "5-6f bidirectional optical-flow pixel warp seamlessly hiding intra-monologue breath/filler cuts"
+    },
+    "sublayer_feather_mask_29": {
+      "feather_radius_px": 29,
+      "hard_stroke_px": 0,
+      "spec": "29px alpha feather on RVM hand/torso depth occlusion mask with 0px hard stroke outline"
+    },
+    "pre_echo_rotoscope_strobe_2f": {
+      "duration_ms": 33.3,
+      "frames_60fps": 2,
+      "alpha_pct": 35,
+      "spec": "33.3ms (2f @ 60fps) incoming RVM silhouette pre-echo at 35% alpha ahead of beat-locked subject entrance"
+    },
+    "mirror_tile_whip_3d_ui_19f": {
+      "frames_60fps": 19,
+      "split_60fps": [7, 12],
+      "spec": "7f mirrored-edge directional whip blur -> 12f perspective 3D HTML/CSS UI stage landing (rotY=-11deg, rotX=+5deg)"
+    },
+    "halation_decay_4_28f": {
+      "attack_frames_60fps": 4,
+      "decay_frames_60fps": 28,
+      "spec": "4f optical highlight/glyph halation bloom followed by 28f natural phosphor decay"
+    },
+    "concentric_negative_bridge": {
+      "anchor_px": [540, 920],
+      "invert_frames_60fps": 2,
+      "spec": "Concentric geometry lock at (540, 920) across a 1-2f inverted luminance negative bridge into #EEF4EA/#FAFAFA polarity"
+    },
+    "silence_vacuum_140bpm_drop": {
+      "min_vacuum_sec": 0.50,
+      "pre_fade_ms": 35,
+      "min_drop_bpm": 140,
+      "spec": ">=0.50s -inf dB total BGM carve followed by transient-locked 140+ BPM beat drop on visual reveal"
+    },
+    "organic_foley_7_pack": {
+      "sfx_archetypes": [
+        "archival_paper_slide",
+        "mech_key_tactile_tick",
+        "leica_shutter_click",
+        "muted_felt_thud",
+        "crystal_glass_ping",
+        "linen_cloth_brush",
+        "soft_air_puff"
+      ],
+      "sync_rule": "5ms env5 lag_ms peak within [-1f, +2f] (R217), 100% unclipped tails"
+    }
+  },
+  "industry_safety_guards_v70": {
+    "cri_100_tooth_lock": "HARD VETO for Dental/Clinic (S2): D65/CRI-100 neutral white balance, CIE Lab delta-b* <= +2.0 on enamel, zero yellow/warm LUT or mouth glow",
+    "skin_tone_guard": "HARD VETO across S1..S7: protect skin vectorscope line (105-135 deg), ban swampy green/magenta wall tint spillover onto skin, ban harsh pore sharpening",
+    "hand_safe_box": "HARD VETO for Nail/Salon/Review (S3, S4): zero text/card/vignette collision with manicure hands, hair swatches, or held product hero zones",
+    "cranial_lock": "HARD VETO across S1..S8: 0% typography or graphic overlap with face, eyes, or hair crown; enforce Dual-Rail 9:16 placement",
+    "r200_claim_gate": "HARD VETO on empirical ROI/clinic/product/BĐS/SaaS claims: require authentic plates/screen_rec + textnorm match, never AI B-roll"
+  },
+  "global_anti_cookiecutter_rules": {
+    "max_checklist_audit_card_per_video": 1,
+    "max_consecutive_same_visual_block": 1,
+    "min_distinct_visual_treatments_per_video": 3,
+    "min_clean_aroll_breathing_ratio_emotional": 0.20,
+    "min_clean_zero_overlay_breathing_ratio": 0.12,
+    "max_concurrent_overlay_zones": 2,
+    "max_concurrent_zones_with_whisper_30pt_g2": 3,
+    "max_clutter_overload_duration_share": 0.15,
+    "card_text_mutex_mandatory": true,
+    "forbid_uniform_top_banner_every_beat": true,
+    "single_hero_focal_point_per_beat": true,
+    "vietnamese_nfc_mandatory": true,
+    "forbidden_fonts_vi": ["Anton", "Bebas Neue", "Instrument Serif", "Great Vibes"],
+    "forbid_pil_opencv_3d_bevel_and_flat_boxes": true,
+    "forbid_swamp_green_wall_skin_cast": true,
+    "forbid_static_hero_png_stamp": true,
+    "mandatory_hero_fps": 60,
+    "web_cinema_plate_renderer": "web_plate_builder.py (@2x DPR HTML5/CSS3/SVG -> 60fps prores4444 / qtrle RGBA .mov via render_kinetic_typo_batch kt01..kt12)",
+    "kinetic_schedule_planner": "typography_composer.plan_dviet_kinetic_beat_schedule",
+    "max_consecutive_same_silhouette": 2,
+    "max_single_silhouette_share": 0.35,
+    "max_pill_badge_beat_share": 0.30,
+    "forbid_duplicate_pill_badge_text": true,
+    "forbid_all_caps_em_dash_kicker_spam": true,
+    "max_consecutive_same_entrance_style": 2,
+    "min_distinct_entrances_8plus_beats": 4,
+    "gate_3c_veto_rules_v71": {
+      "STATIC_HERO_PNG_STAMP": "HARD VETO if any Hero or Secondary display typography beat uses a static mode='still' .png stamp instead of a 60fps animated .mov (prores4444/qtrle RGBA) rendered via render_kinetic_typo_batch (kt01..kt12) synced to words_tl.json syllable onsets.",
+      "LAYOUT_SILHOUETTE_MONOTONY": "HARD VETO if the same layout_silhouette repeats on > 2 consecutive beats (max_consecutive_same_silhouette = 2) OR exceeds 35% of total typography beats (max_single_silhouette_share = 0.35).",
+      "PILL_BADGE_OVERUSE": "HARD VETO if frosted pill badges appear on > 30% of typography beats (max_pill_badge_beat_share = 0.30; @__dviet empirical baseline < 1.5%) OR if any badge_text string is duplicated within the same video (forbid_duplicate_pill_badge_text = true).",
+      "ENTRANCE_STYLE_MONOTONY": "HARD VETO if the same entrance_style / kt01..kt12 template repeats on > 2 consecutive beats (max_consecutive_same_entrance_style = 2) OR if a video with >= 8 typography beats uses < 4 distinct entrance styles (min_distinct_entrances_8plus_beats = 4)."
+    },
+    "sub_layer_feather_px": 29,
+    "hard_stroke_px": 0,
+    "cranial_lock_mandatory": true,
+    "default_color_policy": "color_world_polarity",
+    "supported_color_policies": ["color_world_polarity", "semantic_4act_jewel", "multi_hue_6"],
+    "color_world_primary_hue_share": [0.55, 1.00],
+    "color_world_secondary_contrast_hue_share": [0.00, 0.45],
+    "rainbow_hue_soup_fail_buckets": 5,
+    "opt_in_legacy_multi_hue_6_max_share": 0.42,
+    "default_cut_grammar": "dviet_4cut",
+    "clean_hard_cut_share_range": [0.40, 0.75],
+    "max_heavy_wgpu_transition_share_era2": 0.45,
+    "true_vocal_jcut_lead_ms_range": [-850, -140],
+    "sloppy_mid_syllable_cut_forbidden_ms": [-130, -10],
+    "max_heavy_whoosh_per_minute_era2": 5.0,
+    "forbid_dead_zero_velocity_frame0_hold": true,
+    "ban_raw_karaoke_s13_by_default": true,
+    "secondary_text_rotation_policy": {
+      "policy_summary": "Curate 1–3 secondary typography groups per video (never force all 4/4 groups into one short, and never exceed MAX_ZONES = 2 active overlay zones, or 3 with <=26-30pt whisper G2). Enforce Cranial Lock (0% face/hair contact) via Dual-Rail 9:16. Suppress all colliding text over active Lane-B/C cards. Never stamp noisy raw bottom karaoke (S13) unless explicitly requested.",
+      "forbid_s13_raw_karaoke_unless_explicit": true,
+      "curated_secondary_groups_per_video": [1, 3],
+      "max_consecutive_same_secondary_preset": 2,
+      "groups": {
+        "G1_lead_sub": [
+          "s01_accordion_rollout_sub",
+          "s02_boundary_pinch_sub",
+          "s03_stepup_underline_sub",
+          "s04_baseline_rise_lead",
+          "s05_feather_wipe_lead",
+          "s06_swivel_3d_sub",
+          "s07_ghost_recede_stack",
+          "s08_poetic_scatter_lead",
+          "s09_overlap_script_sub"
+        ],
+        "G2_quiet_bottom": [
+          "s10_word_synced_fixed_slot_captions",
+          "s11_conversational_2line",
+          "s12_minimal_1line_quiet",
+          "s12_whisper_26pt_sub"
+        ],
+        "G3_spatial_shoulder_arc": [
+          "s14_shoulder_callout",
+          "s15_tilted_counter_cluster",
+          "s16_bridge_anchor_swap",
+          "s17_circular_arc_sub_wrap",
+          "dviet_wall_microword_pop"
+        ],
+        "G4_ui_micro_labels": [
+          "s18_typewriter_tech_tag",
+          "s18_active_dim_step_pills",
+          "viewfinder_raw_card",
+          "compact_glass_lock_badge"
+        ],
+        "banned_by_default": ["s13_raw_karaoke_bounce"]
+      }
+    }
+  },
+  "archetypes": {
+    "dviet_era2_7707_manifesto": {
+      "id": "dviet_era2_7707_manifesto",
+      "label": "Signature @__dviet v7.1 Neo-Editorial Manifesto: Asymmetric 3-Cam 1/3 + 60fps Kinetic Web-Cinema .mov Plates (kt01..kt12) + Swash-Initial Hybrid + Dual-Rail Cranial Lock (Feather=29, 0px Stroke) + 14 Native Micro-Bridges",
+      "default_tier": "full",
+      "claim_gate_default": false,
+      "color_policy_default": "color_world_polarity",
+      "supported_color_policies": ["color_world_polarity", "semantic_4act_jewel"],
+      "cut_grammar_default": "dviet_4cut",
+      "default_color_world": "emerald_cream_7707",
+      "rule_confidence": {
+        "high_immutable": "ZERO static mode='still' Hero PNG stamps (100% 60fps prores4444/qtrle RGBA .mov via render_kinetic_typo_batch kt01..kt12 synced to words_tl.json syllable onsets; Gate 3C Vetoes active), ZERO PIL/OpenCV 3D plastic bevels or flat boxes (hard_stroke_px = 0), 0% '— ALL CAPS KICKER' spam, 0 duplicate pill badges, Swash-Initial Hybrid ([0] ASCII swash + [1..n] NFC italic), Cranial Lock (0% face/hair overlap) via Dual-Rail 9:16 + RVM Sub-layer Feather = 29, Skin-Tone Guard (zero swamp-green wall cast), color_world_polarity OR chapter-clean semantic_4act_jewel (0 Rainbow Hue Soup), MAX_ZONES <= 2, Card <-> Text Mutex, wgpu blend!=0 no-drop-shadow guard, NFC 0.28em padding + text_vi.json glue, R209/R30/R217/R35 physics",
+        "medium_calibrated": "4-Cut Grammar (55%-75% clean 0f hard cuts, <=35%-45% wgpu transitions) bridged by player3_air_cushion_20f, rack_focus_13f, persistent_text_bridge_11f, exposure_bloom_3f & bimodal C7 True Vocal J-Cuts (-250ms..-650ms), 1-3 Polarity Flips (#081C15 <-> #EEF4EA/#FAFAFA), >=70% lowercase kiss-leading (0.78) Hero words, 1-2 Music Stop vacuums (>=0.50s -inf dB), 7 Organic Foley SFX (<=5 heavy whooshes/min), +2.2 dB @ 185Hz vocal warmth",
+        "low_bendable_style": "Asymmetric 3-Cam 1/3 left/right speaker framing, wall-of-words micro-hops (dviet_wall_microword_pop), and 1.6-4.2s rubber-band speech cadence — yield immediately to emotional vulnerability (Rule of Six #1 = 51% Emotion)"
+      },
+      "inspiration": "45,582-Frame Native Forensic Audit across 19 @__dviet master videos (led by 7707653827016674580, 7706, 7693, 7688): asymmetric 1/3 framing with Cranial Lock, crisp browser-kerned HTML5/CSS3/SVG @2x lowercase kiss typography (0.78 line-height, 0px stroke) tucked into Upper Editorial Stage or RVM Chest Tactile Rail (Feather = 29), full-screen Lane-C motion canvases, 14 frame-exact optical micro-bridges, and -inf dB silence vacuums",
+      "select_when": [
+        "Flagship @__dviet v7.0 personal brand manifestos, AI/creator thesis reels, creative director commentary, or clean #FAFAFA 4-Act chapter breakdowns",
+        "User wants authentic @__dviet mastery: Web-Cinema @2x vector typography, Dual-Rail Cranial Lock, Color-World Polarity or 4-Act Jewel inks, and 14 frame-exact micro-bridges",
+        "Video demands studio-grade retention with zero cheap PIL 3D plastic bevels, zero swamp-green skin contamination, and zero 4-layer clutter"
+      ],
+      "v70_studio_contract": {
+        "render_lanes": ["A", "B", "C"],
+        "plate_engine": "web_cinema_html_css_svg_plates",
+        "plate_builder_cli": "scripts/tools/web_plate_builder.py",
+        "plate_dpr": 2,
+        "sub_layer_feather_px": 29,
+        "hard_stroke_px": 0,
+        "placement_rails": ["upper_editorial_stage", "chest_tactile_rail", "whisper_g2_sub_rail"],
+        "cranial_lock": true,
+        "micro_bridges_v70": [
+          "player3_air_cushion_20f",
+          "rack_focus_13f",
+          "persistent_text_bridge_11f",
+          "exposure_bloom_3f",
+          "optical_flow_morph_6f",
+          "sublayer_feather_mask_29",
+          "pre_echo_rotoscope_strobe_2f",
+          "concentric_negative_bridge",
+          "silence_vacuum_140bpm_drop",
+          "organic_foley_7_pack"
+        ],
+        "compatible_format_modes": ["F1", "F2", "F3", "F6", "F10"],
+        "compatible_industry_skins": ["S6", "S5", "S8", "S4"],
+        "active_safety_guards": ["cranial_lock", "skin_tone_guard"]
+      },
+      "spatial_framing_and_motion_stages": {
+        "asymmetric_3cam_framing": "Alternate Center-Close (100% authority, Cranial Lock active), Left-1/3 Speaker + Right-2/3 Wall Micro-Words (dviet_wall_microword_pop), and Right-1/3 Speaker + Left-2/3 Negative Space",
+        "dual_rail_placement": "Upper Editorial Stage Y in [220, 520] (above crown) OR Chest Tactile Rail Y in [960, 1340] (RVM Hand-Over-Text with Sub-layer Feather = 29, 0px stroke)",
+        "full_screen_motion_canvases": [
+          "render_timeline_playhead_stage",
+          "render_concentric_lock_lab_stage",
+          "render_giant_numeral_3d_ui_stage",
+          "render_bento_kinetic_matrix_stage"
+        ],
+        "polarity_flip_contract": "Flip 1-3 beats per video from deep obsidian/emerald dark (#081C15 / #0B0D11) to tactile mint-cream/paper light (#EEF4EA / #FAFAFA) sealed by exposure_bloom_3f or persistent_text_bridge_11f"
+      },
+      "pacing": {
+        "asl_sec": [1.6, 3.8],
+        "pattern_interrupt_sec": [2.0, 3.6],
+        "rhythm_profile": "4-Cut Grammar + 14 Micro-Bridges: 55%-75% crisp 0f Hard Cuts + True Vocal J-Cuts (-250..-650ms) + 13f Rack-Focus / 11f Persistent Text Bridges + 1-2 Polarity Canvas Cuts + >=12% zero-overlay breathing frames",
+        "clean_aroll_breathing_pct": [15, 28]
+      },
+      "typography_pairing": {
+        "hero_display": "Be Vietnam Pro",
+        "hero_condensed_alt": "DFVN West West Condensed",
+        "editorial_serif_italic": "Playfair Display",
+        "monospace_code": "JetBrains Mono",
+        "hierarchy_rule": ">=70% lowercase/mixed-case Heroes at >=2.6x Hero/Sub scale ratio, kiss line_height 0.78 (NFC 0.28-0.30em top pad, Swash-Initial Hybrid [0] ℒ/𝒩/𝒬/ℋ/ℳ + [1..n] NFC italic), rendered as 60fps @2x HTML5/CSS3/SVG kinetic .mov (prores4444/qtrle RGBA) via render_kinetic_typo_batch (kt01..kt12, 0px hard stroke, 0 static PNG stamps, 35% Hero : 35% Whisper/Counterpoint : 30% Studio 3D Plates), paired with <=26pt whisper G2"
+      },
+      "palette": {
+        "color_world_options": ["emerald_cream_7707", "amber_cinema_7706", "violet_aurora_7693", "obsidian_cyan_7688"],
+        "semantic_4act_jewel_option": {
+          "canvas_light": "#FAFAFA",
+          "text_ink": "#0F172A",
+          "act_hues": ["#059669", "#2563EB", "#E11D48", "#D97706"]
+        },
+        "canvas_dark": "#081C15",
+        "canvas_polarity_light": "#FAFAFA",
+        "canvas_mint_cream_alt": "#EEF4EA",
+        "text_on_dark": "#FAFAFA",
+        "text_on_light": "#0F172A",
+        "primary_signature_hue": "#2EE86E",
+        "secondary_pain_hue": "#FF4D5E",
+        "chromatic_policy": {
+          "color_policy": "color_world_polarity",
+          "alt_color_policy": "semantic_4act_jewel",
+          "primary_hue_share_range": [0.55, 1.00],
+          "secondary_hue_share_range": [0.00, 0.45],
+          "max_accent_buckets": 2,
+          "skin_tone_vectorscope_lock": true
+        }
+      },
+      "preferred_secondary_text_groups": {
+        "G1_lead_sub": ["s04_baseline_rise_lead", "s01_accordion_rollout_sub", "s09_overlap_script_sub"],
+        "G2_quiet_bottom": ["s12_whisper_26pt_sub", "s12_minimal_1line_quiet"],
+        "G3_spatial_shoulder_arc": ["dviet_wall_microword_pop", "s14_shoulder_callout", "s16_bridge_anchor_swap"],
+        "G4_ui_micro_labels": ["s18_typewriter_tech_tag", "compact_glass_lock_badge"]
+      },
+      "preferred_visual_blocks": [
+        "web_cinema_editorial_hero_plate",
+        "strike_myth_banner",
+        "versus_split_card",
+        "metric_kpi_hero",
+        "code_terminal_window",
+        "quote_editorial_note"
+      ],
+      "camera_and_transitions": {
+        "aroll_curves": [
+          "player3_air_cushion_20f",
+          "matched_velocity_post_cut_glide",
+          "c2_velvet_glide_in",
+          "asymmetric_third_reframe",
+          "cut_kick"
+        ],
+        "transitions": [
+          "clean_0f_hard_cut",
+          "true_vocal_jcut_minus_350ms",
+          "rack_focus_13f",
+          "persistent_text_bridge_11f",
+          "optical_flow_morph_6f",
+          "exposure_bloom_3f",
+          "polarity_canvas_flip"
+        ],
+        "audio_dynamics_contract": {
+          "bgm_stops_vacuum_min_sec": 0.50,
+          "bgm_pre_stop_fade_ms": 35,
+          "max_heavy_whoosh_per_min": 5.0,
+          "preferred_sfx_pack": "organic_foley_7_pack",
+          "vocal_chest_warmth_185hz_db": 2.2
+        },
+        "shutter_angle_deg": [180, 270]
+      },
+      "diversity_quotas": {
+        "max_checklist_audit_card": 0,
+        "max_concurrent_overlay_zones": 2,
+        "curated_secondary_groups_range": [1, 3],
+        "min_lowercase_hero_ratio": 0.70,
+        "min_clean_breathing_ratio": 0.12,
+        "forbid_s13_raw_karaoke": true
+      }
+    },
+    "dviet_vietanh_zdepth_master": {
+      "id": "dviet_vietanh_zdepth_master",
+      "label": "Signature @__dviet × @vietanh 4-Plane Z-Depth & Dual-Rail RVM Sandwich Master",
+      "default_tier": "full",
+      "claim_gate_default": false,
+      "supported_color_policies": ["semantic_4act_jewel", "color_world_polarity", "multi_hue_6"],
+      "rule_confidence": {
+        "high_immutable": "4-Plane Z-Depth luma separation (Plane-1 bokeh <= 28% luma), Cranial Lock (0% face/hair contact) + RVM Sub-layer Feather = 29 (0px hard stroke), Lane-B HTML5/CSS3/SVG @2x plates (zero PIL bevels), Skin-Tone Guard, wgpu blend!=0 no-drop-shadow guard, NFC 0.28em padding + text_vi.json glue, 0 raw S13 karaoke, R209/R30/R217/R35 physics",
+        "medium_calibrated": "player3_air_cushion_20f, rack_focus_13f, persistent_text_bridge_11f, PiP <-> Fullframe smooth C² morph (10-14f), Optical Depth Dissolve (10-12f), J-Cut -250..-140ms vocal lead, 1-3 curated secondary text groups",
+        "low_bendable_style": "2-speed asymmetric speech cadence (1.9-2.3s brisk setup vs 3.2-4.2s velvet landing) — widen holds freely on intimate vocal pauses (Rule of Six #1 = 51% Emotion)"
+      },
+      "inspiration": "v7.0 4-Plane Z-Depth Sandwich: 28% luma studio bokeh + Lane-B @2x DPR Web-Cinema midground plates in Upper Stage / Chest Tactile Rail + rim-lit RVM cutout (Sub-layer Feather = 29, Hand-Over-Text parallax) + crisp NFC sub-pixel secondary choreography",
+      "select_when": [
+        "Flagship personal brand, creator/director breakdowns, high-craft product/AI insights, or studio talking-head reels",
+        "User wants lush 4-Plane Z-Depth behind gesturing hands/shoulders with Cranial Lock and zero noisy bottom karaoke",
+        "Footage supports clean RVM foreground separation and dynamic PiP <-> Fullframe transitions"
+      ],
+      "v70_studio_contract": {
+        "render_lanes": ["A", "B"],
+        "plate_engine": "web_cinema_html_css_svg_plates",
+        "sub_layer_feather_px": 29,
+        "hard_stroke_px": 0,
+        "placement_rails": ["upper_editorial_stage", "chest_tactile_rail", "whisper_g2_sub_rail"],
+        "cranial_lock": true,
+        "micro_bridges_v70": [
+          "player3_air_cushion_20f",
+          "rack_focus_13f",
+          "persistent_text_bridge_11f",
+          "exposure_bloom_3f",
+          "sublayer_feather_mask_29",
+          "halation_decay_4_28f",
+          "organic_foley_7_pack"
+        ],
+        "compatible_format_modes": ["F2", "F1", "F3", "F6"],
+        "compatible_industry_skins": ["S6", "S5", "S4", "S1"],
+        "active_safety_guards": ["cranial_lock", "skin_tone_guard"]
+      },
+      "z_depth_4_plane_sandwich": {
+        "plane_1_living_bokeh": "Graded studio plate / subtle living bokeh clamped around ~28% luma (Skin-Tone Guard active, zero swamp-green cast)",
+        "plane_2_parallax_midground": "Lane-B @2x HTML5/CSS3/SVG Hero Typography & visual plates anchored in Upper Editorial Stage or Chest Tactile Rail (0% face/hair contact via Cranial Lock)",
+        "plane_3_rimlit_cutout": "Rim-lit RVM speaker & gesturing hands foreground cutout with Sub-layer Feather Mask = 29 and 0px hard stroke",
+        "plane_4_crisp_nfc_subtext": "Sub-pixel NFC Vietnamese secondary text curated across 1-3 groups (G1/G2/G3/G4) respecting MAX_ZONES <= 2"
+      },
+      "pacing": {
+        "asl_sec": [1.9, 3.6],
+        "pattern_interrupt_sec": [2.2, 3.8],
+        "rhythm_profile": "2-Speed Asymmetric Speech Cadence (brisk 1.9-2.3s contrast/mechanism beats alternating with 3.2-4.2s velvet insight landings) + rack_focus_13f & J-Cut vocal pre-lead",
+        "clean_aroll_breathing_pct": [20, 30]
+      },
+      "typography_pairing": {
+        "hero_display": "DFVN West West Condensed",
+        "lead_sans": "Be Vietnam Pro",
+        "editorial_serif_italic": "Playfair Display",
+        "calligraphy_accent": "SVN-Aaron Script",
+        "monospace_code": "JetBrains Mono",
+        "hierarchy_rule": "Web-Cinema @2x Hero keyword (78-124px, 0px stroke) in semantic_4act_jewel or Color-World dual-hue spans ([mint:khóa] [white:kết cấu]) paired with curated G1/G3/G4 secondary micro-typography"
+      },
+      "palette": {
+        "canvas_dark": "#0B0D13",
+        "canvas_light": "#FAFAFA",
+        "bokeh_luma_target_pct": 28,
+        "text_primary": "#FAFAFA",
+        "accents": ["#2DD4BF", "#38BDF8", "#FACC15", "#FF4D5E", "#C084FC", "#4ADE80"],
+        "chromatic_policy": {
+          "preferred_mode": "semantic_4act_jewel",
+          "max_single_hue_share": 0.35,
+          "max_adjacent_hero_hue_repeat": 0,
+          "inline_dual_hue_example": "[mint:khóa] [white:kết cấu]",
+          "warm_skin_counter_accents": ["#2DD4BF", "#38BDF8", "#C084FC"]
+        }
+      },
+      "preferred_secondary_text_groups": {
+        "G1_lead_sub": ["s01_accordion_rollout_sub", "s02_boundary_pinch_sub", "s04_baseline_rise_lead", "s09_overlap_script_sub"],
+        "G2_quiet_bottom": ["s12_whisper_26pt_sub", "s10_word_synced_fixed_slot_captions", "s12_minimal_1line_quiet"],
+        "G3_spatial_shoulder_arc": ["s14_shoulder_callout", "s15_tilted_counter_cluster", "s16_bridge_anchor_swap"],
+        "G4_ui_micro_labels": ["s18_active_dim_step_pills", "s18_typewriter_tech_tag", "compact_glass_lock_badge"]
+      },
+      "preferred_visual_blocks": [
+        "web_cinema_editorial_hero_plate",
+        "strike_myth_banner",
+        "versus_split_card",
+        "metric_kpi_hero",
+        "floating_pill_badge",
+        "clean_alpha_prop",
+        "quote_editorial_note"
+      ],
+      "camera_and_transitions": {
+        "aroll_curves": [
+          "player3_air_cushion_20f",
+          "matched_velocity_post_cut_glide",
+          "c2_velvet_glide_in",
+          "text_behind_subject_parallax",
+          "asymmetric_push_float"
+        ],
+        "transitions": [
+          "rack_focus_13f",
+          "persistent_text_bridge_11f",
+          "pip_fullframe_smooth_morph_10_14f",
+          "optical_depth_dissolve_10_12f",
+          "j_cut_minus_140ms"
+        ],
+        "seamless_flow_contract": {
+          "pip_fullframe_morph_frames": [10, 14],
+          "optical_depth_dissolve_frames": [10, 12],
+          "forbid_zero_velocity_frame0_hold": true,
+          "j_cut_audio_lead_ms": -220,
+          "lag_ms_pre_swoosh_peak_on_cut": true
+        },
+        "shutter_angle_deg": [180, 300]
+      },
+      "diversity_quotas": {
+        "max_checklist_audit_card": 0,
+        "max_concurrent_overlay_zones": 2,
+        "max_single_hue_share": 0.35,
+        "max_adjacent_same_hero_hue": 0,
+        "min_secondary_text_groups_used": 2,
+        "forbid_s13_raw_karaoke": true
+      }
+    },
+    "dviet_cinematic_editorial": {
+      "id": "dviet_cinematic_editorial",
+      "label": "Signature @__dviet Cinematic Editorial (4f+28f Halation & Velvet Air-Cushion)",
+      "default_tier": "fast",
+      "claim_gate_default": false,
+      "supported_color_policies": ["color_world_polarity", "semantic_4act_jewel"],
+      "rule_confidence": {
+        "high_immutable": "Cranial Lock + Dual-Rail 9:16, Skin-Tone Guard (warm Kodak skin, zero swamp-green tint), Lane-B @2x plates (0px hard stroke, zero PIL bevels), wgpu blend!=0 no-drop-shadow guard, NFC 0.28em padding, R209/R30/R217",
+        "medium_calibrated": "player3_air_cushion_20f, halation_decay_4_28f, rack_focus_13f, 5ms env5 Organic Foley SFX sync; upgrade to 'full' tier on raw uncut camera takes",
+        "low_bendable_style": "ASL 2.2-3.8s, optical halation intensity 45-65, #0D0D0D dark silk <-> #FAFAFA contrast — bend freely when intimate vocal pauses demand stillness"
+      },
+      "inspiration": "@__dviet 45,582-frame forensics: multi-font Serif + Sans contrast, 4f+28f optical halation decay, Player-3 20f air-cushion Bezier glides, Dual-Rail RVM depth, moody studio authority",
+      "select_when": [
+        "Personal brand authority, creative director commentary, beauty/salon luxury storytelling, design/creator insights",
+        "Footage has strong studio or moody natural light suitable for warm skin + #0D0D0D / #FAFAFA polarity",
+        "User requests @__dviet cinematic editorial warmth with express turnaround"
+      ],
+      "v70_studio_contract": {
+        "render_lanes": ["A", "B"],
+        "plate_engine": "web_cinema_html_css_svg_plates",
+        "sub_layer_feather_px": 29,
+        "hard_stroke_px": 0,
+        "placement_rails": ["upper_editorial_stage", "chest_tactile_rail", "whisper_g2_sub_rail"],
+        "cranial_lock": true,
+        "micro_bridges_v70": [
+          "player3_air_cushion_20f",
+          "rack_focus_13f",
+          "exposure_bloom_3f",
+          "persistent_text_bridge_11f",
+          "halation_decay_4_28f",
+          "organic_foley_7_pack"
+        ],
+        "compatible_format_modes": ["F1", "F2", "F5", "F8"],
+        "compatible_industry_skins": ["S6", "S1", "S3", "S7"],
+        "active_safety_guards": ["cranial_lock", "skin_tone_guard"]
+      },
+      "pacing": {
+        "asl_sec": [2.2, 3.8],
+        "pattern_interrupt_sec": [2.5, 4.2],
+        "rhythm_profile": "Asymmetric Fast-Slow C² cadence (Player-3 20f Bezier air-cushion into calm float/hold + 13f rack-focus hidden cuts)",
+        "clean_aroll_breathing_pct": [20, 30]
+      },
+      "typography_pairing": {
+        "hero_display": "DFVN West West Condensed",
+        "lead_sans": "Be Vietnam Pro",
+        "editorial_serif_italic": "Playfair Display",
+        "calligraphy_accent": "SVN-Aaron Script",
+        "hierarchy_rule": "Pair clean Sans lead (40-48px) with oversized @2x Web-Cinema Serif Italic or Calligraphy/Condensed hero keyword (84-124px, 0px stroke) + 4f+28f optical halation decay"
+      },
+      "palette": {
+        "canvas_dark": "#0D0D0D",
+        "canvas_polarity_light": "#FAFAFA",
+        "text_primary": "#FAFAFA",
+        "accents": ["#F5B932", "#2DD4BF", "#C084FC", "#FB923C", "#38BDF8"]
+      },
+      "preferred_secondary_text_groups": {
+        "G1_lead_sub": ["s04_baseline_rise_lead", "s05_feather_wipe_lead", "s08_poetic_scatter_lead", "s09_overlap_script_sub"],
+        "G2_quiet_bottom": ["s12_whisper_26pt_sub", "s11_conversational_2line", "s12_minimal_1line_quiet"],
+        "G3_spatial_shoulder_arc": ["s14_shoulder_callout", "s16_bridge_anchor_swap"],
+        "G4_ui_micro_labels": ["compact_glass_lock_badge", "viewfinder_raw_card"]
+      },
+      "preferred_visual_blocks": [
+        "web_cinema_editorial_hero_plate",
+        "strike_myth_banner",
+        "versus_split_card",
+        "floating_pill_badge",
+        "quote_editorial_note",
+        "clean_alpha_prop"
+      ],
+      "camera_and_transitions": {
+        "aroll_curves": ["player3_air_cushion_20f", "c2_velvet_glide_in", "matched_velocity_post_cut_glide", "zoom_out_breath", "text_behind_subject_parallax"],
+        "transitions": ["rack_focus_13f", "persistent_text_bridge_11f", "exposure_bloom_3f", "optical_depth_dissolve_10_12f", "polarity_flip", "j_cut_minus_140ms"],
+        "shutter_angle_deg": [180, 300]
+      },
+      "diversity_quotas": {
+        "max_checklist_audit_card": 0,
+        "max_concurrent_overlay_zones": 2,
+        "min_polarity_or_spatial_shift": 1,
+        "max_glow_hero_consecutive_beats": 2
+      }
+    },
+    "minimal_intellectual": {
+      "id": "minimal_intellectual",
+      "label": "Minimal Intellectual & #FAFAFA 4-Act Jewel Essay (Arthur Brooks / Medical / EdTech)",
+      "default_tier": "fast",
+      "claim_gate_default": false,
+      "color_policy_default": "semantic_4act_jewel",
+      "supported_color_policies": ["semantic_4act_jewel", "color_world_polarity"],
+      "rule_confidence": {
+        "high_immutable": "-16.0 +/- 0.5 LUFS BS.1770-4 intelligibility, Cranial Lock + Skin-Tone Guard (plus CRI-100 Tooth Lock when paired with S2 Dental), Lane-B HTML5/CSS3/SVG @2x plates (0px stroke), text_vi.json glue, R209/R30, 180deg natural shutter",
+        "medium_calibrated": "optical_flow_morph_6f seamless jump-cut smoothing, player3_air_cushion_20f subtle card arrivals, 250-400ms room-tone breath holds; enable R200 claim_gate + 'full' tier when citing clinical/scientific studies",
+        "low_bendable_style": "ASL 3.0-5.2s and crisp #FAFAFA / warm paper #F7F4EB vs #141413 polarity — yield to speaker cadence rather than forcing cuts on clock ticks"
+      },
+      "inspiration": "High-trust intellectual & medical/coaching essays: #FAFAFA archival light canvas with semantic_4act_jewel chapter inks (#059669, #2563EB, #E11D48, #D97706), SVG vector diagrams via web_plate_builder.py, 5-6f optical flow jump-cut smoothing, and >= 40% clean breathing frames",
+      "select_when": [
+        "Education/course frameworks (S5), Dental/Medical explanation (S2 CRI-100), philosophy, leadership, or calm expert teaching",
+        "Speaker has strong facial expressiveness and calm vocal cadence that requires clean #FAFAFA chapter clarity rather than dark neon",
+        "User wants multi-chapter jewel typography on light/clean plates without rainbow soup or TikTok clutter"
+      ],
+      "v70_studio_contract": {
+        "render_lanes": ["A", "B"],
+        "plate_engine": "web_cinema_html_css_svg_plates",
+        "sub_layer_feather_px": 29,
+        "hard_stroke_px": 0,
+        "placement_rails": ["upper_editorial_stage", "chest_tactile_rail", "whisper_g2_sub_rail"],
+        "cranial_lock": true,
+        "micro_bridges_v70": [
+          "optical_flow_morph_6f",
+          "player3_air_cushion_20f",
+          "persistent_text_bridge_11f",
+          "rack_focus_13f",
+          "organic_foley_7_pack"
+        ],
+        "compatible_format_modes": ["F6", "F1", "F7", "F4"],
+        "compatible_industry_skins": ["S5", "S2", "S1", "S6"],
+        "active_safety_guards": ["cranial_lock", "skin_tone_guard", "cri_100_tooth_lock"]
+      },
+      "pacing": {
+        "asl_sec": [3.0, 5.2],
+        "pattern_interrupt_sec": [3.5, 6.0],
+        "rhythm_profile": "Measured contemplative cadence smoothed by 5-6f optical flow morphs and 7 Organic Foley paper/pen micro-ticks; let insights land in 250-400ms room-tone",
+        "clean_aroll_breathing_pct": [38, 48]
+      },
+      "typography_pairing": {
+        "hero_display": "Playfair Display",
+        "lead_sans": "Be Vietnam Pro",
+        "ui_clean": "Inter",
+        "calligraphy_accent": "Playfair Display Italic",
+        "hierarchy_rule": "Single @2x Web-Cinema hero word or 2-3 word Playfair Italic phrase in semantic_4act_jewel chapter ink on #FAFAFA/#F7F4EB; ZERO persistent top banners on >= 40% of frames"
+      },
+      "palette": {
+        "canvas_dark": "#141413",
+        "canvas_paper": "#FAFAFA",
+        "canvas_warm_paper_alt": "#F7F4EB",
+        "text_primary": "#0F172A",
+        "text_on_dark": "#F7F4EB",
+        "accents": ["#059669", "#2563EB", "#E11D48", "#D97706"]
+      },
+      "preferred_secondary_text_groups": {
+        "G1_lead_sub": ["s04_baseline_rise_lead", "s05_feather_wipe_lead", "s08_poetic_scatter_lead"],
+        "G2_quiet_bottom": ["s12_whisper_26pt_sub", "s12_minimal_1line_quiet", "s11_conversational_2line"],
+        "G3_spatial_shoulder_arc": ["s14_shoulder_callout"],
+        "G4_ui_micro_labels": ["compact_glass_lock_badge"]
+      },
+      "preferred_visual_blocks": [
+        "web_cinema_svg_framework_plate",
+        "quote_editorial_note",
+        "polaroid_callout",
+        "flowchart_pipeline",
+        "metric_kpi_hero"
+      ],
+      "camera_and_transitions": {
+        "aroll_curves": ["player3_air_cushion_20f", "slow_contemplative_push", "matched_velocity_post_cut_glide", "gentle_ease_out_settle"],
+        "transitions": ["optical_flow_morph_6f", "persistent_text_bridge_11f", "j_cut_minus_140ms", "l_cut_linger", "paper_slide_reveal"],
+        "shutter_angle_deg": [180, 180]
+      },
+      "diversity_quotas": {
+        "max_checklist_audit_card": 1,
+        "max_concurrent_overlay_zones": 2,
+        "min_zero_top_text_frame_ratio": 0.40,
+        "forbid_glitch_and_strobe": true
+      }
+    },
+    "tech_saas_modular": {
+      "id": "tech_saas_modular",
+      "label": "Tech / AI / SaaS / B2B Modular Web-Cinema Walkthrough (Lane B+C 3D UI)",
+      "default_tier": "full",
+      "claim_gate_default": true,
+      "supported_color_policies": ["color_world_polarity", "semantic_4act_jewel"],
+      "rule_confidence": {
+        "high_immutable": "R200 claim_gate (benchmarks, latency deltas & UI claims require real screen_rec or deterministic @2x HTML/CSS code plates via web_plate_builder.py, NEVER AI B-roll or PIL flat boxes), Cranial Lock, R35 True-Peak, R217 SFX sync",
+        "medium_calibrated": "mirror_tile_whip_3d_ui_19f, player3_air_cushion_20f, persistent_text_bridge_11f, 45-token B-roll prompt hygiene banlist, PiP <-> Fullframe smooth morph (10-14f), textnorm version/number alignment",
+        "low_bendable_style": "ASL 1.8-3.0s and obsidian #0B0F19 <-> #F8FAFC polarity — widen shot duration up to 4.5s when walking through dense CLI or SVG architecture diagrams"
+      },
+      "inspiration": "Vercel / Linear / Raycast / Apple keynote product films: @2x DPR HTML5/CSS3 frosted glass terminal windows, inline SVG system pipelines, 19f Mirror-Tile Whip -> 3D UI perspective handoffs, and crisp JetBrains Mono + Be Vietnam Pro",
+      "select_when": [
+        "AI workflows, coding agents, B2B SaaS demos, developer tools, automation pipelines, architectural walkthroughs (F9, S8)",
+        "Script explains system architecture, CLI commands, input->process->output steps, or benchmark deltas",
+        "Requires razor-sharp @2x vector UI legibility rather than raster boxes"
+      ],
+      "v70_studio_contract": {
+        "render_lanes": ["A", "B", "C"],
+        "plate_engine": "web_cinema_html_css_svg_plates",
+        "sub_layer_feather_px": 29,
+        "hard_stroke_px": 0,
+        "placement_rails": ["upper_editorial_stage", "chest_tactile_rail", "whisper_g2_sub_rail"],
+        "cranial_lock": true,
+        "micro_bridges_v70": [
+          "mirror_tile_whip_3d_ui_19f",
+          "player3_air_cushion_20f",
+          "persistent_text_bridge_11f",
+          "exposure_bloom_3f",
+          "rack_focus_13f",
+          "organic_foley_7_pack"
+        ],
+        "compatible_format_modes": ["F9", "F2", "F3", "F6"],
+        "compatible_industry_skins": ["S8", "S5", "S4", "S6"],
+        "active_safety_guards": ["cranial_lock", "r200_claim_gate", "skin_tone_guard"]
+      },
+      "pacing": {
+        "asl_sec": [1.8, 3.0],
+        "pattern_interrupt_sec": [2.0, 3.4],
+        "rhythm_profile": "Crisp modular snap: 19f Mirror-Tile Whip -> 3D UI stages + @2x SVG structural diagrams synchronized to technical nouns + mech_key_tactile_tick foley",
+        "clean_aroll_breathing_pct": [15, 25]
+      },
+      "typography_pairing": {
+        "hero_display": "SF Pro Display",
+        "lead_sans": "Be Vietnam Pro",
+        "monospace_code": "JetBrains Mono",
+        "accent_condensed": "Montserrat Static",
+        "hierarchy_rule": "Crisp @2x CSS3 geometric Sans headlines + inline dual-hue technical spans ([cyan:luồng] [mint:tự động]) + G4 monospace step pills (0px hard stroke)"
+      },
+      "palette": {
+        "canvas_dark": "#0B0F19",
+        "canvas_light": "#F8FAFC",
+        "surface_card": "#111827",
+        "text_primary": "#F8FAFC",
+        "accents": ["#38BDF8", "#2DD4BF", "#4ADE80", "#2563EB", "#FF4D5E"]
+      },
+      "preferred_secondary_text_groups": {
+        "G1_lead_sub": ["s01_accordion_rollout_sub", "s03_stepup_underline_sub", "s06_swivel_3d_sub"],
+        "G2_quiet_bottom": ["s12_whisper_26pt_sub", "s10_word_synced_fixed_slot_captions"],
+        "G3_spatial_shoulder_arc": ["s14_shoulder_callout", "s16_bridge_anchor_swap"],
+        "G4_ui_micro_labels": ["s18_typewriter_tech_tag", "s18_active_dim_step_pills", "compact_glass_lock_badge", "viewfinder_raw_card"]
+      },
+      "preferred_visual_blocks": [
+        "web_cinema_bento_glass_ui",
+        "code_terminal_window",
+        "flowchart_pipeline",
+        "versus_split_card",
+        "metric_kpi_hero",
+        "clean_alpha_prop"
+      ],
+      "camera_and_transitions": {
+        "aroll_curves": ["player3_air_cushion_20f", "matched_velocity_post_cut_glide", "crisp_snap_in", "isometric_card_tilt_3d"],
+        "transitions": ["mirror_tile_whip_3d_ui_19f", "pip_fullframe_smooth_morph_10_14f", "persistent_text_bridge_11f", "polarity_flip", "j_cut_minus_140ms"],
+        "shutter_angle_deg": [180, 270]
+      },
+      "diversity_quotas": {
+        "max_checklist_audit_card": 1,
+        "max_concurrent_overlay_zones": 2,
+        "min_diagram_or_terminal_blocks": 2,
+        "max_heavy_glow_intensity": 55
+      }
+    },
+    "high_retention_proof": {
+      "id": "high_retention_proof",
+      "label": "High-Retention Clinical / Product / BĐS Visual Proof (HARD VETO Safety-Gated)",
+      "default_tier": "full",
+      "claim_gate_default": true,
+      "supported_color_policies": ["color_world_polarity", "semantic_4act_jewel"],
+      "rule_confidence": {
+        "high_immutable": "R200 claim_gate + Domain HARD VETO Guards (CRI-100 Tooth Lock on S2 Dental, Skin-Tone Guard on S1 Skincare, Hand Safe-Box on S3/S4 Nail/Review), ZERO PIL plastic boxes (100% web_plate_builder.py @2x KPI/delta plates), Cranial Lock, R35 True-Peak <= -1.0 dBTP, R30 3f readability",
+        "medium_calibrated": "rack_focus_13f into macro/clinical proof, exposure_bloom_3f on Before/After reveal, player3_air_cushion_20f receipt lock, textnorm spoken-number alignment, V8 B-roll liveness",
+        "low_bendable_style": "ASL 1.8-2.8s front-loaded velocity — decelerate cleanly on final trust/CTA beat so clinical/expert authority lands"
+      },
+      "inspiration": "High-trust luxury clinic (CRI-100 dental / skincare), salon macro showcase, KOC tactile review, and BĐS deal receipts: immediate authentic proof plates paired with @2x HTML/CSS metric cards and zero cheap neon karaoke",
+      "select_when": [
+        "Before/After clinical & skincare proof (S1, S2), Nail/Salon showcase (S3), KOC/E-com reviews (S4), or BĐS/ROI case studies (S8)",
+        "Script contains concrete numbers, percentages, price deltas, shade comparisons, or clinical outcomes",
+        "Core goal is conversion, booking, or immediate empirical trust in the first 3 seconds"
+      ],
+      "v70_studio_contract": {
+        "render_lanes": ["A", "B"],
+        "plate_engine": "web_cinema_html_css_svg_plates",
+        "sub_layer_feather_px": 29,
+        "hard_stroke_px": 0,
+        "placement_rails": ["upper_editorial_stage", "chest_tactile_rail", "whisper_g2_sub_rail"],
+        "cranial_lock": true,
+        "micro_bridges_v70": [
+          "rack_focus_13f",
+          "exposure_bloom_3f",
+          "player3_air_cushion_20f",
+          "persistent_text_bridge_11f",
+          "silence_vacuum_140bpm_drop",
+          "organic_foley_7_pack"
+        ],
+        "compatible_format_modes": ["F4", "F5", "F3", "F9"],
+        "compatible_industry_skins": ["S1", "S2", "S3", "S4", "S8"],
+        "active_safety_guards": ["cranial_lock", "skin_tone_guard", "cri_100_tooth_lock", "hand_safe_box", "r200_claim_gate"]
+      },
+      "pacing": {
+        "asl_sec": [1.8, 2.8],
+        "pattern_interrupt_sec": [1.8, 3.0],
+        "rhythm_profile": "Front-loaded velocity: 0.0-3.0s immediate visual receipt + 13f rack-focus macro proof beats + 3f exposure bloom reveal + calm CTA lock",
+        "clean_aroll_breathing_pct": [15, 24]
+      },
+      "typography_pairing": {
+        "hero_display": "DFVN West West Condensed",
+        "lead_sans": "Be Vietnam Pro",
+        "kpi_numeric": "Montserrat Static",
+        "accent_script": "Montserrat ExtraBold",
+        "hierarchy_rule": "@2x Web-Cinema numbers and deltas MUST be >= 1.8x larger than surrounding labels (0px stroke); ruby/coral (#E11D48/#FF4D5E) strike for myths, emerald/sapphire (#059669/#0284C7) for verified proof"
+      },
+      "palette": {
+        "canvas_dark": "#111111",
+        "canvas_clinical_light": "#F8FAFC",
+        "text_primary": "#FAFAFA",
+        "text_on_clinical_light": "#0F172A",
+        "proof_positive": "#059669",
+        "myth_negative": "#E11D48",
+        "accents": ["#0284C7", "#2DD4BF", "#D97706", "#4ADE80"]
+      },
+      "preferred_secondary_text_groups": {
+        "G1_lead_sub": ["s02_boundary_pinch_sub", "s03_stepup_underline_sub", "s06_swivel_3d_sub"],
+        "G2_quiet_bottom": ["s12_whisper_26pt_sub", "s10_word_synced_fixed_slot_captions"],
+        "G3_spatial_shoulder_arc": ["s15_tilted_counter_cluster", "s16_bridge_anchor_swap"],
+        "G4_ui_micro_labels": ["viewfinder_raw_card", "s18_active_dim_step_pills", "compact_glass_lock_badge"]
+      },
+      "preferred_visual_blocks": [
+        "web_cinema_kpi_delta_plate",
+        "metric_kpi_hero",
+        "strike_myth_banner",
+        "versus_split_card",
+        "polaroid_callout",
+        "checklist_audit_card"
+      ],
+      "camera_and_transitions": {
+        "aroll_curves": ["player3_air_cushion_20f", "matched_velocity_post_cut_glide", "punch_in_jump", "broll_ken_burns_brisk"],
+        "transitions": ["rack_focus_13f", "exposure_bloom_3f", "pip_fullframe_smooth_morph_10_14f", "polarity_flip", "j_cut_minus_140ms"],
+        "shutter_angle_deg": [180, 270]
+      },
+      "diversity_quotas": {
+        "max_checklist_audit_card": 1,
+        "max_concurrent_overlay_zones": 2,
+        "require_numeric_kpi_when_numbers_spoken": true,
+        "min_contrast_or_proof_blocks": 3
+      }
+    },
+    "story_confessional_breath": {
+      "id": "story_confessional_breath",
+      "label": "Story / Confessional / Vlog Velvet Breath (Optical Flow & Halation)",
+      "default_tier": "fast",
+      "claim_gate_default": false,
+      "supported_color_policies": ["color_world_polarity", "semantic_4act_jewel"],
+      "rule_confidence": {
+        "high_immutable": "Cranial Lock + R209 lower-rail anchor (never occlude micro-expressions), Skin-Tone Guard (natural filmic skin, zero swamp-green tint), 0px hard stroke, text_vi.json natural phrase breaks, -16.0 LUFS dynamic headroom",
+        "medium_calibrated": "optical_flow_morph_6f invisible breath-cut smoothing, halation_decay_4_28f warm highlight rolloff, bimodal C7 deep vocal J/L-cuts, BGM LRA <= 5.0 LU, >= 10 LU voice-over-bed floor",
+        "low_bendable_style": "ASL 3.5-5.5s velvet drift — hold a single unbroken close-up for 6-8s if emotional vulnerability peaks (Rule of Six #1 = 51% Emotion)"
+      },
+      "inspiration": "Founder confessions, intimate patient/creator stories, and soulful lifestyle short vlogs (F7, F8, S7): 5-6f optical flow jump-cut invisibility, 4f+28f warm halation decay, 7 Organic Foley room textures, and >= 45% pure A-roll breathing space",
+      "select_when": [
+        "Personal vulnerability, founder Turning Point story, patient/client emotional journey, podcast highlight, or warm lifestyle vlog (S7)",
+        "Rule of Six #1 (Emotion = 51%) dominates: cutting away to a boxed UI card during a vulnerable sentence would destroy empathy",
+        "Audio has rich vocal dynamics, pauses, or intimate inflection"
+      ],
+      "v70_studio_contract": {
+        "render_lanes": ["A", "B"],
+        "plate_engine": "web_cinema_html_css_svg_plates",
+        "sub_layer_feather_px": 29,
+        "hard_stroke_px": 0,
+        "placement_rails": ["chest_tactile_rail", "whisper_g2_sub_rail"],
+        "cranial_lock": true,
+        "micro_bridges_v70": [
+          "optical_flow_morph_6f",
+          "halation_decay_4_28f",
+          "rack_focus_13f",
+          "player3_air_cushion_20f",
+          "organic_foley_7_pack"
+        ],
+        "compatible_format_modes": ["F7", "F8", "F1"],
+        "compatible_industry_skins": ["S7", "S6", "S1", "S5"],
+        "active_safety_guards": ["cranial_lock", "skin_tone_guard"]
+      },
+      "pacing": {
+        "asl_sec": [3.5, 5.5],
+        "pattern_interrupt_sec": [4.0, 6.5],
+        "rhythm_profile": "Velvet breathing wave: slow push-in on vulnerability, gentle pull-back on realization, 5-6f optical flow seamless cuts, deep J/L-cuts preserving natural breath",
+        "clean_aroll_breathing_pct": [45, 65]
+      },
+      "typography_pairing": {
+        "hero_display": "Playfair Display",
+        "lead_sans": "Be Vietnam Pro",
+        "script_accent": "SVN-Blog Script",
+        "hierarchy_rule": "Subtle @2x Chest Tactile Rail or whisper G2 typography (26-58px, 0px stroke); avoid upper-screen banners; let eyes and micro-expressions carry the frame"
+      },
+      "palette": {
+        "canvas_dark": "#12100E",
+        "warm_cream": "#FAF7F2",
+        "text_primary": "#FAF7F2",
+        "accents": ["#F5B932", "#FB923C", "#2DD4BF", "#C084FC"]
+      },
+      "preferred_secondary_text_groups": {
+        "G1_lead_sub": ["s05_feather_wipe_lead", "s08_poetic_scatter_lead", "s09_overlap_script_sub"],
+        "G2_quiet_bottom": ["s12_whisper_26pt_sub", "s12_minimal_1line_quiet", "s11_conversational_2line"],
+        "G3_spatial_shoulder_arc": ["s14_shoulder_callout"],
+        "G4_ui_micro_labels": ["viewfinder_raw_card"]
+      },
+      "preferred_visual_blocks": [
+        "quote_editorial_note",
+        "polaroid_callout",
+        "floating_pill_badge"
+      ],
+      "camera_and_transitions": {
+        "aroll_curves": ["velvet_settle_then_in", "player3_air_cushion_20f", "matched_velocity_post_cut_glide", "zoom_out_breath", "micro_handheld_drift"],
+        "transitions": ["optical_flow_morph_6f", "j_cut_minus_140ms", "l_cut_linger", "rack_focus_13f", "editorial_blur_in"],
+        "shutter_angle_deg": [180, 180]
+      },
+      "diversity_quotas": {
+        "max_checklist_audit_card": 0,
+        "max_concurrent_overlay_zones": 2,
+        "min_clean_aroll_breathing_ratio": 0.45,
+        "forbid_aggressive_sfx_whoosh": true
+      }
+    },
+    "hybrid_adaptive": {
+      "id": "hybrid_adaptive",
+      "label": "Universal 10×8 Semantic-Adaptive Studio Director (3-Lane Multi-Modal)",
+      "default_tier": "full",
+      "claim_gate_default": false,
+      "supported_color_policies": ["color_world_polarity", "semantic_4act_jewel", "multi_hue_6"],
+      "rule_confidence": {
+        "high_immutable": "Orthogonal 10x8 Format-Skin HARD VETO compliance (CRI-100, Skin-Tone Guard, Hand Safe-Box, Cranial Lock, R200 Claim-Gate on KPIs), ZERO PIL/OpenCV plastic bevels (100% web_plate_builder.py @2x plates, Feather=29, 0px stroke), MAX_ZONES <= 2, wgpu blend guard, NFC 0.28em + text_vi.json, R209/R30/R217/R35",
+        "medium_calibrated": "Dynamic 3-Lane (A/B/C) routing + 14 native-frame micro-bridges (player3_air_cushion_20f, rack_focus_13f, persistent_text_bridge_11f, exposure_bloom_3f, optical_flow_morph_6f), Haar projected facesafe, 45-token B-roll lint, V8 liveness, BGM LRA <= 5.0 LU",
+        "low_bendable_style": "Semantic gear-shifting (1.8-2.4s on Problem/Proof vs 3.5-4.8s on Emotion) — adapt tier to 'fast' for clean pre-sliced commentary drafts"
+      },
+      "inspiration": "Universal Studio Director v7.0 engine: decouples Format Mode (F1..F10) from Industry Skin (S1..S8) across 80 canonical combinations and 240+ polarity/jewel hybrids, routing each beat to Lane A, Lane B (@2x HTML5/CSS3/SVG), or Lane C (HyperFrames/EffectCraft)",
+      "select_when": [
+        "Cross-genre or multi-act scripts moving across Hook myth-bust -> Emotional story -> 3-step SVG framework -> Verified KPI receipt -> Warm CTA",
+        "Any cell of the 10 Format Modes × 8 Industry Skins matrix where bespoke multi-lane orchestration is desired",
+        "Default universal choice when combining talking-head intimacy with crisp @2x Web-Cinema cards and motion stages"
+      ],
+      "v70_studio_contract": {
+        "render_lanes": ["A", "B", "C"],
+        "plate_engine": "web_cinema_html_css_svg_plates",
+        "sub_layer_feather_px": 29,
+        "hard_stroke_px": 0,
+        "placement_rails": ["upper_editorial_stage", "chest_tactile_rail", "whisper_g2_sub_rail"],
+        "cranial_lock": true,
+        "micro_bridges_v70": [
+          "player3_air_cushion_20f",
+          "rack_focus_13f",
+          "persistent_text_bridge_11f",
+          "exposure_bloom_3f",
+          "optical_flow_morph_6f",
+          "sublayer_feather_mask_29",
+          "mirror_tile_whip_3d_ui_19f",
+          "halation_decay_4_28f",
+          "silence_vacuum_140bpm_drop",
+          "organic_foley_7_pack"
+        ],
+        "compatible_format_modes": ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10"],
+        "compatible_industry_skins": ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"],
+        "active_safety_guards": ["cranial_lock", "skin_tone_guard", "cri_100_tooth_lock", "hand_safe_box", "r200_claim_gate"]
+      },
+      "pacing": {
+        "asl_sec": [2.0, 4.2],
+        "pattern_interrupt_sec": [2.2, 4.5],
+        "rhythm_profile": "Contrastive 2-speed gear-shifting: brisk 1.8-2.4s cuts on Problem/Proof (rack_focus_13f + exposure_bloom_3f), wide 3.5-4.8s velvet breath on Emotion (optical_flow_morph_6f + vocal J-Cut)",
+        "clean_aroll_breathing_pct": [22, 35]
+      },
+      "semantic_routing_map": {
+        "problem_or_myth": ["strike_myth_banner", "web_cinema_editorial_hero_plate"],
+        "architecture_or_process": ["web_cinema_svg_framework_plate", "flowchart_pipeline", "code_terminal_window"],
+        "proof_or_comparison": ["web_cinema_kpi_delta_plate", "metric_kpi_hero", "versus_split_card", "polaroid_callout"],
+        "insight_or_principle": ["quote_editorial_note"],
+        "emotion_or_empathy": ["PURE_AROLL_BREATH_ZERO_TOP_BANNER"]
+      },
+      "typography_pairing": {
+        "hero_display": "DFVN West West Condensed",
+        "lead_sans": "Be Vietnam Pro",
+        "editorial_serif": "Playfair Display",
+        "monospace_code": "JetBrains Mono",
+        "hierarchy_rule": "Adapt @2x Web-Cinema font voice, Color-World or semantic_4act_jewel chapter hue, and curated G1..G4 secondary text group to beat role (0px hard stroke, Cranial Lock enforced)"
+      },
+      "palette": {
+        "canvas_dark": "#0F1117",
+        "canvas_light": "#FAFAFA",
+        "text_primary": "#FAFAFA",
+        "text_on_light": "#0F172A",
+        "accents": ["#059669", "#2563EB", "#E11D48", "#D97706", "#2DD4BF", "#38BDF8"]
+      },
+      "preferred_secondary_text_groups": {
+        "G1_lead_sub": ["s01_accordion_rollout_sub", "s03_stepup_underline_sub", "s04_baseline_rise_lead", "s09_overlap_script_sub"],
+        "G2_quiet_bottom": ["s12_whisper_26pt_sub", "s10_word_synced_fixed_slot_captions", "s12_minimal_1line_quiet"],
+        "G3_spatial_shoulder_arc": ["s14_shoulder_callout", "s15_tilted_counter_cluster", "s16_bridge_anchor_swap"],
+        "G4_ui_micro_labels": ["s18_active_dim_step_pills", "s18_typewriter_tech_tag", "viewfinder_raw_card", "compact_glass_lock_badge"]
+      },
+      "preferred_visual_blocks": [
+        "web_cinema_editorial_hero_plate",
+        "web_cinema_svg_framework_plate",
+        "web_cinema_kpi_delta_plate",
+        "strike_myth_banner",
+        "flowchart_pipeline",
+        "metric_kpi_hero",
+        "versus_split_card",
+        "quote_editorial_note",
+        "code_terminal_window",
+        "polaroid_callout"
+      ],
+      "camera_and_transitions": {
+        "aroll_curves": ["player3_air_cushion_20f", "matched_velocity_post_cut_glide", "c2_velvet_glide_in", "zoom_out_breath", "punch_in_jump"],
+        "transitions": ["rack_focus_13f", "persistent_text_bridge_11f", "optical_flow_morph_6f", "exposure_bloom_3f", "pip_fullframe_smooth_morph_10_14f", "polarity_flip", "j_cut_minus_140ms"],
+        "shutter_angle_deg": [180, 300]
+      },
+      "diversity_quotas": {
+        "max_checklist_audit_card": 1,
+        "max_concurrent_overlay_zones": 2,
+        "min_distinct_visual_blocks": 3,
+        "min_clean_aroll_breathing_ratio": 0.20,
+        "min_secondary_text_groups_used": 2
+      }
+    }
+  }
+}

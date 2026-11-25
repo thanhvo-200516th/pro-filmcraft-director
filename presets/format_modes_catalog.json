@@ -1,0 +1,496 @@
+{
+  "schema_version": "7.0.0",
+  "purpose": "Universal Studio Director v7.0 — 10 Structural Video Format Modes (F1..F10), 3 Execution Lanes (lane_a_native, lane_b_web_plates, lane_c_hyperframes), 14 Native-Frame Micro-Bridges, ASL/A-Roll Envelopes, and 10x8 Industry Compatibility Matrix.",
+  "lanes": {
+    "lane_a_native": {
+      "id": "lane_a_native",
+      "label": "Lane A — Pure FilmCraft Native wgpu Timeline (8V + 8A)",
+      "engine": "FilmCraft 0.20.1+ native .fcproj + C² Bezier Camera + RVM V3 Subject Sandwich + native graphic_text",
+      "peak_ram_gb": 1.8,
+      "headless_chrome_workers": 0,
+      "best_for": "Talking-head authority, emotional storytelling, clinical before/after, salon/skincare macro, and clean spatial VFX"
+    },
+    "lane_b_web_plates": {
+      "id": "lane_b_web_plates",
+      "label": "Lane B — FilmCraft Master + Deterministic Web/Canvas Motion Plates",
+      "engine": "FilmCraft .fcproj + dviet_motion_canvas_engine.py / Playwright UI & KPI cards (sequential after RVM, max 2 Chrome workers)",
+      "peak_ram_gb": 3.8,
+      "headless_chrome_workers": 2,
+      "ram_schedule_policy": "sequential_rvm_then_chrome_max2",
+      "best_for": "Course funnels with 3D deliverables, SaaS UI walkthroughs, PAS/BAB E-com receipts, tactile Pros/Cons scorecards, and Top-N listicles"
+    },
+    "lane_c_hyperframes": {
+      "id": "lane_c_hyperframes",
+      "label": "Lane C — Full Kinetic Motion Composition (HyperFrames / Code-Driven Stages -> .fcproj)",
+      "engine": "HyperFrames deterministic HTML5/GSAP/Canvas multi-scene plates compiled onto editable FilmCraft .fcproj tracks",
+      "peak_ram_gb": 4.2,
+      "headless_chrome_workers": 2,
+      "ram_schedule_policy": "sequential_rvm_then_chrome_max2",
+      "best_for": "Faceless motion explainers, system architecture reels, and 0%-15% A-roll data/brand manifestos"
+    }
+  },
+  "native_frame_14_micro_bridges": {
+    "clean_0f_hard_cut": {
+      "index": 1,
+      "frames_30fps": 0,
+      "category": "editorial_cut",
+      "spec": "0-frame crisp hard cut snapped onto speaker head-turn or hand-raise velocity peak"
+    },
+    "true_vocal_jcut_prelead": {
+      "index": 2,
+      "lead_ms": [-850, -140],
+      "category": "acoustic_bridge",
+      "spec": "Incoming clause voice leads visual cut by 140ms-850ms (target 250ms-550ms) pulling attention invisibly"
+    },
+    "acoustic_lcut_room_tail": {
+      "index": 3,
+      "tail_ms": [180, 600],
+      "category": "acoustic_bridge",
+      "spec": "Outgoing voice decay or ambient room tone trails beneath incoming B-roll cutaway"
+    },
+    "concentric_geometric_match_cut": {
+      "index": 4,
+      "frames_30fps": 0,
+      "category": "geometric_lock",
+      "spec": "0-frame affine-locked circle/rect focal match cut (delta_center <= 2.0%, delta_r <= 6.0%)"
+    },
+    "polarity_canvas_snap_1f": {
+      "index": 5,
+      "frames_30fps": 1,
+      "category": "chromatic_interrupt",
+      "spec": "1-frame full-screen polarity inversion between Dark Obsidian (#081C15/#111111) and Light Paper/Porcelain (#EEF4EA/#FAFAFA)"
+    },
+    "c2_velocity_push_handoff": {
+      "index": 6,
+      "frames_30fps": [8, 16],
+      "category": "camera_momentum",
+      "spec": "Continuous C² Bezier scale push-in across cut boundary eliminating dead frame-0 camera holds"
+    },
+    "whip_pan_directional_330": {
+      "index": 7,
+      "frames_30fps": [6, 10],
+      "category": "optical_motion",
+      "spec": "Directional blur whip-pan at shutter_angle=330 deg across spatial location or step changes"
+    },
+    "whip_zoom_optical_bridge": {
+      "index": 8,
+      "frames_30fps": [7, 14],
+      "category": "optical_motion",
+      "spec": "Fast optical zoom ramp bridging wide A-roll into macro product/UI detail"
+    },
+    "rvm_foreground_wipe_pass": {
+      "index": 9,
+      "frames_30fps": [8, 15],
+      "category": "spatial_mask",
+      "spec": "RVM subject or foreground object pass-by masking background plate swap on V2/V3"
+    },
+    "split_diopter_50_50_slide": {
+      "index": 10,
+      "frames_30fps": [9, 14],
+      "category": "layout_reveal",
+      "spec": "Dual-panel 50/50 or 16:9 card slide comparing Before/After, Pros/Cons, or Speaker/UI"
+    },
+    "flash_halation_2f_pop": {
+      "index": 11,
+      "frames_30fps": 2,
+      "category": "exposure_accent",
+      "spec": "Subtle 2-frame neutral/film exposure pop (automatically vetoed when warm_film_burn_veto == true)"
+    },
+    "iris_mask_expand_stage": {
+      "index": 12,
+      "frames_30fps": [10, 18],
+      "category": "stage_portal",
+      "spec": "1x -> 24x geometric mask expansion transitioning from A-roll into full-screen motion canvas"
+    },
+    "bgm_vacuum_drop_reentry": {
+      "index": 13,
+      "vacuum_min_sec": 0.50,
+      "category": "sonic_punctuation",
+      "spec": ">=0.50s -inf dB music stop vacuum (35ms pre-fade) before thesis punchline + beat-1 drop re-entry"
+    },
+    "tactile_asmr_foley_pivot": {
+      "index": 14,
+      "frames_30fps": [0, 4],
+      "category": "sensory_cut",
+      "spec": "Raw diegetic transient (pipette clink, box unseal, shutter click, brush sweep) motivating macro insert cut"
+    }
+  },
+  "format_code_lookup": {
+    "F1": "expert_talking_head",
+    "F2": "pas_bab_ecom_conversion",
+    "F3": "tactile_review_testing",
+    "F4": "clinical_aesthetic_before_after",
+    "F5": "course_lead_magnet_funnel",
+    "F6": "cinematic_vlog_storytelling",
+    "F7": "tutorial_ui_walkthrough",
+    "F8": "fast_paced_listicle_top_n",
+    "F9": "spatial_vfx_clone_storefront_tour",
+    "F10": "faceless_motion_explainer"
+  },
+  "format_modes": {
+    "expert_talking_head": {
+      "code": "F1",
+      "id": "expert_talking_head",
+      "label": "F1 — Talking Head Chuyên Gia & Manifesto (@__dviet Dual-Rail Authority)",
+      "structural_arc": ["Contrarian_Hook", "Myth_Deconstruction", "Core_Mechanism", "Thesis_Landing"],
+      "default_lane": "lane_a_native",
+      "compatible_lanes": ["lane_a_native", "lane_b_web_plates"],
+      "recommended_archetype": "dviet_era2_7707_manifesto",
+      "asl_range": [1.8, 3.8],
+      "aroll_share_range": [0.58, 0.85],
+      "recommended_micro_bridges": [
+        "clean_0f_hard_cut",
+        "true_vocal_jcut_prelead",
+        "polarity_canvas_snap_1f",
+        "c2_velocity_push_handoff",
+        "bgm_vacuum_drop_reentry",
+        "rvm_foreground_wipe_pass"
+      ],
+      "recommended_for_industries": [
+        "personal_brand",
+        "course_edtech",
+        "b2b_saas_realestate",
+        "dental_clinic",
+        "luxury_skincare"
+      ],
+      "spatial_safe_zone_contract": "Enforce cranial_exclusion_band [hair_top_y - 48, chin_y + 32]; route Hero/Lead strictly into upper_editorial_stage or chest_tactile_rail (>=20% clean breathing frames)."
+    },
+    "pas_bab_ecom_conversion": {
+      "code": "F2",
+      "id": "pas_bab_ecom_conversion",
+      "label": "F2 — Quảng Cáo Chuyển Đổi PAS / BAB (Direct-Response Product Conversion)",
+      "structural_arc": ["Pain_or_Desire_Hook", "Agitation_or_Before", "Mechanism_Product_Reveal", "Proof_Receipt_CTA"],
+      "default_lane": "lane_b_web_plates",
+      "compatible_lanes": ["lane_b_web_plates", "lane_a_native"],
+      "recommended_archetype": "high_retention_proof",
+      "asl_range": [1.4, 2.6],
+      "aroll_share_range": [0.25, 0.50],
+      "recommended_micro_bridges": [
+        "clean_0f_hard_cut",
+        "whip_zoom_optical_bridge",
+        "concentric_geometric_match_cut",
+        "tactile_asmr_foley_pivot",
+        "polarity_canvas_snap_1f",
+        "split_diopter_50_50_slide"
+      ],
+      "recommended_for_industries": [
+        "luxury_skincare",
+        "tactile_review",
+        "nail_hair_salon",
+        "dental_clinic",
+        "course_edtech"
+      ],
+      "spatial_safe_zone_contract": "Protect macro_subject_bbox on zero-face product/bottle/swatch shots; enforce industry hard_veto_guards (skin_tone_hue_guard / warm_film_burn_veto)."
+    },
+    "tactile_review_testing": {
+      "code": "F3",
+      "id": "tactile_review_testing",
+      "label": "F3 — Review Thực Chiến & Chấm Điểm Xúc Giác (Tactile Testing, ASMR & Verdict)",
+      "structural_arc": ["Bold_Verdict_Tease", "Sensory_ASMR_Unbox_Test", "Pros_vs_Cons_Audit", "Final_Score_Stamp"],
+      "default_lane": "lane_b_web_plates",
+      "compatible_lanes": ["lane_b_web_plates", "lane_a_native"],
+      "recommended_archetype": "high_retention_proof",
+      "asl_range": [1.2, 2.2],
+      "aroll_share_range": [0.28, 0.52],
+      "recommended_micro_bridges": [
+        "tactile_asmr_foley_pivot",
+        "clean_0f_hard_cut",
+        "bgm_vacuum_drop_reentry",
+        "split_diopter_50_50_slide",
+        "concentric_geometric_match_cut",
+        "c2_velocity_push_handoff"
+      ],
+      "recommended_for_industries": [
+        "tactile_review",
+        "luxury_skincare",
+        "nail_hair_salon",
+        "b2b_saas_realestate"
+      ],
+      "spatial_safe_zone_contract": "Carve >=0.50s sensory ASMR break on unbox/swatch beat; lock Pros (#4ADE80) / Cons (#FF4D5E) / Score (#FACC15) outside macro_subject_bbox."
+    },
+    "clinical_aesthetic_before_after": {
+      "code": "F4",
+      "id": "clinical_aesthetic_before_after",
+      "label": "F4 — Case Study Lâm Sàng & Thẩm Mỹ Before/After (Clinical & Aesthetic Proof)",
+      "structural_arc": ["Baseline_Condition_Hook", "Diagnostic_Root_Cause", "Precision_Procedure_Macro", "Verified_After_Reveal"],
+      "default_lane": "lane_a_native",
+      "compatible_lanes": ["lane_a_native", "lane_b_web_plates"],
+      "recommended_archetype": "high_retention_proof",
+      "asl_range": [1.9, 3.5],
+      "aroll_share_range": [0.30, 0.58],
+      "recommended_micro_bridges": [
+        "split_diopter_50_50_slide",
+        "clean_0f_hard_cut",
+        "true_vocal_jcut_prelead",
+        "concentric_geometric_match_cut",
+        "c2_velocity_push_handoff",
+        "tactile_asmr_foley_pivot"
+      ],
+      "recommended_for_industries": [
+        "dental_clinic",
+        "luxury_skincare",
+        "nail_hair_salon"
+      ],
+      "spatial_safe_zone_contract": "Mandatory zero-ink lock over enamel_gum_bbox (CIE-Lab L*>72 & a*>16) and hand/nail/skin macro_subject_bbox; CRI-100 neutral white lock, warm_lut_veto & R200 claim_gate."
+    },
+    "course_lead_magnet_funnel": {
+      "code": "F5",
+      "id": "course_lead_magnet_funnel",
+      "label": "F5 — Phễu Khóa Học, Coaching & Tặng Tài Liệu 3D (EdTech & Lead-Magnet Funnel)",
+      "structural_arc": ["Costly_Mistake_Hook", "3_Step_System_Map", "Cognitive_Breathing_Reset", "Tangible_3D_Deliverable_CTA"],
+      "default_lane": "lane_b_web_plates",
+      "compatible_lanes": ["lane_b_web_plates", "lane_a_native"],
+      "recommended_archetype": "dviet_vietanh_zdepth_master",
+      "asl_range": [1.8, 3.4],
+      "aroll_share_range": [0.42, 0.68],
+      "recommended_micro_bridges": [
+        "true_vocal_jcut_prelead",
+        "polarity_canvas_snap_1f",
+        "iris_mask_expand_stage",
+        "clean_0f_hard_cut",
+        "rvm_foreground_wipe_pass",
+        "bgm_vacuum_drop_reentry"
+      ],
+      "recommended_for_industries": [
+        "course_edtech",
+        "personal_brand",
+        "b2b_saas_realestate"
+      ],
+      "spatial_safe_zone_contract": "Insert polarity/breathing reset every 12-15s; composite RVM comment rain behind speaker on V2/V3; render tangible 3D Workbook/Notion/Template mockup on CTA."
+    },
+    "cinematic_vlog_storytelling": {
+      "code": "F6",
+      "id": "cinematic_vlog_storytelling",
+      "label": "F6 — Vlog Điện Ảnh, Hậu Trường Xưởng & Tâm Sự (51% Emotion Craft Storytelling)",
+      "structural_arc": ["Atmospheric_Cold_Open", "Inciting_Craft_Moment", "Vulnerable_Reflection", "Quiet_Resonant_Close"],
+      "default_lane": "lane_a_native",
+      "compatible_lanes": ["lane_a_native"],
+      "recommended_archetype": "story_confessional_breath",
+      "asl_range": [2.4, 5.2],
+      "aroll_share_range": [0.40, 0.75],
+      "recommended_micro_bridges": [
+        "acoustic_lcut_room_tail",
+        "true_vocal_jcut_prelead",
+        "clean_0f_hard_cut",
+        "c2_velocity_push_handoff",
+        "flash_halation_2f_pop"
+      ],
+      "recommended_for_industries": [
+        "cinematic_vlog",
+        "personal_brand",
+        "nail_hair_salon",
+        "luxury_skincare"
+      ],
+      "spatial_safe_zone_contract": "Walter Murch 51% Emotion veto overrides rigid timers; preserve -34..-28 dBFS ambient room tone; forbid noisy UI/KPI checklists."
+    },
+    "tutorial_ui_walkthrough": {
+      "code": "F7",
+      "id": "tutorial_ui_walkthrough",
+      "label": "F7 — Hướng Dẫn Từng Bước & Quay Màn Hình 3D UI (Product/SaaS/Workflow Walkthrough)",
+      "structural_arc": ["Outcome_First_Demo_Hook", "Step_1_Trigger", "Step_2_Core_Execution", "Live_Result_Verification"],
+      "default_lane": "lane_b_web_plates",
+      "compatible_lanes": ["lane_b_web_plates", "lane_c_hyperframes"],
+      "recommended_archetype": "tech_saas_modular",
+      "asl_range": [1.7, 3.2],
+      "aroll_share_range": [0.20, 0.45],
+      "recommended_micro_bridges": [
+        "iris_mask_expand_stage",
+        "split_diopter_50_50_slide",
+        "whip_zoom_optical_bridge",
+        "clean_0f_hard_cut",
+        "true_vocal_jcut_prelead",
+        "polarity_canvas_snap_1f"
+      ],
+      "recommended_for_industries": [
+        "b2b_saas_realestate",
+        "course_edtech",
+        "personal_brand",
+        "tactile_review"
+      ],
+      "spatial_safe_zone_contract": "Use 50/50 split UI + PiP A-roll or isometric 3D glass browser stages; enforce CARD_TEXT_COLLISION = 0 over cursor/terminal focal regions."
+    },
+    "fast_paced_listicle_top_n": {
+      "code": "F8",
+      "id": "fast_paced_listicle_top_n",
+      "label": "F8 — Listicle Nhịp Nhanh Top-N / X Sai Lầm (Rapid Numbered Anchor & Step Progression)",
+      "structural_arc": ["Stakes_Number_Hook", "Item_1_Fast_Proof", "Item_2_Contrast_Pivot", "Item_N_Payoff_Twist"],
+      "default_lane": "lane_b_web_plates",
+      "compatible_lanes": ["lane_b_web_plates", "lane_a_native"],
+      "recommended_archetype": "dviet_era2_7707_manifesto",
+      "asl_range": [1.3, 2.5],
+      "aroll_share_range": [0.35, 0.62],
+      "recommended_micro_bridges": [
+        "clean_0f_hard_cut",
+        "whip_pan_directional_330",
+        "polarity_canvas_snap_1f",
+        "true_vocal_jcut_prelead",
+        "concentric_geometric_match_cut",
+        "bgm_vacuum_drop_reentry"
+      ],
+      "recommended_for_industries": [
+        "tactile_review",
+        "course_edtech",
+        "personal_brand",
+        "nail_hair_salon",
+        "luxury_skincare",
+        "b2b_saas_realestate"
+      ],
+      "spatial_safe_zone_contract": "Deploy active-dim progressive step pills (S18b) or giant numeral stages; reset visual layout on every numbered item transition."
+    },
+    "spatial_vfx_clone_storefront_tour": {
+      "code": "F9",
+      "id": "spatial_vfx_clone_storefront_tour",
+      "label": "F9 — Spatial VFX, Clone Hook & Tour Không Gian Thực Tế (Storefront, Clinic, Salon & Property Tour)",
+      "structural_arc": ["Spatial_Clone_or_Facade_Hook", "Zone_1_Walkthrough_Callout", "Zone_2_Signature_Detail", "Location_Booking_Pin_CTA"],
+      "default_lane": "lane_a_native",
+      "compatible_lanes": ["lane_a_native", "lane_b_web_plates"],
+      "recommended_archetype": "dviet_vietanh_zdepth_master",
+      "asl_range": [1.8, 3.6],
+      "aroll_share_range": [0.30, 0.65],
+      "recommended_micro_bridges": [
+        "rvm_foreground_wipe_pass",
+        "whip_pan_directional_330",
+        "concentric_geometric_match_cut",
+        "c2_velocity_push_handoff",
+        "clean_0f_hard_cut",
+        "acoustic_lcut_room_tail"
+      ],
+      "recommended_for_industries": [
+        "b2b_saas_realestate",
+        "dental_clinic",
+        "nail_hair_salon",
+        "cinematic_vlog"
+      ],
+      "spatial_safe_zone_contract": "Anchor callouts to planar walls/architectural lines (planar_wall_tracking); RVM subject wipe transitions run sequentially prior to any plate render."
+    },
+    "faceless_motion_explainer": {
+      "code": "F10",
+      "id": "faceless_motion_explainer",
+      "label": "F10 — Motion Graphics & Explainer Không Lộ Mặt (Faceless Kinetic Typography & System Film)",
+      "structural_arc": ["Kinetic_Thesis_Stomp", "Visual_Metaphor_Diagram", "Data_or_Mechanism_Proof", "Brand_Signature_Lockup"],
+      "default_lane": "lane_c_hyperframes",
+      "compatible_lanes": ["lane_c_hyperframes", "lane_b_web_plates"],
+      "recommended_archetype": "tech_saas_modular",
+      "asl_range": [1.5, 3.0],
+      "aroll_share_range": [0.00, 0.15],
+      "recommended_micro_bridges": [
+        "concentric_geometric_match_cut",
+        "polarity_canvas_snap_1f",
+        "iris_mask_expand_stage",
+        "whip_zoom_optical_bridge",
+        "bgm_vacuum_drop_reentry",
+        "clean_0f_hard_cut"
+      ],
+      "recommended_for_industries": [
+        "b2b_saas_realestate",
+        "course_edtech",
+        "luxury_skincare",
+        "dental_clinic",
+        "personal_brand"
+      ],
+      "spatial_safe_zone_contract": "Zero talking-head dependency; obey MAX_ZONES <= 2, 1-Color-World Polarity Law, and 2-worker headless Chrome cap (< 4.5GB RAM)."
+    }
+  },
+  "compatibility_matrix_10x8": {
+    "expert_talking_head": {
+      "luxury_skincare": "supported",
+      "dental_clinic": "primary",
+      "nail_hair_salon": "supported",
+      "tactile_review": "supported",
+      "course_edtech": "primary",
+      "personal_brand": "primary",
+      "cinematic_vlog": "supported",
+      "b2b_saas_realestate": "primary"
+    },
+    "pas_bab_ecom_conversion": {
+      "luxury_skincare": "primary",
+      "dental_clinic": "supported",
+      "nail_hair_salon": "primary",
+      "tactile_review": "primary",
+      "course_edtech": "supported",
+      "personal_brand": "conditional_with_guards",
+      "cinematic_vlog": "discouraged",
+      "b2b_saas_realestate": "supported"
+    },
+    "tactile_review_testing": {
+      "luxury_skincare": "primary",
+      "dental_clinic": "conditional_with_guards",
+      "nail_hair_salon": "supported",
+      "tactile_review": "primary",
+      "course_edtech": "conditional_with_guards",
+      "personal_brand": "supported",
+      "cinematic_vlog": "supported",
+      "b2b_saas_realestate": "supported"
+    },
+    "clinical_aesthetic_before_after": {
+      "luxury_skincare": "primary",
+      "dental_clinic": "primary",
+      "nail_hair_salon": "primary",
+      "tactile_review": "supported",
+      "course_edtech": "discouraged",
+      "personal_brand": "conditional_with_guards",
+      "cinematic_vlog": "discouraged",
+      "b2b_saas_realestate": "supported"
+    },
+    "course_lead_magnet_funnel": {
+      "luxury_skincare": "conditional_with_guards",
+      "dental_clinic": "supported",
+      "nail_hair_salon": "supported",
+      "tactile_review": "supported",
+      "course_edtech": "primary",
+      "personal_brand": "primary",
+      "cinematic_vlog": "discouraged",
+      "b2b_saas_realestate": "primary"
+    },
+    "cinematic_vlog_storytelling": {
+      "luxury_skincare": "supported",
+      "dental_clinic": "conditional_with_guards",
+      "nail_hair_salon": "primary",
+      "tactile_review": "supported",
+      "course_edtech": "supported",
+      "personal_brand": "primary",
+      "cinematic_vlog": "primary",
+      "b2b_saas_realestate": "supported"
+    },
+    "tutorial_ui_walkthrough": {
+      "luxury_skincare": "conditional_with_guards",
+      "dental_clinic": "supported",
+      "nail_hair_salon": "conditional_with_guards",
+      "tactile_review": "supported",
+      "course_edtech": "primary",
+      "personal_brand": "supported",
+      "cinematic_vlog": "discouraged",
+      "b2b_saas_realestate": "primary"
+    },
+    "fast_paced_listicle_top_n": {
+      "luxury_skincare": "supported",
+      "dental_clinic": "supported",
+      "nail_hair_salon": "supported",
+      "tactile_review": "primary",
+      "course_edtech": "primary",
+      "personal_brand": "primary",
+      "cinematic_vlog": "discouraged",
+      "b2b_saas_realestate": "supported"
+    },
+    "spatial_vfx_clone_storefront_tour": {
+      "luxury_skincare": "supported",
+      "dental_clinic": "primary",
+      "nail_hair_salon": "primary",
+      "tactile_review": "supported",
+      "course_edtech": "conditional_with_guards",
+      "personal_brand": "supported",
+      "cinematic_vlog": "primary",
+      "b2b_saas_realestate": "primary"
+    },
+    "faceless_motion_explainer": {
+      "luxury_skincare": "supported",
+      "dental_clinic": "supported",
+      "nail_hair_salon": "conditional_with_guards",
+      "tactile_review": "supported",
+      "course_edtech": "primary",
+      "personal_brand": "supported",
+      "cinematic_vlog": "discouraged",
+      "b2b_saas_realestate": "primary"
+    }
+  }
+}

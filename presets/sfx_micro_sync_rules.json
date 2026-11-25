@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "master_targets": {
+    "social_9_16": { "lufs": -14.0, "lufs_tolerance": 1.0, "true_peak_dbtp": -1.5, "sample_rate_hz": 48000 },
+    "youtube_16_9": { "lufs": -14.0, "lufs_tolerance": 1.0, "true_peak_dbtp": -1.0, "sample_rate_hz": 48000 }
+  },
+  "bus_levels_dbfs": {
+    "voice_lufs": [-14.0, -12.0],
+    "bgm_ducked": [-28.0, -24.0],
+    "bgm_open": [-16.0, -14.0],
+    "sfx_transition": [-14.0, -10.0],
+    "sfx_impact_ui": [-12.0, -6.0],
+    "ambience": [-38.0, -32.0]
+  },
+  "ducking_4_point_envelope": {
+    "pre_roll_sec": 0.35,
+    "release_sec": 0.70,
+    "hold_through_gap_under_sec": 1.5,
+    "note": "Do NOT use essentialSound.generateDucking if preserving custom volume keyframes; use 4-point Volume Keyframes."
+  },
+  "micro_sync_offsets_30fps": {
+    "transition_whoosh_frames": [-4, -2],
+    "pop_ui_at_scale_pct": 0.60,
+    "lock_in_frame_offset": 0,
+    "tail_preservation": true,
+    "min_forced_fadeout_ms": 200
+  }
+}

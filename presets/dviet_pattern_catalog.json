@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0.0",
+  "methodology": "haihoang_airaviec_4_pillar_extraction",
+  "source_videos_count": 13,
+  "typography_system": {
+    "sans": ["SF Pro Display", "Be Vietnam Pro", "Inter"],
+    "serif_italic": ["Playfair Display", "IvyPresto Display"],
+    "script_calligraphy": ["Whisper", "SVN-Aaron Script"],
+    "color_rule": {
+      "light": "#FAFAFA",
+      "dark": "#111111",
+      "accent_options": ["#8B5CF6", "#22C55E", "#F5C518", "#F28C18"]
+    }
+  },
+  "patterns": [
+    {
+      "id": "dviet_hook_chest_lockup",
+      "trigger_roles": ["Hook"],
+      "layout": "A-roll full-screen, 2-tier text at chest level (y=55-65%)",
+      "fonts": { "lead": "sans", "hero": "serif_italic" },
+      "sfx": "WHOOSH/VOICE_PUNCH"
+    },
+    {
+      "id": "dviet_text_behind_subject",
+      "trigger_roles": ["Hook", "CTA"],
+      "layout": "Large Sans/Accent text occluded behind subject head (y=20-35%)",
+      "fonts": { "lead": "serif_italic", "hero": "sans_bold" },
+      "sfx": "SUB_THUMP/BASS_HIT"
+    },
+    {
+      "id": "dviet_white_polarity_interrupt",
+      "trigger_modes": ["Contrast"],
+      "layout": "Full #FAFAFA canvas or PiP card with accent glow border",
+      "fonts": { "lead": "sans", "hero": "serif_italic" },
+      "sfx": "SUB_THUMP/BASS_HIT"
+    },
+    {
+      "id": "dviet_3tier_step_card",
+      "trigger_modes": ["Proof"],
+      "layout": "Dark silk #0D0D0D: 25% header number + 40% UI card + 25% PiP A-roll",
+      "fonts": { "number": "sans_bold", "label": "serif_italic" },
+      "sfx": "SUB_THUMP/BASS_HIT"
+    },
+    {
+      "id": "dviet_split_50_50_ui_demo",
+      "trigger_modes": ["Proof", "Expand"],
+      "layout": "50% Top UI/Demo + 50% Bottom A-roll, caption on divider",
+      "fonts": { "caption": "sans", "keyword": "sans_accent" },
+      "sfx": "CLICK/FLASH/RISER_HI"
+    },
+    {
+      "id": "dviet_3d_timeline_pills",
+      "trigger_roles": ["Body"],
+      "layout": "3D angled timeline B-roll + vertical frosted-glass pills",
+      "fonts": { "pill": "sans_bold" },
+      "sfx": "WHOOSH/VOICE_PUNCH"
+    },
+    {
+      "id": "dviet_circular_head_path",
+      "trigger_modes": ["Expand", "Contrast"],
+      "layout": "Curved text wrapping around subject head",
+      "fonts": { "lead": "sans", "hero": "sans_accent" },
+      "sfx": "WHOOSH/VOICE_PUNCH"
+    },
+    {
+      "id": "dviet_cta_calligraphy_swatch",
+      "trigger_roles": ["CTA"],
+      "layout": "A-roll centered + large Calligraphy/Accent CTA keyword",
+      "fonts": { "lead": "sans", "hero": "script_calligraphy" },
+      "sfx": "SUB_THUMP/BASS_HIT"
+    }
+  ]
+}

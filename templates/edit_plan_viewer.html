@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Edit Plan v7.0 (10×8 Universal Studio) — Pro FilmCraft Director</title>
+  <style>
+    :root {
+      --bg: #0b0d12;
+      --surface: #121620;
+      --card: #171c28;
+      --border: #262e42;
+      --text: #f3f4f6;
+      --muted: #94a3b8;
+      --accent: #7c5cff;
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --veto: #f43f5e;
+      --lane-a: #38bdf8;
+      --lane-b: #2ee86e;
+      --lane-c: #c084fc;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Be Vietnam Pro", Inter, system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+    header {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(18, 22, 32, 0.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border); padding: 14px 24px;
+      display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .title-row { display: flex; align-items: center; gap: 10px; }
+    .v-badge { background: rgba(46, 232, 110, 0.14); color: var(--lane-b); border: 1px solid rgba(46, 232, 110, 0.35); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+    .meta { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+    .actions { display: flex; gap: 8px; align-items: center; }
+    .btn { background: var(--accent); color: #fff; border: 1px solid transparent; padding: 9px 14px; border-radius: 8px; font-weight: 600; font-size: 12.5px; cursor: pointer; transition: 0.15s; }
+    .btn:hover { filter: brightness(1.1); }
+    .btn-ghost { background: #1c2231; color: #e2e8f0; border-color: var(--border); }
+
+    .matrix-bar {
+      max-width: 1540px; margin: 16px auto 0; padding: 0 24px;
+      display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px;
+    }
+    .panel-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px;
+    }
+    .panel-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; margin-bottom: 10px; display: flex; justify-content: space-between; }
+    .axis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .field label { display: block; font-size: 11.5px; color: var(--muted); margin-bottom: 4px; }
+    select {
+      width: 100%; background: #0e121a; color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 10px; font-size: 12.5px; font-weight: 500;
+    }
+    .guards-wrap { display: flex; flex-wrap: wrap; gap: 7px; }
+    .guard-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
+      border: 1px solid var(--border); background: #0e121a; color: #64748b;
+      cursor: pointer; user-select: none; transition: 0.15s;
+    }
+    .guard-pill.active {
+      background: rgba(244, 63, 94, 0.13); border-color: rgba(244, 63, 94, 0.48); color: #fda4af;
+    }
+    .guard-pill.active.lock-ok {
+      background: rgba(16, 185, 129, 0.13); border-color: rgba(16, 185, 129, 0.45); color: #6ee7b7;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    .filter-strip {
+      max-width: 1540px; margin: 12px auto 0; padding: 0 24px;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .lane-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab {
+      background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+      padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .tab.active { border-color: var(--accent); color: #fff; background: rgba(124, 92, 255, 0.18); }
+
+    .layout { display: grid; grid-template-columns: 1.45fr 1fr; gap: 20px; padding: 16px 24px 36px; max-width: 1540px; margin: 0 auto; }
+    .beat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+    .beat-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin-bottom: 10px; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: #232a3b; color: #cbd5e1; margin-left: 5px; font-weight: 600; }
+    .lane-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; }
+    .lane-A { background: rgba(56, 189, 248, 0.14); color: var(--lane-a); border: 1px solid rgba(56, 189, 248, 0.35); }
+    .lane-B { background: rgba(46, 232, 110, 0.14); color: var(--lane-b); border: 1px solid rgba(46, 232, 110, 0.35); }
+    .lane-C { background: rgba(192, 132, 252, 0.15); color: var(--lane-c); border: 1px solid rgba(192, 132, 252, 0.35); }
+
+    .options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+    .opt { border: 1px solid var(--border); border-radius: 9px; padding: 11px; cursor: pointer; background: #10141d; transition: 0.15s; display: flex; flex-direction: column; justify-content: space-between; }
+    .opt:hover { border-color: #475569; }
+    .opt.selected { border-color: var(--accent); background: rgba(124, 92, 255, 0.14); box-shadow: 0 0 0 1px rgba(124, 92, 255, 0.35); }
+    .opt-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
+    .opt h4 { margin: 0; font-size: 12.8px; line-height: 1.35; }
+    .opt p { margin: 0; font-size: 11.8px; color: var(--muted); line-height: 1.45; }
+    .opt-meta { margin-top: 8px; padding-top: 6px; border-top: 1px dashed #232a3b; font-size: 11px; color: #94a3b8; display: flex; flex-wrap: wrap; gap: 6px; }
+    textarea { width: 100%; margin-top: 10px; background: #0e121a; color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; font-size: 12px; resize: vertical; }
+    .script-panel { position: sticky; top: 82px; height: calc(100vh - 106px); overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+    .script-line { padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid transparent; background: #121620; cursor: pointer; }
+    .script-line.active { background: rgba(124, 92, 255, 0.12); border-left-color: var(--accent); }
+    .empty-box { text-align: center; padding: 48px 20px; color: var(--muted); background: var(--card); border: 1px dashed var(--border); border-radius: 12px; }
+    @media (max-width: 1080px) {
+      .matrix-bar, .layout, .axis-grid, .options { grid-template-columns: 1fr; }
+      .script-panel { position: static; height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="title-row">
+        <strong>Interactive Edit Plan — Universal Studio Director</strong>
+        <span class="v-badge">v7.0 · 10×8 Matrix · 3-Lane</span>
+      </div>
+      <div class="meta" id="metaInfo">Đang tải edit_plan.json...</div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="copyPlanJson()" id="copyBtn">Copy JSON</button>
+      <button class="btn" onclick="exportPlan()">Tải Approved Edit Plan (.json)</button>
+    </div>
+  </header>
+
+  <section class="matrix-bar">
+    <div class="panel-box">
+      <div class="panel-label">
+        <span>Trục Trực Giao 10×8 (Format Mode × Industry Skin)</span>
+        <span id="matrixCodeBadge" style="color:#a78bfa">80 Canonical · 240+ Hybrids</span>
+      </div>
+      <div class="axis-grid">
+        <div class="field">
+          <label for="formatSelect">Trục 1 — Format Mode (F1..F10)</label>
+          <select id="formatSelect" onchange="onAxisChange()"></select>
+        </div>
+        <div class="field">
+          <label for="skinSelect">Trục 2 — Industry Skin (S1..S8)</label>
+          <select id="skinSelect" onchange="onSkinChange()"></select>
+        </div>
+        <div class="field">
+          <label for="colorPolicySelect">Chromatic Policy (v7.0)</label>
+          <select id="colorPolicySelect" onchange="onAxisChange()">
+            <option value="color_world_polarity">color_world_polarity (1 World + Polarity)</option>
+            <option value="semantic_4act_jewel">semantic_4act_jewel (4 Hồi trên #FAFAFA)</option>
+            <option value="multi_hue_6">multi_hue_6 (Opt-in Legacy)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-box">
+      <div class="panel-label">
+        <span>Active Safety Guards (Cầu Dao HARD VETO)</span>
+        <span style="font-weight:500;text-transform:none">Click để bật/tắt khóa bảo vệ</span>
+      </div>
+      <div class="guards-wrap" id="guardsContainer"></div>
+    </div>
+  </section>
+
+  <section class="filter-strip">
+    <div class="lane-tabs" id="laneTabs">
+      <button class="tab active" onclick="setLaneFilter('ALL')">Tất cả Beats</button>
+      <button class="tab" onclick="setLaneFilter('A')">Lane A · NLE Native (.fcproj)</button>
+      <button class="tab" onclick="setLaneFilter('B')">Lane B · Web-Cinema HTML5/CSS3/SVG @2x</button>
+      <button class="tab" onclick="setLaneFilter('C')">Lane C · HyperFrames / EffectCraft</button>
+    </div>
+    <div class="meta" id="vetoHint">Cranial Lock (0% chạm mặt/tóc) &amp; Sub-layer Feather = 29 luôn bật mặc định.</div>
+  </section>
+
+  <div class="layout">
+    <div id="beatsCol"></div>
+    <div class="script-panel">
+      <h3 style="margin-top:0;font-size:15px">Kịch bản, Nhịp cắt &amp; Render Lane</h3>
+      <div id="scriptCol"></div>
+    </div>
+  </div>
+
+  <script>
+    const FORMAT_MODES = [
+      { id: 'expert_talking_head', code: 'F1', label: 'F1 · Expert Talking-Head & Manifesto (@__dviet)' },
+      { id: 'pas_bab_ecom_conversion', code: 'F2', label: 'F2 · PAS / BAB Direct-Response Conversion' },
+      { id: 'tactile_review_testing', code: 'F3', label: 'F3 · Tactile Review, ASMR Unbox & Verdict' },
+      { id: 'clinical_aesthetic_before_after', code: 'F4', label: 'F4 · Clinical & Aesthetic Before/After Proof' },
+      { id: 'course_lead_magnet_funnel', code: 'F5', label: 'F5 · Course / EdTech & 3D Lead-Magnet Funnel' },
+      { id: 'cinematic_vlog_storytelling', code: 'F6', label: 'F6 · Cinematic Vlog & 51% Emotion Storytelling' },
+      { id: 'tutorial_ui_walkthrough', code: 'F7', label: 'F7 · Step-by-Step 3D UI / SaaS Walkthrough' },
+      { id: 'fast_paced_listicle_top_n', code: 'F8', label: 'F8 · Fast-Paced Listicle Top-N / X Sai Lầm' },
+      { id: 'spatial_vfx_clone_storefront_tour', code: 'F9', label: 'F9 · Spatial VFX, Clone Hook & Storefront Tour' },
+      { id: 'faceless_motion_explainer', code: 'F10', label: 'F10 · Faceless Motion Graphics & System Film' }
+    ];
+
+    const INDUSTRY_SKINS = [
+      { id: 'luxury_skincare', code: 'S1', label: 'S1 · Mỹ phẩm / Luxury Skincare', guards: ['skin_tone_guard', 'cranial_lock', 'r200_claim_gate', 'no_pil_web_plate'], veto: 'Cấm ám xanh/tím lên da, cấm warm film-burn, cấm B-roll AI giả kết quả da.' },
+      { id: 'dental_clinic', code: 'S2', label: 'S2 · Nha khoa CRI-100 (Dental Clinic)', guards: ['cri_100_tooth_lock', 'skin_tone_guard', 'cranial_lock', 'r200_claim_gate', 'no_pil_web_plate'], veto: 'HARD VETO CRI-100: Cấm LUT vàng/ấm làm xỉn men răng (Δb* <= +2.0), cấm glow/chữ đè vùng miệng.' },
+      { id: 'nail_hair_salon', code: 'S3', label: 'S3 · Nail / Hair / Boutique Salon', guards: ['hand_safe_box', 'skin_tone_guard', 'cranial_lock', 'no_pil_web_plate'], veto: 'HARD VETO Hand Safe-Box: Cấm chữ/thẻ đè vùng bàn tay làm nail/mẫu tóc, cấm sai lệch mã màu sơn.' },
+      { id: 'tactile_review', code: 'S4', label: 'S4 · Review Thực Chiến / KOC / E-com', guards: ['hand_safe_box', 'skin_tone_guard', 'cranial_lock', 'r200_claim_gate', 'no_pil_web_plate'], veto: 'Giữ sạch vùng macro_subject_bbox cầm sản phẩm, cấm karaoke S13 rẻ tiền, kiểm chứng R200 thông số thật.' },
+      { id: 'course_edtech', code: 'S5', label: 'S5 · Bán khóa học / EdTech / Coaching', guards: ['cranial_lock', 'skin_tone_guard', 'r200_claim_gate', 'no_pil_web_plate'], veto: 'Ưu tiên nền sáng #FAFAFA 4 Hồi Jewel, MAX_ZONES <= 2, cấm hiệu ứng lùa gà lòe loẹt.' },
+      { id: 'personal_brand', code: 'S6', label: 'S6 · Nhân hiệu Chuyên gia (@__dviet)', guards: ['cranial_lock', 'skin_tone_guard', 'no_pil_web_plate'], veto: 'Cấm nhuộm tường xanh đầm lầy ngược tông da, cấm chữ nhựa 3D PIL, khóa Cranial Lock 0% chạm mặt/tóc.' },
+      { id: 'cinematic_vlog', code: 'S7', label: 'S7 · Vlog Short / Lifestyle Điện ảnh', guards: ['skin_tone_guard', 'cranial_lock', 'no_pil_web_plate'], veto: 'Cấm hộp KPI/checklist công sở phá cảm xúc đời thường, giữ >= 30% khung hình thở sạch + 7 Organic Foley.' },
+      { id: 'b2b_saas_realestate', code: 'S8', label: 'S8 · B2B / SaaS / Bất động sản', guards: ['cranial_lock', 'r200_claim_gate', 'no_pil_web_plate'], veto: 'HARD VETO R200: Giá m², ROI, benchmark bắt buộc khớp textnorm & screen_rec/quay thật @2x DPR.' }
+    ];
+
+    const SAFETY_GUARDS = [
+      { id: 'cri_100_tooth_lock', label: 'CRI-100 Tooth Lock', tip: 'Khóa trắng chuẩn nha khoa D65, cấm LUT vàng/ấm làm ố men răng' },
+      { id: 'skin_tone_guard', label: 'Skin-Tone Guard', tip: 'Bảo vệ trục da vectorscope, cấm tường xanh đầm lầy ám vào da' },
+      { id: 'hand_safe_box', label: 'Hand Safe-Box', tip: 'Cấm chữ/badge che bàn tay mẫu Nail, tóc hoặc sản phẩm cầm tay' },
+      { id: 'cranial_lock', label: 'Cranial Lock', tip: 'Dual-Rail 9:16: 0% chữ chạm mặt/mắt/tóc, Sub-layer Feather = 29', alwaysOkStyle: true },
+      { id: 'r200_claim_gate', label: 'R200 Claim-Gate', tip: 'Cấm dùng AI B-roll giả làm bằng chứng KPI/lâm sàng thật' },
+      { id: 'no_pil_web_plate', label: 'Web-Plate @2x (0px Stroke)', tip: 'Cấm chữ nhựa 3D PIL/OpenCV; render HTML5/CSS3/SVG @2x ProRes 4444', alwaysOkStyle: true }
+    ];
+
+    window.__EDIT_PLAN__ = window.__EDIT_PLAN__ || /*__PLAN_JSON__*/null/*__END_PLAN_JSON__*/;
+    let plan = window.__EDIT_PLAN__;
+    let activeLaneFilter = 'ALL';
+
+    function inferLane(opt, beat) {
+      if (opt && opt.render_lane) return String(opt.render_lane).toUpperCase().replace('LANE ', '');
+      const sig = `${(opt && opt.atomic) || ''} ${(opt && opt.title) || ''} ${(beat && beat.visual_mode) || ''}`.toLowerCase();
+      if (sig.includes('stage') || sig.includes('hyperframes') || sig.includes('effectcraft') || sig.includes('3d_ui') || sig.includes('bento_kinetic') || sig.includes('playhead') || sig.includes('concentric')) return 'C';
+      if (sig.includes('web') || sig.includes('card') || sig.includes('kpi') || sig.includes('split') || sig.includes('strike') || sig.includes('svg') || sig.includes('pill') || sig.includes('terminal') || sig.includes('hero')) return 'B';
+      return 'A';
+    }
+
+    function laneLabel(lane) {
+      if (lane === 'B') return 'Lane B · Web @2x';
+      if (lane === 'C') return 'Lane C · Stage';
+      return 'Lane A · NLE';
+    }
+
+    function mapLegacyIndustryToSkin(ind) {
+      const s = String(ind || '').toLowerCase();
+      if (s.includes('dental') || s.includes('nha')) return 'dental_clinic';
+      if (s.includes('nail') || s.includes('salon')) return 'nail_hair_salon';
+      if (s.includes('beauty') || s.includes('skin') || s.includes('spa')) return 'luxury_skincare';
+      if (s.includes('ecom') || s.includes('review')) return 'tactile_review';
+      if (s.includes('edu') || s.includes('course')) return 'course_edtech';
+      if (s.includes('vlog')) return 'cinematic_vlog';
+      if (s.includes('tech') || s.includes('saas') || s.includes('real_estate') || s.includes('bds')) return 'b2b_saas_realestate';
+      return 'personal_brand';
+    }
+
+    function initSelectors() {
+      const fSel = document.getElementById('formatSelect');
+      const sSel = document.getElementById('skinSelect');
+      fSel.innerHTML = FORMAT_MODES.map(f => `<option value="${f.id}">${f.label}</option>`).join('');
+      sSel.innerHTML = INDUSTRY_SKINS.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+      if (plan) {
+        const fmtByCode = FORMAT_MODES.find(x => x.code === plan.format_mode || x.id === plan.format_mode);
+        plan.format_mode = fmtByCode ? fmtByCode.id : 'expert_talking_head';
+        const skinByCode = INDUSTRY_SKINS.find(x => x.code === plan.industry_skin || x.id === plan.industry_skin);
+        plan.industry_skin = skinByCode ? skinByCode.id : mapLegacyIndustryToSkin(plan.industry);
+        plan.chromatic_policy = plan.chromatic_policy || 'color_world_polarity';
+        if (!Array.isArray(plan.active_safety_guards) || !plan.active_safety_guards.length) {
+          const skinObj = INDUSTRY_SKINS.find(x => x.id === plan.industry_skin) || INDUSTRY_SKINS[5];
+          plan.active_safety_guards = [...skinObj.guards];
+        }
+        fSel.value = plan.format_mode;
+        sSel.value = plan.industry_skin;
+        document.getElementById('colorPolicySelect').value = plan.chromatic_policy;
+      }
+    }
+
+    function renderGuards() {
+      const box = document.getElementById('guardsContainer');
+      const activeSet = new Set((plan && plan.active_safety_guards) || ['cranial_lock', 'skin_tone_guard', 'no_pil_web_plate']);
+      box.innerHTML = SAFETY_GUARDS.map(g => {
+        const isOn = activeSet.has(g.id);
+        const cls = isOn ? `guard-pill active ${g.alwaysOkStyle ? 'lock-ok' : ''}` : 'guard-pill';
+        return `<div class="${cls}" title="${g.tip}" onclick="toggleGuard('${g.id}')"><span class="dot"></span>${g.label}</div>`;
+      }).join('');
+      const skinObj = INDUSTRY_SKINS.find(x => x.id === (plan && plan.industry_skin)) || INDUSTRY_SKINS[5];
+      document.getElementById('vetoHint').textContent = `HARD VETO (${skinObj.code}): ${skinObj.veto}`;
+      const fmtObj = FORMAT_MODES.find(x => x.id === (plan && plan.format_mode)) || FORMAT_MODES[0];
+      document.getElementById('matrixCodeBadge').textContent = `Cell: ${fmtObj.code} × ${skinObj.code} (${plan ? plan.chromatic_policy : 'v7.0'})`;
+    }
+
+    function toggleGuard(id) {
+      if (!plan) return;
+      const set = new Set(plan.active_safety_guards || []);
+      if (set.has(id)) set.delete(id); else set.add(id);
+      plan.active_safety_guards = Array.from(set);
+      renderGuards();
+    }
+
+    function onAxisChange() {
+      if (!plan) return;
+      plan.format_mode = document.getElementById('formatSelect').value;
+      plan.chromatic_policy = document.getElementById('colorPolicySelect').value;
+      render();
+    }
+
+    function onSkinChange() {
+      if (!plan) return;
+      plan.industry_skin = document.getElementById('skinSelect').value;
+      const skinObj = INDUSTRY_SKINS.find(x => x.id === plan.industry_skin);
+      if (skinObj) {
+        plan.industry = skinObj.id;
+        plan.active_safety_guards = [...skinObj.guards];
+      }
+      render();
+    }
+
+    function setLaneFilter(lane) {
+      activeLaneFilter = lane;
+      document.querySelectorAll('#laneTabs .tab').forEach((btn, idx) => {
+        const map = ['ALL', 'A', 'B', 'C'];
+        btn.classList.toggle('active', map[idx] === lane);
+      });
+      render();
+    }
+
+    function loadDemoPlan() {
+      plan = {
+        schema_version: '7.0.0',
+        industry: 'personal_brand',
+        industry_skin: 'personal_brand',
+        format_mode: 'expert_talking_head',
+        chromatic_policy: 'semantic_4act_jewel',
+        narrative_arc: 'Contrarian 4-Act',
+        aspect_ratio: '9:16',
+        active_safety_guards: ['cranial_lock', 'skin_tone_guard', 'no_pil_web_plate'],
+        beats: [
+          {
+            beat_id: 1, start_sec: 0.0, end_sec: 2.6, role: 'Hook · Act I', visual_mode: 'Dual-Rail Hero',
+            text: 'Đừng vẽ chữ nhựa 3D đè lên mặt người nói nữa.',
+            selected_option: 'A',
+            options: [
+              { key: 'A', title: 'Chest Tactile Rail + RVM Feather=29', atomic: 'web_cinema_editorial_hero_plate', render_lane: 'B', placement_rail: 'Chest Tactile Rail', micro_bridge: 'player3_air_cushion_20f', reason: 'HTML5/CSS3 @2x không viền cứng, bàn tay lướt đè lên chữ tự nhiên.' },
+              { key: 'B', title: 'Concentric Negative Lab Stage', atomic: 'render_concentric_lock_lab_stage', render_lane: 'C', placement_rail: 'Full Stage', micro_bridge: 'concentric_negative_bridge', reason: ' Đảo cực nền sáng #FAFAFA khóa tâm thị giác 0.4s đầu.' },
+              { key: 'C', title: 'Clean Center Authority + Whisper G2', atomic: 'clean_0f_hard_cut', render_lane: 'A', placement_rail: 'Whisper G2 (Y>=1360)', micro_bridge: 'exposure_bloom_3f', reason: 'Giữ 100% biểu cảm mắt, nhả nhẹ 3f bloom.' }
+            ]
+          },
+          {
+            beat_id: 2, start_sec: 2.6, end_sec: 6.1, role: 'Mechanism · Act II', visual_mode: '19f Whip -> 3D UI',
+            text: 'Tách cấu trúc 10 Format khỏi 8 Vỏ ngành bằng tấm kính vector @2x.',
+            selected_option: 'B',
+            options: [
+              { key: 'A', title: 'Left-1/3 Cam + Wall Micro-Words', atomic: 'dviet_wall_microword_pop', render_lane: 'A', placement_rail: 'Upper Editorial Stage', micro_bridge: 'persistent_text_bridge_11f', reason: 'Neo chữ qua vết cắt 11f, vocal J-Cut -320ms.' },
+              { key: 'B', title: 'SVG 10×8 Matrix Glass Card (@2x)', atomic: 'web_cinema_svg_framework_plate', render_lane: 'B', placement_rail: 'Upper Editorial Stage', micro_bridge: 'rack_focus_13f', reason: '13f rack-focus ẩn vết cắt sang sơ đồ SVG sắc nét ProRes 4444.' },
+              { key: 'C', title: '19f Mirror-Tile Whip -> Bento 3D', atomic: 'render_bento_kinetic_matrix_stage', render_lane: 'C', placement_rail: 'Full Stage', micro_bridge: 'mirror_tile_whip_3d_ui_19f', reason: 'Chuyển cảnh không gian 3D ấn tượng cho điểm nhấn kiến trúc.' }
+            ]
+          }
+        ]
+      };
+      initSelectors();
+      render();
+    }
+
+    function render() {
+      renderGuards();
+      const beatsCol = document.getElementById('beatsCol');
+      const scriptCol = document.getElementById('scriptCol');
+      if (!plan || !Array.isArray(plan.beats)) {
+        document.getElementById('metaInfo').textContent = 'Chưa nạp dữ liệu edit_plan.json (Hoặc bấm nạp bản mẫu v7.0 để xem trước giao diện 10×8).';
+        beatsCol.innerHTML = `<div class="empty-box"><p style="margin:0 0 12px">Chưa có <code>window.__EDIT_PLAN__</code> được nhúng.</p><button class="btn" onclick="loadDemoPlan()">Nạp Bản Mẫu Demo v7.0 (10×8 Matrix + 3 Lanes)</button></div>`;
+        scriptCol.innerHTML = '';
+        return;
+      }
+
+      document.getElementById('metaInfo').textContent =
+        `Format: ${plan.format_mode || 'F1'} | Skin: ${plan.industry_skin || plan.industry} | Arc: ${plan.narrative_arc || 'Studio'} | Tỉ lệ: ${plan.aspect_ratio || '9:16'} | Tổng Beats: ${plan.beats.length}`;
+
+      beatsCol.innerHTML = '';
+      scriptCol.innerHTML = '';
+
+      plan.beats.forEach((b, idx) => {
+        const chosen = (b.options || []).find(o => o.key === b.selected_option) || (b.options && b.options[0]);
+        const activeLane = inferLane(chosen, b);
+        b.selected_render_lane = activeLane;
+
+        if (activeLaneFilter !== 'ALL' && activeLane !== activeLaneFilter) return;
+
+        const div = document.createElement('div');
+        div.className = 'beat';
+        div.id = `beat-card-${idx}`;
+        div.innerHTML = `
+          <div class="beat-head">
+            <span>
+              <strong>Beat ${b.beat_id}</strong> (${b.start_sec.toFixed(2)}s → ${b.end_sec.toFixed(2)}s · ${(b.end_sec - b.start_sec).toFixed(2)}s)
+            </span>
+            <span>
+              <span class="lane-badge lane-${activeLane}">${laneLabel(activeLane)}</span>
+              <span class="tag">${b.role || 'Beat'}</span>
+              <span class="tag">${b.visual_mode || 'Editorial'}</span>
+            </span>
+          </div>
+          <div style="font-size:14px;margin-bottom:8px;line-height:1.45">"${b.text}"</div>
+          <div class="options">
+            ${(b.options || []).map(o => {
+              const oLane = inferLane(o, b);
+              const rail = o.placement_rail || (oLane === 'C' ? 'Full Stage' : 'Dual-Rail Safe');
+              const bridge = o.micro_bridge || 'player3_air_cushion_20f';
+              return `
+                <div class="opt ${b.selected_option === o.key ? 'selected' : ''}" onclick="selectOpt(${idx}, '${o.key}')">
+                  <div>
+                    <div class="opt-top">
+                      <h4>${o.key}. ${o.title}</h4>
+                      <span class="lane-badge lane-${oLane}">Lane ${oLane}</span>
+                    </div>
+                    <p>Atomic: <code>${o.atomic}</code><br/>${o.reason}</p>
+                  </div>
+                  <div class="opt-meta">
+                    <span>Rail: <b>${rail}</b></span>
+                    <span>· Bridge: <code>${bridge}</code></span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          <textarea rows="2" placeholder="Ghi chú đạo diễn cho Beat ${b.beat_id} (VD: đổi sang Chest Tactile Rail, bật rack_focus_13f)..." onchange="plan.beats[${idx}].director_note=this.value">${b.director_note || ''}</textarea>
+        `;
+        beatsCol.appendChild(div);
+
+        const s = document.createElement('div');
+        s.className = 'script-line';
+        s.onclick = () => document.getElementById(`beat-card-${idx}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        s.innerHTML = `
+          <div style="font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;margin-bottom:3px">
+            <span>${b.start_sec.toFixed(2)}s · ${b.role || 'Beat'} · Chọn: <b style="color:#fff">${b.selected_option}</b></span>
+            <span class="lane-badge lane-${activeLane}">Lane ${activeLane}</span>
+          </div>
+          <div style="font-size:12.8px;line-height:1.4">${b.text}</div>
+        `;
+        scriptCol.appendChild(s);
+      });
+    }
+
+    function selectOpt(idx, key) {
+      plan.beats[idx].selected_option = key;
+      const chosen = (plan.beats[idx].options || []).find(o => o.key === key);
+      plan.beats[idx].selected_render_lane = inferLane(chosen, plan.beats[idx]);
+      render();
+    }
+
+    function copyPlanJson() {
+      if (!plan) return;
+      navigator.clipboard.writeText(JSON.stringify(plan, null, 2)).then(() => {
+        const btn = document.getElementById('copyBtn');
+        const old = btn.textContent;
+        btn.textContent = 'Đã Copy JSON!';
+        setTimeout(() => { btn.textContent = old; }, 1600);
+      });
+    }
+
+    function exportPlan() {
+      if (!plan) return;
+      const blob = new Blob([JSON.stringify(plan, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'approved_edit_plan.json';
+      a.click();
+    }
+
+    initSelectors();
+    render();
+  </script>
+</body>
+</html>

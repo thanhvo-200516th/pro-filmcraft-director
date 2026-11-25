@@ -1,0 +1,612 @@
+{
+  "schema_version": "7.0.0",
+  "purpose": "Universal Studio Director v7.0 — Quad-Mode Execution Policy (--tier fast | studio | full | auto), 10 Format Modes x 8 Industry Skins Routing Matrix, i5-12450H < 4.5GB RAM Governor (sequential_rvm_then_chrome_max2), Cranial & Zero-Face Macro Safe-Zones, Industry Hard Veto Guards, plus v6.0 1-Color-World Polarity Law, 4-Cut Grammar & Epistemic Provenance.",
+  "default_mode": "auto",
+  "supported_cli_tiers": ["fast", "studio", "full", "auto"],
+  "hardware_budget_governor": {
+    "target_host_profile": "Intel Core i5-12450H (8C/12T: 4P + 4E)",
+    "max_ram_gb": 4.5,
+    "hard_ceiling_rss_mb": 4608,
+    "target_operating_rss_mb": 3850,
+    "schedule_policy": "sequential_rvm_then_chrome_max2",
+    "stages": [
+      {
+        "stage_order": 1,
+        "id": "ingest_whisper_and_cv_probe",
+        "tool": "probe_and_align.py",
+        "concurrency_rule": "Run faster-whisper int8 (4-6 physical threads) BEFORE OpenCV Haar/CIE-Lab/HSV frame pool; release ASR model prior to CV pass",
+        "max_rss_gb": 1.35
+      },
+      {
+        "stage_order": 2,
+        "id": "rvm_subject_matting_pass",
+        "tool": "RVM V3 isolation pass",
+        "concurrency_rule": "Strictly single-stream sequential batch=1 (downsample_ratio=0.25 on 1080x1920); teardown ONNX/Torch session and gc.collect() BEFORE launching any headless Chrome worker",
+        "never_concurrent_with": ["headless_chrome_web_plates", "hyperframes_render"],
+        "max_rss_gb": 2.40
+      },
+      {
+        "stage_order": 3,
+        "id": "web_plates_or_hyperframes_render",
+        "tool": "dviet_motion_canvas_engine.py / Playwright / HyperFrames",
+        "concurrency_rule": "sequential_rvm_then_chrome_max2: launch at most 2 headless Chrome workers (--disable-dev-shm-usage --js-flags=--max-old-space-size=512) streaming frames directly to ffmpeg",
+        "max_chrome_workers": 2,
+        "max_rss_gb": 4.15
+      },
+      {
+        "stage_order": 4,
+        "id": "filmcraft_compile_and_verify",
+        "tool": "compile_and_verify.py",
+        "concurrency_rule": "Streaming 16-frame QA contact sheet + 4x True-Peak post-AAC ratchet without full-video uncompressed frame buffering",
+        "max_rss_gb": 1.85
+      }
+    ]
+  },
+  "auto_tier_selector": {
+    "select_full_when_any": [
+      "Input is an uncut raw camera recording ('soucre quay') requiring pause-onset refinement and silence/filler surgery",
+      "Input is an existing defective .fcproj requiring forensic rebuild or face-safe / loudness remediation",
+      "Script contains empirical claims, ROI numbers, prices, clinical before/after results, or benchmarks (claim_gate == true) in dental_clinic or b2b_saas_realestate",
+      "Format mode uses lane_c_hyperframes (faceless_motion_explainer) or flagship Era-2 / Z-Depth master archetypes on raw footage",
+      "Deliverable is a final client handoff or commercial ad campaign"
+    ],
+    "select_studio_when_any": [
+      "Format mode uses lane_b_web_plates (pas_bab_ecom_conversion, tactile_review_testing, course_lead_magnet_funnel, tutorial_ui_walkthrough, fast_paced_listicle_top_n) on clean or semi-clean assets",
+      "Industry skin enforces anatomical/macro safe-zone locks (luxury_skincare, nail_hair_salon, tactile_review, course_edtech, personal_brand) without full forensic rebuild overhead",
+      "User wants Studio P0+P1 industry veto guards, cranial/macro safe-zones, and sequential max-2 plate rendering within ~55-68s"
+    ],
+    "select_fast_when_all": [
+      "Input is a clean pre-sliced voice folder or concise single-take commentary with clean boundaries",
+      "claim_gate == false (personal opinion, creative commentary, philosophical essay, or founder story)",
+      "Format mode runs cleanly on lane_a_native and user prioritizes rapid ~45-60s turnaround or interactive Option A/B/C creative iteration"
+    ]
+  },
+  "tiers": {
+    "fast": {
+      "id": "fast",
+      "label": "Gói Nhanh — P0 Core Physics + v6.0/v7.0 Color-World, 4-Cut & Spatial Density Express",
+      "priority_scope": ["P0"],
+      "allowed_lanes": ["lane_a_native"],
+      "ram_budget_gb": 1.8,
+      "ram_schedule": "sequential_rvm_then_chrome_max2",
+      "max_chrome_workers": 0,
+      "estimated_runtime_sec": [45, 60],
+      "cli_flags": {
+        "probe_and_align": "--tier fast",
+        "compile_and_verify": "--tier fast"
+      },
+      "active_modules": [
+        {
+          "id": "vietnamese_lexicon_split",
+          "tool": "typography_composer.py::split_phrase_2line",
+          "data_ref": "./data/text_vi.json",
+          "spec": "1,200 Vietnamese compound glue pairs + closed-class leads/trails preventing orphan syllable splits across 2-line captions, inline Color-World spans, and wall micro-word pops"
+        },
+        {
+          "id": "color_world_polarity_v60",
+          "tool": "typography_composer.py / compile_and_verify.py",
+          "data_ref": "./presets/typography_hierarchy_presets.json#DVIET_COLOR_WORLDS",
+          "spec": "1 Cohesive Color World per video (55%-100% Primary Signature Hue + 0%-45% Pain/Contrast Hue + #EEF4EA/#FAFAFA Polarity Flips); flags RAINBOW_HUE_SOUP at >= 5 neon buckets (legacy multi_hue_6 opt-in via meta.color_policy)"
+        },
+        {
+          "id": "spatial_density_and_card_text_mutex_v60",
+          "tool": "typography_composer.py / compile_and_verify.py",
+          "data_ref": "./presets/typography_hierarchy_presets.json#secondary_text_4_groups",
+          "spec": "100ms spatial density sampler enforcing MAX_ZONES <= 2 (3 only w/ <=26-30pt whisper G2), CARD_TEXT_COLLISION = 0 across Hero/G1..G4 vs card*/gfx*, 1-3 curated secondary groups, >=12% clean breathing frames, and >=70% lowercase kiss-leading Heroes in Era-2"
+        },
+        {
+          "id": "cranial_and_zero_face_macro_express_probe_v70",
+          "tool": "probe_and_align.py --tier fast",
+          "spec": "8-frame Haar face envelope emitting cranial_exclusion_band [max(0, hair_top_y - 48), min(H, chin_y + 32)] + dual_rail_zones; falls back to CIE-Lab enamel_gum_bbox & HSV/Edge macro_subject_bbox whenever faces == 0"
+        },
+        {
+          "id": "four_cut_grammar_bimodal_c7_and_bgm_stops",
+          "tool": "typography_composer.py / compile_and_verify.py",
+          "spec": "4-Cut Grammar (40%-75% clean 0-frame hard cuts, <=45% wgpu accent transitions), Bimodal C7 True Vocal J-Cut (-850ms..-140ms pre-lead; rejects -130ms..-10ms sloppy chops), meta.bgm_stops >=0.50s -inf dB silence vacuum carver (35ms pre-fade), <=5 heavy whooshes/min, and optional +2.2 dB @ 185Hz vocal chest warmth"
+        },
+        {
+          "id": "subtitle_bottom_anchor_r209",
+          "tool": "typography_composer.py",
+          "ruling": "R209",
+          "spec": "Bottom-edge subtitle anchor at Y >= 1360 (on 1080x1920) with top-down multi-line expansion or S10 fixed-slot zero-jump word pop so captions never climb onto mouth/chin; paired with hook_drop_handoff"
+        },
+        {
+          "id": "last_word_readability_r30",
+          "tool": "typography_composer.py / compile_and_verify.py",
+          "ruling": "R30",
+          "spec": "Last word of every caption/card holds >= 90% opacity for >= 3 consecutive frames (or switches to 2-frame quick-exit at gate); 0.95 ink-width auto-fit inside safe zone X in [140, 940]"
+        },
+        {
+          "id": "sfx_envelope_peak_sync",
+          "tool": "compile_and_verify.py",
+          "spec": "5ms moving-average envelope (240 samples @ 48kHz) lag_ms pre-swoosh peak-on-cut detection + sync_frame 90%-easing impact alignment (cut/broll_in=0f, cta_pill=4f, block/item=5f, card/hook_title=6f) + cut_kick + MD5 SFX deduplication"
+        },
+        {
+          "id": "sfx_norm_xcorr_r217",
+          "tool": "compile_and_verify.py",
+          "ruling": "R217",
+          "spec": "Energy-normalized sliding cross-correlation (match_at) verifying SFX transient sync within [-1f, +2f] (ITU-R BT.1359) without false drift from loud vocal formants"
+        },
+        {
+          "id": "closed_loop_loudness_a1",
+          "tool": "compile_and_verify.py",
+          "spec": "Closed-loop BS.1770-4 loudness calibration (-16.0 +/- 0.5 LUFS standard / -14.0 +/- 1.0 LUFS social), 16-frame QA contact sheet, Rule A1 native .fcproj handoff, and -sn zero mov_text guard"
+        }
+      ],
+      "skipped_heavy_gates": [
+        "textnorm_spoken_number_align",
+        "rms_20ms_pause_onset_refinement",
+        "haar_face_bands_tracking_24f",
+        "projected_facesafe_ink_check",
+        "broll_motion_liveness_v8",
+        "bgm_lra_offset_optimizer",
+        "post_aac_true_peak_guard_r35",
+        "epistemic_claim_gate_r200",
+        "editor_report_and_verdict"
+      ],
+      "best_for": [
+        "Short daily opinion talking-heads & cinematic vlog drafts",
+        "Quick social reels & creator economy commentary on lane_a_native",
+        "Clean pre-sliced voice folders",
+        "Rapid creative drafts & Option A/B/C style exploration"
+      ]
+    },
+    "studio": {
+      "id": "studio",
+      "label": "Gói Studio — P0 + P1 Multi-Industry Safe-Zone, Hard Veto Guards & Lane-B Web Plates (< 3.9GB RAM)",
+      "priority_scope": ["P0", "P1"],
+      "inherits": "fast",
+      "allowed_lanes": ["lane_a_native", "lane_b_web_plates"],
+      "ram_budget_gb": 3.9,
+      "ram_schedule": "sequential_rvm_then_chrome_max2",
+      "max_chrome_workers": 2,
+      "estimated_runtime_sec": [55, 68],
+      "cli_flags": {
+        "probe_and_align": "--tier studio",
+        "compile_and_verify": "--tier full"
+      },
+      "active_modules": [
+        {
+          "id": "inherit_all_p0_fast_modules",
+          "tool": "all",
+          "spec": "Includes 100% of P0 Core Physics + v6.0/v7.0 Color-World, 4-Cut Grammar, and Spatial Density modules"
+        },
+        {
+          "id": "industry_hard_veto_guards_v70",
+          "tool": "probe_and_align.py / compile_and_verify.py",
+          "data_ref": "./presets/industry_profiles.json",
+          "spec": "Enforces per-industry hard_veto_guards: CRI-100 tooth/gum lock & warm_lut_veto (dental_clinic), skin_tone_hue_guard & plastic_bevel_veto (luxury_skincare), hand_nail_safebox_lock & shadow_crush_veto (nail_hair_salon), sensory_asmr_break & food_cold_tint_veto (tactile_review), 12-15s breathing & 3D deliverable (course_edtech), emotion_51_self_veto & ambient room tone (cinematic_vlog), and SFX allow/ban filtering"
+        },
+        {
+          "id": "cranial_dual_rail_and_macro_safe_zones_16f",
+          "tool": "probe_and_align.py --tier studio",
+          "spec": "16-frame Haar tracking + cranial_exclusion_band [max(0, hair_top_y - 48), min(H, chin_y + 32)] + dual_rail_zones (upper_editorial_stage & chest_tactile_rail) + Zero-Face CIE-Lab Enamel-Gum (L* > 72, a* > 16) & HSV/Edge Macro Saliency Safe-Box"
+        },
+        {
+          "id": "sequential_rvm_then_chrome_max2_plates",
+          "tool": "dviet_motion_canvas_engine.py / visual_blocks.py",
+          "spec": "Runs RVM matting sequentially first, releases memory, then renders Lane-B web/canvas UI & KPI plates with <= 2 headless Chrome workers staying strictly < 4.5GB RAM on i5-12450H"
+        },
+        {
+          "id": "textnorm_and_rms_onset_refinement",
+          "tool": "probe_and_align.py --tier studio",
+          "spec": "Vietnamese textnorm spoken-number/percentage alignment + 20ms RMS pause onset tightening"
+        },
+        {
+          "id": "epistemic_claim_gate_r200",
+          "tool": "compile_and_verify.py",
+          "ruling": "R200",
+          "spec": "Enforces authentic proof plates on factual/clinical/KPI claims whenever industry hard_veto_guards.claim_gate_r200 == true"
+        }
+      ],
+      "skipped_heavy_gates": [
+        "bgm_lra_offset_optimizer",
+        "post_aac_true_peak_guard_r35"
+      ],
+      "best_for": [
+        "Standard multi-industry commercial reels across all 8 Industry Skins",
+        "Lane-B Web-Plate videos (PAS/BAB E-com, Tactile Reviews, Course Funnels, UI Walkthroughs, Top-N Listicles)",
+        "Salon, Skincare & Personal Brand videos needing Cranial + Zero-Face Macro Safe-Zone protection within < 68s"
+      ]
+    },
+    "full": {
+      "id": "full",
+      "label": "Gói Toàn diện — P0 + P1 + P2 Universal Studio Proof (v7.0 10x8 Matrix, Multi-Lane A/B/C & Full Forensic QA)",
+      "priority_scope": ["P0", "P1", "P2"],
+      "inherits": "studio",
+      "allowed_lanes": ["lane_a_native", "lane_b_web_plates", "lane_c_hyperframes"],
+      "ram_budget_gb": 4.5,
+      "ram_schedule": "sequential_rvm_then_chrome_max2",
+      "max_chrome_workers": 2,
+      "estimated_runtime_sec": [68, 82],
+      "cli_flags": {
+        "probe_and_align": "--tier full",
+        "compile_and_verify": "--tier full"
+      },
+      "active_modules": [
+        {
+          "id": "inherit_all_p0_and_p1_studio_modules",
+          "tool": "all",
+          "spec": "Includes 100% of P0 Core Physics + P1 Studio Industry Hard Veto Guards, Cranial Dual-Rail, Zero-Face Macro Safe-Zones, and sequential_rvm_then_chrome_max2 (< 4.5GB RAM)"
+        },
+        {
+          "id": "v60_era2_color_clutter_and_cut_strict_audit",
+          "tool": "compile_and_verify.py --tier full",
+          "spec": "Strict EDITOR-REPORT.md elevation for RAINBOW_HUE_SOUP, OVER_TRANSITIONED_SPAM (>45% wgpu), SLOPPY_MID_SYLLABLE_CUT, WHOOSH_OVERLOAD (>6/min), CARD_TEXT_COLLISION, FRAME_CLUTTER_OVERLOAD (>15% >2 zones), and ALL_CAPS_HERO_OVERUSE"
+        },
+        {
+          "id": "textnorm_and_rms_onset_refinement",
+          "tool": "probe_and_align.py --tier full",
+          "spec": "Vietnamese textnorm spoken-number/percentage/unit alignment + 20ms RMS window (-35 dBFS pause / -45 dBFS deep pause) onset refinement recovering pauses swallowed by Whisper"
+        },
+        {
+          "id": "haar_face_bands_and_macro_safebox_24f",
+          "tool": "probe_and_align.py --tier full",
+          "data_ref": "./data/haarcascade_frontalface_default.xml",
+          "spec": "24-frame Viola-Jones tracking emitting eye_band, mouth_band, cranial_exclusion_band [hair_top_y-48, chin_y+32], dual_rail_zones, plus CIE-Lab Enamel-Gum (L*>72, a*>16) & HSV/Edge Macro Saliency Safe-Box on zero-face clips"
+        },
+        {
+          "id": "broll_hygiene_and_plate_cleaner",
+          "tool": "visual_blocks.py::clean_broll_plate & lint_broll_prompt",
+          "ruling": "1.2.2/1.2.3 F2",
+          "spec": "Automatic letterbox/border stripper + flat-luminance guard (std >= 30/255) + 45-token AI B-roll prompt hygiene banlist preventing gibberish text, fake charts, logos, and chat UI hallucinations"
+        },
+        {
+          "id": "projected_facesafe_ink_check",
+          "tool": "compile_and_verify.py --tier full",
+          "ruling": "R26 / R208",
+          "spec": "Projects source eye_band, mouth_band, cranial_exclusion_band, and zero-face enamel/macro boxes through active C² camera scale/pan/PiP-morph keyframes against glyph ink-boxes; enforces R26 no-glow over face and R208 <1.5s hook exemption"
+        },
+        {
+          "id": "broll_motion_liveness_v8",
+          "tool": "compile_and_verify.py --tier full",
+          "ruling": "V8",
+          "spec": "Detects frozen B-roll clips, black/blank plates (luminance std < 30/255), or failed layer compositing (mid-slot frame diff vs A-roll master <= 20/255)"
+        },
+        {
+          "id": "bgm_lra_offset_optimizer",
+          "tool": "compile_and_verify.py --tier full",
+          "spec": "Scans BGM start offsets in 0.5s steps to pick minimum non-fade Loudness Range (LRA <= 5.0 LU per EBU Tech 3342) and enforces >= 10.0 LU voice-over-bed margin across every 3s short-term speech window"
+        },
+        {
+          "id": "post_aac_true_peak_guard_r35",
+          "tool": "compile_and_verify.py --tier full",
+          "ruling": "R35",
+          "spec": "4x oversampled True-Peak metering + iterative AAC encode-measure-ratchet ceiling loop eliminating +0.1 to +0.4 dB lossy codec inter-sample peak overshoot (strictly <= -1.5 / -1.0 dBTP)"
+        },
+        {
+          "id": "epistemic_claim_gate_r200",
+          "tool": "compile_and_verify.py --tier full",
+          "ruling": "R200",
+          "spec": "Audits factual/KPI/case-study/clinical claims: blocks AI-generated B-roll from masquerading as empirical proof and flags unverified claims for mandatory human sign-off prior to publishing"
+        },
+        {
+          "id": "editor_report_and_verdict",
+          "tool": "compile_and_verify.py --tier full",
+          "spec": "Generates structured EDITOR-REPORT.md (Loudness, XCorr Sync, SFX Ledger, Chromatic & 4-Group Subtext Balance, Velocity Continuity, Face/Enamel/Macro Safe-Zone, B-Roll V8, Claim Gate) with tri-state verdict: VERIFIED | DONE_WITH_CONCERNS | REJECTED"
+        }
+      ],
+      "best_for": [
+        "Flagship @__dviet Era-2 MagentX Manifesto reels & 4-Plane Z-Depth reels",
+        "Dental Clinic & Luxury Skincare clinical before/after proof campaigns (CRI-100 + Enamel-Gum Safe-Box + R200)",
+        "Uncut raw camera recordings ('soucre quay') with pauses, false starts, or vocal dynamics",
+        "Lane-C HyperFrames faceless motion explainers & B2B/SaaS/Real-Estate ROI proof deliverables",
+        "Forensic rebuilds of defective .fcproj timelines & final client deliverables"
+      ]
+    }
+  },
+  "routing_matrix_10x8": {
+    "policy_note": "Maps all 10 Format Modes (F1..F10) x 8 Industry Skins to optimal tier (fast | studio | full), default execution lane, LUFS target, R200 claim gate, and i5-12450H RAM schedule (< 4.5GB).",
+    "ram_schedule_global": "sequential_rvm_then_chrome_max2",
+    "max_ram_gb": 4.5,
+    "matrix": {
+      "expert_talking_head": {
+        "luxury_skincare": { "tier": "studio", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": false },
+        "dental_clinic": { "tier": "full", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": true },
+        "nail_hair_salon": { "tier": "studio", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": false },
+        "tactile_review": { "tier": "fast", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": false },
+        "course_edtech": { "tier": "studio", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": false },
+        "personal_brand": { "tier": "studio", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": false },
+        "cinematic_vlog": { "tier": "fast", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "b2b_saas_realestate": { "tier": "full", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": true }
+      },
+      "pas_bab_ecom_conversion": {
+        "luxury_skincare": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": true },
+        "dental_clinic": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": true },
+        "nail_hair_salon": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "tactile_review": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "course_edtech": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "personal_brand": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "cinematic_vlog": { "tier": "studio", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "b2b_saas_realestate": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": true }
+      },
+      "tactile_review_testing": {
+        "luxury_skincare": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "dental_clinic": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": true },
+        "nail_hair_salon": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "tactile_review": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "course_edtech": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "personal_brand": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "cinematic_vlog": { "tier": "fast", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "b2b_saas_realestate": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": true }
+      },
+      "clinical_aesthetic_before_after": {
+        "luxury_skincare": { "tier": "full", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": true },
+        "dental_clinic": { "tier": "full", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": true },
+        "nail_hair_salon": { "tier": "studio", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": true },
+        "tactile_review": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": true },
+        "course_edtech": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "personal_brand": { "tier": "full", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": true },
+        "cinematic_vlog": { "tier": "studio", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "b2b_saas_realestate": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": true }
+      },
+      "course_lead_magnet_funnel": {
+        "luxury_skincare": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "dental_clinic": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": true },
+        "nail_hair_salon": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "tactile_review": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "course_edtech": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "personal_brand": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "cinematic_vlog": { "tier": "fast", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "b2b_saas_realestate": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": true }
+      },
+      "cinematic_vlog_storytelling": {
+        "luxury_skincare": { "tier": "studio", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "dental_clinic": { "tier": "studio", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "nail_hair_salon": { "tier": "fast", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "tactile_review": { "tier": "fast", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "course_edtech": { "tier": "fast", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "personal_brand": { "tier": "fast", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "cinematic_vlog": { "tier": "fast", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "b2b_saas_realestate": { "tier": "studio", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false }
+      },
+      "tutorial_ui_walkthrough": {
+        "luxury_skincare": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -16.0, "claim_gate": false },
+        "dental_clinic": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -16.0, "claim_gate": true },
+        "nail_hair_salon": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -16.0, "claim_gate": false },
+        "tactile_review": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "course_edtech": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -16.0, "claim_gate": false },
+        "personal_brand": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "cinematic_vlog": { "tier": "studio", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "b2b_saas_realestate": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -16.0, "claim_gate": true }
+      },
+      "fast_paced_listicle_top_n": {
+        "luxury_skincare": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "dental_clinic": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": true },
+        "nail_hair_salon": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "tactile_review": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "course_edtech": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "personal_brand": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": false },
+        "cinematic_vlog": { "tier": "fast", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "b2b_saas_realestate": { "tier": "full", "lane": "lane_b_web_plates", "lufs": -14.0, "claim_gate": true }
+      },
+      "spatial_vfx_clone_storefront_tour": {
+        "luxury_skincare": { "tier": "studio", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": false },
+        "dental_clinic": { "tier": "full", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": true },
+        "nail_hair_salon": { "tier": "studio", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": false },
+        "tactile_review": { "tier": "studio", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": false },
+        "course_edtech": { "tier": "studio", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": false },
+        "personal_brand": { "tier": "studio", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": false },
+        "cinematic_vlog": { "tier": "studio", "lane": "lane_a_native", "lufs": -16.0, "claim_gate": false },
+        "b2b_saas_realestate": { "tier": "full", "lane": "lane_a_native", "lufs": -14.0, "claim_gate": true }
+      },
+      "faceless_motion_explainer": {
+        "luxury_skincare": { "tier": "full", "lane": "lane_c_hyperframes", "lufs": -14.0, "claim_gate": false },
+        "dental_clinic": { "tier": "full", "lane": "lane_c_hyperframes", "lufs": -14.0, "claim_gate": true },
+        "nail_hair_salon": { "tier": "full", "lane": "lane_c_hyperframes", "lufs": -14.0, "claim_gate": false },
+        "tactile_review": { "tier": "full", "lane": "lane_c_hyperframes", "lufs": -14.0, "claim_gate": false },
+        "course_edtech": { "tier": "full", "lane": "lane_c_hyperframes", "lufs": -14.0, "claim_gate": false },
+        "personal_brand": { "tier": "full", "lane": "lane_c_hyperframes", "lufs": -14.0, "claim_gate": false },
+        "cinematic_vlog": { "tier": "studio", "lane": "lane_b_web_plates", "lufs": -16.0, "claim_gate": false },
+        "b2b_saas_realestate": { "tier": "full", "lane": "lane_c_hyperframes", "lufs": -14.0, "claim_gate": true }
+      }
+    }
+  },
+  "video_type_routing_matrix": {
+    "era2_manifesto_flagship": {
+      "recommended_archetype": "dviet_era2_7707_manifesto",
+      "recommended_tier": "full",
+      "claim_gate_required": false,
+      "target_lufs": -14.0,
+      "notes": "Asymmetric 3-Cam 1/3 framing, 1 Color World + Polarity Flip (#081C15 <-> #EEF4EA), Full-Screen Motion Canvases, >=70% lowercase 0.78 kiss Heroes, 4-Cut Grammar (55%-75% clean hard cuts + True Vocal J-Cuts), and Music Stop vacuums."
+    },
+    "zdepth_editorial_flagship": {
+      "recommended_archetype": "dviet_vietanh_zdepth_master",
+      "recommended_tier": "full",
+      "claim_gate_required": false,
+      "target_lufs": -14.0,
+      "notes": "4-Plane Z-Depth Sandwich (28% bokeh luma), 6-Hue <=35% palette + inline dual-hue spans, 4-Group S01..S18 subtext rotation (zero raw karaoke), and seamless PiP <-> Fullframe / J-Cut -140ms flow."
+    },
+    "daily_opinion_talking_head": {
+      "recommended_archetype": "dviet_cinematic_editorial",
+      "recommended_tier": "fast",
+      "claim_gate_required": false,
+      "target_lufs": -14.0,
+      "notes": "Express P0 micro-physics keeps fast creative momentum while locking Vietnamese compound splits, R209 subtitle drop, and peak-synced whooshes."
+    },
+    "intellectual_essay_podcast": {
+      "recommended_archetype": "minimal_intellectual",
+      "recommended_tier": "fast",
+      "claim_gate_required": false,
+      "target_lufs": -16.0,
+      "notes": "Calm -16 LUFS dynamic breath, >= 40% clean A-roll frames, tactile editorial notes; upgrade to 'full' only if uncut raw camera audio needs 20ms pause-onset surgery."
+    },
+    "founder_confessional_story": {
+      "recommended_archetype": "story_confessional_breath",
+      "recommended_tier": "fast",
+      "claim_gate_required": false,
+      "target_lufs": -16.0,
+      "notes": "Rule of Six #1 (51% Emotion): slow 3.5-5.5s velvet drifts, zero checklist cards, gentle J/L-cut acoustic continuity."
+    },
+    "raw_camera_flagship_short": {
+      "recommended_archetype": "hybrid_adaptive",
+      "recommended_tier": "full",
+      "claim_gate_required": false,
+      "target_lufs": -14.0,
+      "notes": "Raw camera footage benefits from 20ms RMS pause refinement, Haar eye/mouth tracking across multi-gear C² zooms, and BGM LRA <= 5.0 LU bed selection."
+    },
+    "ecom_clinic_case_study_proof": {
+      "recommended_archetype": "high_retention_proof",
+      "recommended_tier": "full",
+      "claim_gate_required": true,
+      "target_lufs": -14.0,
+      "notes": "R200 mandatory: before/after clinic results, ROAS/revenue KPIs, and product claims require real plates or structured KPI cards—never AI B-roll disguised as proof."
+    },
+    "real_estate_deal_breakdown": {
+      "recommended_archetype": "high_retention_proof",
+      "recommended_tier": "full",
+      "claim_gate_required": true,
+      "target_lufs": -14.0,
+      "notes": "Spoken prices, yields, and legal/location metrics trigger textnorm number alignment, metric_kpi_hero/versus_split_card receipts, and R200 claim_gate verification."
+    },
+    "tech_ai_saas_walkthrough": {
+      "recommended_archetype": "tech_saas_modular",
+      "recommended_tier": "full",
+      "claim_gate_required": true,
+      "target_lufs": -16.0,
+      "notes": "Benchmarks, free-vs-paid comparisons, and live CLI/UI demos require real screen_rec or deterministic code_terminal_window/flowchart_pipeline blocks + R35 True-Peak guard."
+    },
+    "defective_fcproj_forensic_rebuild": {
+      "recommended_archetype": "hybrid_adaptive",
+      "recommended_tier": "full",
+      "claim_gate_required": false,
+      "target_lufs": -16.0,
+      "notes": "Full forensic pass catches clipped SFX tails, wgpu blend+shadow CPU fallbacks, eye/mouth caption collisions, frozen B-roll (V8), and post-AAC peak overshoots."
+    }
+  },
+  "rule_provenance": {
+    "wgpu_blend_no_dropshadow": {
+      "source": "FilmCraft 0.20.1 wgpu shader pipeline",
+      "confidence": "high",
+      "tier": "P0",
+      "flexibility": "immutable_physics",
+      "rationale": "Non-normal blend modes combined with drop_shadow force CPU software fallback and stutter timeline playback."
+    },
+    "vietnamese_nfc_and_glyph_pad_028em": {
+      "source": "Unicode NFC + fontTools empirical scan (R64/R65: BeVietnamPro-BlackItalic Ẳ +0.239em top, Ế +0.226em right)",
+      "confidence": "high",
+      "tier": "P0",
+      "flexibility": "immutable_physics",
+      "rationale": "Prevents clipped stacked Vietnamese diacritics (Ấ, Ể, Ỗ, Ự) and right-edge italic overhang clipping across 134/134 glyphs."
+    },
+    "vietnamese_compound_lexicon_r55": {
+      "source": "data/text_vi.json v1.1.1 (Ruling R55: 1,200 compound glue pairs + closed-class leads/trails)",
+      "confidence": "high",
+      "tier": "P0",
+      "flexibility": "immutable_linguistics",
+      "rationale": "Prevents jarring semantic split of Vietnamese bisyllabic compounds across line breaks and inline hue spans."
+    },
+    "cranial_exclusion_and_dual_rail_v70": {
+      "source": "Universal Studio Director v7.0 Safe-Zone Architecture ([max(0, hair_top_y - 48), min(H, chin_y + 32)])",
+      "confidence": "high",
+      "tier": "P0_P1",
+      "flexibility": "calibrated_invariant",
+      "rationale": "Expands frontal face boxes into full anatomical Cranial Exclusion Bands and computes dynamic upper_editorial_stage & chest_tactile_rail per clip so foreground typography never clips hair crowns, eyes, or chins."
+    },
+    "zero_face_cie_lab_enamel_and_macro_saliency_v70": {
+      "source": "Universal Studio Director v7.0 Zero-Face Macro Safe-Zone Detectors (CIE-Lab L*>72 coupled with a*>16 + HSV/Sobel Saliency)",
+      "confidence": "high",
+      "tier": "P0_P1",
+      "flexibility": "immutable_physics",
+      "rationale": "In Dental intraoral close-ups, Nail/Salon hand shots, and Skincare pipette macros where Viola-Jones detects faces == 0, automatic enamel_gum_bbox & macro_subject_bbox prevent captions from obscuring teeth, gums, nails, or product focal areas."
+    },
+    "industry_hard_veto_guards_v70": {
+      "source": "Universal Studio Director v7.0 8-Skin Domain Veto Ledger (presets/industry_profiles.json)",
+      "confidence": "high",
+      "tier": "P1",
+      "flexibility": "immutable_domain_safety",
+      "rationale": "Prevents catastrophic domain mismatches such as warm yellow LUTs/drill SFX on Dental Veneers, shadow crush on Hair/Nail swatches, cold cyan tints on F&B reviews, or cyber glitches on emotional vlogs."
+    },
+    "i5_12450h_ram_governor_sequential_rvm_chrome_max2": {
+      "source": "Universal Studio Director v7.0 Host Resource Telemetry (i5-12450H < 4.5GB RSS budget)",
+      "confidence": "high",
+      "tier": "P0",
+      "flexibility": "immutable_physics",
+      "rationale": "Running RVM matting concurrently with 4+ headless Chrome renderers triggers Linux OOM swap thrashing; sequential RVM teardown followed by <= 2 Chrome workers caps RSS strictly under 4.5GB."
+    },
+    "color_world_polarity_v60": {
+      "source": "4-Agent Forensic Audit of @__dviet 7707653827016674580 + 19-Video Corpus (v6.0 Color-World & Polarity Law)",
+      "confidence": "high",
+      "tier": "P0",
+      "flexibility": "calibrated_invariant",
+      "rationale": "1 Primary Signature Hue (55%-100%) + 0-1 Pain/Contrast Hue (0%-45%) + #EEF4EA/#FAFAFA Polarity Flips builds authority and prevents 5+ bucket Rainbow Hue Soup (multi_hue_6 kept as explicit opt-in)."
+    },
+    "spatial_density_max2_and_card_mutex_v60": {
+      "source": "4-Agent Forensic Audit of @__dviet 7707653827016674580 (v6.0 MAX_ZONES <= 2, Card <-> Text Mutex & >=70% Lowercase Kiss)",
+      "confidence": "high",
+      "tier": "P0",
+      "flexibility": "calibrated_invariant",
+      "rationale": "Capping concurrent overlay zones at <= 2 (3 only w/ <=26-30pt whisper G2), enforcing zero Card-Text bbox collisions, curating 1-3 secondary groups, and leaving >=12% breathing frames eliminates visual overload."
+    },
+    "four_cut_grammar_bimodal_c7_and_bgm_stops_v60": {
+      "source": "4-Agent Forensic Audit of @__dviet 7707653827016674580 (4-Cut Grammar, Bimodal C7 True Vocal J-Cut & Music Stop Vacuum)",
+      "confidence": "high",
+      "tier": "P0_P1",
+      "flexibility": "calibrated_invariant",
+      "rationale": "40%-75% clean 0-frame hard cuts, <=45% wgpu accent transitions, True Vocal J-Cuts (-850ms..-140ms pre-lead while rejecting -130ms..-10ms sloppy chops), and >=0.50s -inf dB BGM stop vacuums create effortless editorial rhythm."
+    },
+    "epistemic_claim_gate_r200": {
+      "source": "Ruling R200 & Spec 1.2.3 §13.4 (Epistemic Media Integrity)",
+      "confidence": "high",
+      "tier": "P1",
+      "flexibility": "immutable_ethics",
+      "rationale": "AI-generated B-roll and generic stock are illustrative only; empirical results, financial KPIs, and real comparisons require authentic assets or user sign-off."
+    },
+    "subtitle_bottom_anchor_r209": {
+      "source": "Ruling R209 & TikTok/Reels 9:16 Safe Zone (Y >= 1360, X in [140, 940])",
+      "confidence": "high",
+      "tier": "P0",
+      "flexibility": "immutable_physics",
+      "rationale": "Top-down multi-line drop from Y >= 1360 prevents 2-line captions from rising into the speaker's mouth/chin zone while clearing bottom platform UI."
+    },
+    "last_word_readability_r30": {
+      "source": "Ruling R30 (12-video picture_lock canary: >= 3 frames @ >= 90% opacity, 2f quick-exit fallback, 0.95 ink-width fit)",
+      "confidence": "high",
+      "tier": "P0",
+      "flexibility": "immutable_physics",
+      "rationale": "Guarantees the final spoken word of a block is visually legible before the next cut or card transition."
+    },
+    "sfx_sync_tolerance_and_norm_xcorr_r217": {
+      "source": "ITU-R BT.1359 [-1f, +2f] + Ruling R217 (batch b04 v22 normalized match_at)",
+      "confidence": "high",
+      "tier": "P0",
+      "flexibility": "immutable_physics",
+      "rationale": "5ms env5 peak lands within [-1f, +2f] of visual impact (90% easing frame); energy-normalized cross-correlation eliminates false +8.7f vocal-pull errors."
+    },
+    "loudness_bs1770_and_post_aac_r35": {
+      "source": "ITU-R BS.1770-4 / EBU R128 s1 + Ruling R35 (4x True-Peak post-AAC encode-measure-ratchet loop)",
+      "confidence": "high",
+      "tier": "P0_P2",
+      "flexibility": "immutable_physics",
+      "rationale": "AAC lossy encoding introduces +0.1 to +0.4 dB inter-sample overshoot; closed-loop ceiling ratcheting guarantees <= -1.5 / -1.0 dBTP on delivered streams."
+    },
+    "projected_facesafe_r26_r208": {
+      "source": "Spec 1.1.1 §8.1-8.3 (4,960/4,961 frame survey) + Ruling R26 (no face glow) + Ruling R208 (<1.5s hook exemption)",
+      "confidence": "medium",
+      "tier": "P1",
+      "flexibility": "calibrated_invariant",
+      "rationale": "Haar eye [0.10..0.90, 0.30..0.50] and mouth [0.25..0.75, 0.70..0.90] envelopes protect facial expressiveness while exempting brief <1.5s opening hook stomps."
+    },
+    "broll_45_token_hygiene_and_v8": {
+      "source": "Spec 1.2.2/1.2.3 F2 (batches b04/b05) + Check V8 (std >= 30/255, diff > 20/255)",
+      "confidence": "medium",
+      "tier": "P1_P2",
+      "flexibility": "calibrated_invariant",
+      "rationale": "Blocks 45 prompt tokens known to trigger AI text/chart/logo/checklist hallucinations and catches frozen or blank B-roll renders."
+    },
+    "bgm_lra_and_short_term_ducking": {
+      "source": "EBU Tech 3342 + Spec 1.1.1 S29/L12 (4-track x 40-60s benchmark: LRA <= 5.0 LU, voice - bed >= 10 LU)",
+      "confidence": "medium",
+      "tier": "P2",
+      "flexibility": "calibrated_invariant",
+      "rationale": "Selecting a stable BGM offset prevents intro/drop volume swings from masking speech intelligibility on phone speakers."
+    },
+    "asl_pacing_and_sfx_density": {
+      "source": "Archetype Editorial Heuristics (@__dviet 19-video forensics & S11 density guidelines)",
+      "confidence": "low",
+      "tier": "Director_Brain",
+      "flexibility": "bendable_aesthetic_heuristic",
+      "rationale": "ASL windows (1.8-5.5s), zoom amplitudes (1.06-1.22x), and SFX preset density (calm/standard/punchy) MUST bend freely to serve Rule of Six #1 (51% Emotion)."
+    }
+  }
+}

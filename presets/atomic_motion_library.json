@@ -1,0 +1,132 @@
+{
+  "schema_version": "1.0.0",
+  "base_fps": 30,
+  "note": "To convert frames to 60fps, multiply frame counts by 2. FilmCraft Bezier in_influence/out_influence are clamped to [0.0, 1.0].",
+  "atomics": {
+    "smooth_push_in": {
+      "category": "camera",
+      "effect": "transform",
+      "anchor_rule": "eye_center",
+      "shutter_override": true,
+      "shutter_angle": 180,
+      "duration_frames_30fps": [90, 150],
+      "keyframes": [
+        { "t_pct": 0.0, "scale": 100.0, "interp": "Linear" },
+        { "t_pct": 1.0, "scale": 114.0, "interp": "Linear" }
+      ],
+      "sfx_cue": null
+    },
+    "punch_in_jump": {
+      "category": "camera",
+      "effect": "transform",
+      "anchor_rule": "eye_center",
+      "shutter_override": true,
+      "shutter_angle": 180,
+      "duration_frames_30fps": [6, 8],
+      "keyframes": [
+        { "frame": 0, "scale": 100.0, "interp": "Bezier", "out_influence": 0.15 },
+        { "frame": 7, "scale": 125.0, "interp": "EaseIn", "in_influence": 0.80 }
+      ],
+      "sfx_cue": "whoosh_short_snap"
+    },
+    "whip_zoom_blur": {
+      "category": "transition",
+      "effect": "transform_adjustment",
+      "shutter_override": true,
+      "shutter_angle": 330,
+      "duration_frames_30fps": [7, 18],
+      "phases_30fps": { "ramp_in": 3, "peak_blur": 2, "ramp_out": 2 },
+      "sfx_cue": "whip_whoosh",
+      "sfx_offset_frames_30fps": -3
+    },
+    "slide_up_mask_reveal": {
+      "category": "typography",
+      "effect": "transform_before_crop",
+      "padding_top_em": 0.30,
+      "shutter_override": true,
+      "shutter_angle": 180,
+      "duration_frames_30fps": [12, 15],
+      "keyframes": [
+        { "frame": 0, "pos_y_offset": 120, "opacity": 0, "interp": "Bezier", "out_influence": 0.15 },
+        { "frame": 4, "opacity": 100, "interp": "EaseOut" },
+        { "frame": 12, "pos_y_offset": 0, "interp": "EaseIn", "in_influence": 0.82 }
+      ],
+      "sfx_cue": "swoosh_crisp_reveal"
+    },
+    "pill_unroll_y": {
+      "category": "graphic",
+      "effect": "transform",
+      "uniform_scale": false,
+      "anchor_rule": "bottom_edge",
+      "shutter_override": true,
+      "shutter_angle": 180,
+      "duration_frames_30fps": [9, 16],
+      "keyframes": [
+        { "frame": 0, "scale_w": 85.0, "scale_h": 10.0, "interp": "Bezier", "out_influence": 0.20 },
+        { "frame": 5, "scale_w": 103.0, "scale_h": 106.0, "interp": "Continuous" },
+        { "frame": 9, "scale_w": 100.0, "scale_h": 100.0, "interp": "EaseIn", "in_influence": 0.75 }
+      ],
+      "sfx_cue": "ui_pop_bubble",
+      "sfx_offset_frames_30fps": 4
+    },
+    "editorial_blur_in": {
+      "category": "typography",
+      "effect": "gaussian_blur_plus_opacity",
+      "duration_frames_30fps": [10, 10],
+      "keyframes": [
+        { "frame": 0, "blur": 18.0, "opacity": 10.0, "interp": "EaseOut" },
+        { "frame": 10, "blur": 0.0, "opacity": 100.0, "interp": "EaseIn" }
+      ],
+      "sfx_cue": "soft_chime_lock",
+      "sfx_offset_frames_30fps": 10
+    },
+    "flicker_strobe_pop": {
+      "category": "typography",
+      "mutex_group": "optical_strobe_group",
+      "duration_frames_30fps": [6, 6],
+      "opacity_pattern": [100, 0, 100, 0, 100, 100],
+      "sfx_cue": "glitch_tick"
+    },
+    "ghost_trail": {
+      "category": "typography",
+      "duration_frames_30fps": [4, 4],
+      "description": "2 frames new word sharpen + 2 frames trailing ghost fade-out",
+      "sfx_cue": "pop_snap",
+      "sfx_offset_frames_30fps": 1
+    },
+    "polarity_flip": {
+      "category": "transition",
+      "duration_frames_30fps": [1, 1],
+      "description": "1-frame hard snap between Dark (#111111) and Cream (#FDFBE0) or Alert Red (#B91C1C)",
+      "sfx_cue": "ui_snap_click",
+      "sfx_offset_frames_30fps": 0
+    },
+    "text_behind_subject": {
+      "category": "compositing",
+      "mutex_group": "spatial_mask_group",
+      "tracks": ["V2_text", "V3_rvm_subject"],
+      "occlusion_target_pct": [30, 50],
+      "lock_transform_v1_v3": true,
+      "sfx_cue": "sub_impact_soft"
+    },
+    "split_card_16_9": {
+      "category": "layout",
+      "description": "16:9 B-Roll rounded card in lower-mid over blurred BG + Hero Number in 1/3 upper",
+      "corner_radius_px": 28,
+      "bg_blur_px": 28,
+      "sfx_cue": "whoosh_soft_card",
+      "sfx_offset_frames_30fps": -2
+    },
+    "micro_handheld_drift": {
+      "category": "camera",
+      "effect": "transform",
+      "base_scale": 104.0,
+      "shutter_angle": 45,
+      "pos_amplitude_px": 6,
+      "pos_period_frames_30fps": 21,
+      "rot_amplitude_deg": 0.4,
+      "rot_period_frames_30fps": 31,
+      "interp": "Auto"
+    }
+  }
+}

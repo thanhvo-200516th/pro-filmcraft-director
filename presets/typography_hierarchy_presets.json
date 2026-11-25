@@ -1,0 +1,989 @@
+{
+  "schema_version": "7.1.0",
+  "font_pairings_134_nfc": {
+    "dviet_era2_manifesto": { "hero": "Be Vietnam Pro", "hero_alt": "DFVN West West Condensed", "lead": "Be Vietnam Pro", "serif_accent": "Playfair Display", "mono": "JetBrains Mono" },
+    "tech_saas": { "hero": "DFVN West West Condensed", "lead": "Be Vietnam Pro", "script_accent": "SVN-Aaron Script" },
+    "personal_brand": { "hero": "DFVN West West Condensed", "lead": "Be Vietnam Pro", "script_accent": "SVN-Aaron Script" },
+    "ecom": { "hero": "DFVN West West Condensed", "lead": "Be Vietnam Pro", "script_accent": "Montserrat Static" },
+    "beauty_spa": { "hero": "Be Vietnam Pro", "lead": "Be Vietnam Pro", "script_accent": "SVN-Aaron Script" },
+    "real_estate": { "hero": "Montserrat Static", "lead": "Be Vietnam Pro", "script_accent": "SVN-Aaron Script" },
+    "education": { "hero": "Be Vietnam Pro", "lead": "Be Vietnam Pro", "script_accent": "Montserrat Static" }
+  },
+  "scale_tiers_9_16": {
+    "hero_px": [78, 138],
+    "lead_px": [30, 48],
+    "caption_px": [26, 44],
+    "whisper_g2_px": 26,
+    "whisper_g2_max_px": 30,
+    "scale_ratio": 2.6,
+    "min_hero_lead_ratio": 2.6,
+    "lowercase_hero_min_ratio_era2": 0.70,
+    "max_chars_per_line": 22,
+    "padding_top_em": 0.30,
+    "line_height": 0.78,
+    "line_height_kiss_era2": 0.78,
+    "line_height_standard_vi": 1.22
+  },
+  "DVIET_COLOR_WORLDS": {
+    "purpose": "v6.0 Default Chromatic Law (color_world_polarity): 1 Cohesive Color World per video (55%-100% Primary Signature Hue + 0%-45% Pain/Contrast Hue + Dark/Light Polarity Flips). Eliminates 5+ bucket Rainbow Hue Soup.",
+    "default_color_policy": "color_world_polarity",
+    "primary_signature_share_range": [0.55, 1.00],
+    "secondary_pain_share_range": [0.00, 0.45],
+    "fail_rainbow_soup_at_buckets": 5,
+    "worlds": {
+      "emerald_cream_7707": {
+        "primary_hex": "#2EE86E",
+        "primary_dark_ink": "#166534",
+        "pain_hex": "#FF4D5E",
+        "dark_bg": "#081C15",
+        "light_bg": "#EEF4EA",
+        "text_on_dark": "#FAFAFA",
+        "text_on_light": "#111827",
+        "ui_secondary": "#8B5CF6"
+      },
+      "amber_cinema_7706": {
+        "primary_hex": "#F5B932",
+        "primary_dark_ink": "#92400E",
+        "pain_hex": "#FF4D5E",
+        "dark_bg": "#120E0A",
+        "light_bg": "#FAF6EC",
+        "text_on_dark": "#FAFAFA",
+        "text_on_light": "#1C1917",
+        "ui_secondary": "#38BDF8"
+      },
+      "violet_aurora_7693": {
+        "primary_hex": "#A855F7",
+        "primary_dark_ink": "#4C1D95",
+        "pain_hex": "#F43F5E",
+        "dark_bg": "#120924",
+        "light_bg": "#F5F3FF",
+        "text_on_dark": "#FAFAFA",
+        "text_on_light": "#1E1B4B",
+        "ui_secondary": "#C4B5FD"
+      },
+      "obsidian_cyan_7688": {
+        "primary_hex": "#38BDF8",
+        "primary_dark_ink": "#0369A1",
+        "pain_hex": "#F43F5E",
+        "dark_bg": "#0B0D11",
+        "light_bg": "#F1F5F9",
+        "text_on_dark": "#FAFAFA",
+        "text_on_light": "#0F172A",
+        "ui_secondary": "#FACC15"
+      }
+    }
+  },
+  "semantic_6_hue_palette": {
+    "purpose": "Opt-in Legacy Multi-Hue System (activate ONLY when meta.color_policy == 'multi_hue_6' for explicit rainbow multi-color briefs).",
+    "opt_in_meta_color_policy": "multi_hue_6",
+    "max_single_hue_share_per_video": 0.35,
+    "max_adjacent_same_hero_hue": 0,
+    "warm_bg_counter_contrast_rule": "When Plane-1 bokeh or speaker skin/lighting is warm amber/tungsten, prioritize cool semantic hues (mint #2DD4BF, cyan #38BDF8, violet #C084FC) so consecutive beats never wash out into monochrome yellow/orange.",
+    "hues": {
+      "gold": {
+        "hex": "#FACC15",
+        "semantic_roles": ["authority_thesis", "key_takeaway", "flagship_hook", "value_highlight"],
+        "wonder_glow_intensity": [42, 56],
+        "pair_best_over": "Cool dark slate (#0B0D13) or neutral charcoal; avoid repeating over heavy warm tungsten skin"
+      },
+      "coral": {
+        "hex": "#FF4D5E",
+        "semantic_roles": ["myth_bust", "pain_bottleneck", "costly_mistake", "warning_alert"],
+        "wonder_glow_intensity": [40, 54],
+        "pair_best_over": "Dark charcoal (#0D0D0D / #111111) or high-contrast strike banners"
+      },
+      "mint": {
+        "hex": "#2DD4BF",
+        "semantic_roles": ["structural_solution", "core_mechanism", "clean_unlock", "precision_fix"],
+        "wonder_glow_intensity": [38, 52],
+        "pair_best_over": "Warm skin tones & 28%-luma tungsten studio bokeh (ideal cool counter-accent)"
+      },
+      "cyan": {
+        "hex": "#38BDF8",
+        "semantic_roles": ["system_architecture", "ai_workflow", "data_logic", "speed_flow"],
+        "wonder_glow_intensity": [38, 55],
+        "pair_best_over": "Deep navy/slate (#0B0F19) or warm studio skin for crisp tech separation"
+      },
+      "violet_or_peach": {
+        "violet_hex": "#C084FC",
+        "peach_hex": "#FB923C",
+        "semantic_roles": ["creative_craft", "emotional_turn", "human_nuance", "editorial_bridge"],
+        "wonder_glow_intensity": [40, 56],
+        "pair_best_over": "Use #C084FC Violet over warm skin/amber plates; use #FB923C Peach over cool slate/blue-gray plates"
+      },
+      "lime": {
+        "hex": "#4ADE80",
+        "semantic_roles": ["verified_growth", "positive_kpi_delta", "pass_verdict", "actionable_cta"],
+        "wonder_glow_intensity": [38, 50],
+        "pair_best_over": "Dark matte surfaces (#0B0D13 / #111827) on proof & outcome beats"
+      }
+    },
+    "neutral_anchors": {
+      "white": "#FAFAFA",
+      "paper_ink": "#1C1B18",
+      "muted_dim": "#94A3B8"
+    }
+  },
+  "inline_dual_hue_markup_spec": {
+    "syntax": "[<hue_token>:<nfc_phrase>]",
+    "examples": [
+      "[mint:khóa] [white:kết cấu]",
+      "[coral:điểm nghẽn] [white:ẩn bên dưới]",
+      "[cyan:luồng tự động] [gold:3 bước]"
+    ],
+    "allowed_tokens": ["gold", "coral", "mint", "cyan", "violet", "peach", "lime", "white", "#RRGGBB"],
+    "rules": {
+      "max_hues_per_line": 2,
+      "preserve_vietnamese_nfc_and_glue": "Normalize NFC first and obey data/text_vi.json compound glue so multi-hue spans never fracture a single bisyllabic Vietnamese word mid-line.",
+      "wgpu_blend_guard": "If parent text clip uses blend != 0, disable drop_shadow across all inline spans."
+    }
+  },
+  "secondary_text_4_groups": {
+    "purpose": "Complete 4-Group Secondary Typography Catalog (S01..S18 + HUD micro-labels) replacing monotonous bottom karaoke with context-aware editorial choreography.",
+    "ban_s13_raw_karaoke_default": true,
+    "groups": {
+      "G1_lead_sub": {
+        "label": "Group 1 — Lead & Editorial Sub-Lines Paired with Hero Display (S01..S09)",
+        "track_tier": "V8",
+        "presets": {
+          "s01_accordion_rollout_sub": { "code": "S01", "maps_to": "va_fam06_overlapping_character_rollout", "spec": "Grapheme-safe overlapping character slide (-34px -> 0, 32ms stagger) tucked cleanly above or below Hero" },
+          "s02_boundary_pinch_sub": { "code": "S02", "maps_to": "va_fam07_boundary_first_interleaved_unfold", "spec": "Outer-boundaries-first inward pinch (24px -> 0 in 23f @ 60fps) framing centered Hero words" },
+          "s03_stepup_underline_sub": { "code": "S03", "maps_to": "va_fam08_bottom_anchored_stepup_color_lerp", "spec": "Bottom-center anchored 38% -> 100% step-up (+16px -> 0) with semantic accent underline" },
+          "s04_baseline_rise_lead": { "code": "S04", "maps_to": "va_fam01_baseline_mask_slide", "spec": "Cropped baseline rise (+58px -> 0) + 16px -> 0 Gaussian deblur for clean 40-48px lead-ins" },
+          "s05_feather_wipe_lead": { "code": "S05", "maps_to": "va_fam05_soft_wipe_glow_watermark", "spec": "135px soft linear feather wipe (-90deg) introducing contemplative or luxury Hero statements" },
+          "s06_swivel_3d_sub": { "code": "S06", "maps_to": "va_fam10_3d_swivel_and_horizon_gradient_rise", "spec": "Crisp rot_y -90deg -> 0deg 3D swivel sub-badge synchronized with punchy Contrast/Proof kicks" },
+          "s07_ghost_recede_stack": { "code": "S07", "maps_to": "stacked_hollow_echo", "spec": "3-layer vertical receding ghost echo (100% / 38% / 14% alpha, 42px dy) emphasizing tension or repetition" },
+          "s08_poetic_scatter_lead": { "code": "S08", "maps_to": "tracking_expand", "spec": "Soft tracking expansion (-0.04em -> +0.14em, non-script font only) for atmospheric or philosophical beats" },
+          "s09_overlap_script_sub": { "code": "S09", "maps_to": "script_brush_accent", "spec": "SVN-Aaron Script or Playfair Italic corner accent overlapping 15-25% of sans/condensed Hero edge" }
+        }
+      },
+      "G2_quiet_bottom": {
+        "label": "Group 2 — Whisper 26pt & Quiet R209 Fixed-Slot Captions (S10..S12; S13 Banned)",
+        "track_tier": "V7_V8",
+        "ruling": "R209 (Y >= 1360 top-down), R30 (>= 3f last-word hold) & v6.0 Whisper Cap (<= 26-30pt when paired as 3rd zone)",
+        "presets": {
+          "s10_word_synced_fixed_slot_captions": { "code": "S10", "maps_to": "Subtitle.tsx_fixed_slot_pop", "spec": "Pre-laid fixed-slot phrase at Y >= 1360 (zero horizontal reflow jump); spoken words pop from 48% muted -> 100% crisp white/semantic tint on exact word_tl timestamps" },
+          "s11_conversational_2line": { "code": "S11", "maps_to": "conversational_captions_2line", "spec": "2-line text_vi.json compound-glued R209 top-down caption (Y in [1360, 1436]) with subtle -18px -> 0 rise and continuous hold micro-drift" },
+          "s12_minimal_1line_quiet": { "code": "S12", "maps_to": "minimal_single_line_captions", "spec": "Single-line 32-38px quiet lower-third caption preserving maximum chest/hand gesture space on emotional beats" },
+          "s12_whisper_26pt_sub": { "code": "S12w", "maps_to": "whisper_26pt_bottom_sub", "spec": "Ultra-restrained 26pt (<=30pt) whisper lower-third at Y >= 1420 (72% #E2E8F0 opacity) — the ONLY G2 tier permitted as a 3rd active zone alongside Hero + G1/Card" }
+        },
+        "explicitly_banned_default": {
+          "s13_raw_karaoke_bounce": "Banned unless user explicitly asks for karaoke. Bouncy neon word boxes compete with 4-Plane Z-Depth midground typography and pull viewer gaze away from eye_band."
+        }
+      },
+      "G3_spatial_shoulder_arc": {
+        "label": "Group 3 — Asymmetric Wall Micro-Word Pops, Shoulder & Bridge-Swap Typography (S14..S17 + Wall Pop)",
+        "track_tier": "V7_V8",
+        "presets": {
+          "dviet_wall_microword_pop": { "code": "S14w", "maps_to": "typography_composer.py::dviet_wall_microword_pop", "spec": "Signature @__dviet 7707 1-3 lowercase word pop (line_height 0.78 kiss mode, >=2.6x scale ratio) anchored into the open 2/3 negative wall space beside a 1/3 asymmetric speaker, optionally hopping across 2 spatial coordinates (dviet_two_point_wall_hop)" },
+          "s14_shoulder_callout": { "code": "S14", "maps_to": "side_left_callout / xuanart_editorial_right_autocontrast", "spec": "Asymmetric left/right shoulder callout (X=240 or X=840, Y=640..860) balancing off-center speaker framing with inline Color-World keyword" },
+          "s15_tilted_counter_cluster": { "code": "S15", "maps_to": "va_fam02_diagonal_rotation_whip", "spec": "-4deg to -7deg counter-tilted lockup where bottom sub-line enters -6f BEFORE the main Hero impact for kinetic whip anticipation" },
+          "s16_bridge_anchor_swap": { "code": "S16", "maps_to": "dviet_bridge_anchor", "spec": "Persistent anchor stem holds on V7 while right/bottom semantic complement swaps cleanly on V8 (+6f stagger) across parallel clauses" },
+          "s17_circular_arc_sub_wrap": { "code": "S17", "maps_to": "curved_halo_arc_sub", "spec": "Subtle curved/arched micro-subtitle framing upper shoulder/head silhouette halo without intersecting projected eye_band (mutex with mask_line_wipe)" }
+        }
+      },
+      "G4_ui_micro_labels": {
+        "label": "Group 4 — Structured UI Micro-Labels, Active-Dim Pills & Viewfinder HUD (S18)",
+        "track_tier": "V8",
+        "presets": {
+          "s18_typewriter_tech_tag": { "code": "S18a", "maps_to": "typewriter_cursor", "spec": "JetBrains Mono grapheme-safe monospace tag (1.5 graphemes/frame + 8f cursor blink) for CLI, file, version, or timestamp cues" },
+          "s18_active_dim_step_pills": { "code": "S18b", "maps_to": "progressive_step_pills", "spec": "Multi-step horizontal/vertical pill strip: active step renders at 100% opacity + semantic hue, while previous/completed items automatically dim to 46% opacity" },
+          "viewfinder_raw_card": { "code": "S18c", "maps_to": "xuanart_corner_bracket_wipe", "spec": "Minimal 4-corner bracket viewfinder + micro-metadata label signaling authentic raw camera / real case-study receipt" },
+          "compact_glass_lock_badge": { "code": "S18d", "maps_to": "floating_pill_badge_micro", "spec": "Compact dark frosted pill badge locking a concise takeaway or metric unit without blocking A-roll posture" }
+        }
+      }
+    },
+    "content_genre_rotation_matrix": {
+      "zdepth_flagship_personal_brand": {
+        "primary_groups": ["G1_lead_sub", "G3_spatial_shoulder_arc"],
+        "support_groups": ["G4_ui_micro_labels", "G2_quiet_bottom"],
+        "rotation_recipe": "Open with 2.5D Hero + G1 (s01/s04/s09); shift to G3 (s14/s15/s16) on asymmetric body beats; use G4 (s18_active_dim_step_pills) on 3-step frameworks; drop to quiet G2 (s10/s12) on pure A-roll breath."
+      },
+      "tech_ai_saas_walkthrough": {
+        "primary_groups": ["G4_ui_micro_labels", "G1_lead_sub"],
+        "support_groups": ["G3_spatial_shoulder_arc", "G2_quiet_bottom"],
+        "rotation_recipe": "Anchor architecture/step beats with G4 (s18_typewriter_tech_tag, s18_active_dim_step_pills at 46% dim); pair key theses with G1 (s01/s03); use G2 s10 fixed-slot captions during fast spoken explanations."
+      },
+      "sales_case_study_proof": {
+        "primary_groups": ["G4_ui_micro_labels", "G3_spatial_shoulder_arc"],
+        "support_groups": ["G1_lead_sub", "G2_quiet_bottom"],
+        "rotation_recipe": "Stamp authentic plates with G4 viewfinder_raw_card / compact_glass_lock_badge; punch contrasts with G3 s15_tilted_counter_cluster (-6f pre-lead) and G1 s02/s06; keep pure trust CTA on G2 s11."
+      },
+      "intellectual_essay_and_story": {
+        "primary_groups": ["G2_quiet_bottom", "G1_lead_sub"],
+        "support_groups": ["G3_spatial_shoulder_arc"],
+        "rotation_recipe": "Prioritize G2 s12_minimal_1line_quiet and clean room-tone silence; punctuate thesis turns sparingly with G1 s04/s05/s08 or a single G3 s14_shoulder_callout."
+      },
+      "anti_clutter_mutex_rules": [
+        "MAX_ZONES = 2 (v6.0 Spatial Density Cap): Never exceed 2 active overlay zones on any 100ms slice (3 allowed ONLY when G2 bottom caption is <= 26-30pt whisper s12_whisper_26pt_sub).",
+        "Card <-> Text Mutex (CARD_TEXT_COLLISION = 0): Never overlap any Hero, G1, G2, G3, or G4 text bounding box with an active card*/gfx*/prop* visual block.",
+        "Curated 1-3 Secondary Groups: Pick 1-3 cohesive secondary groups per video (never force 4/4 groups into one short) and leave >= 12% clean zero-overlay breathing frames.",
+        "Never use the exact same S01..S18 preset on more than 2 consecutive beats."
+      ]
+    }
+  },
+  "entrance_recipes": {
+    "dviet_wall_microword_pop": {
+      "base_fps": 60,
+      "track_tier": "V7_V8",
+      "allowed_roles": ["Hook", "Body", "CTA"],
+      "allowed_modes": ["Expand", "Contrast", "Proof"],
+      "preferred_industries": ["personal_brand", "tech_saas", "ecom", "education"],
+      "shutter_override": true,
+      "shutter_angle": 180,
+      "lowercase_kiss_line_height": 0.78,
+      "min_scale_ratio": 2.6,
+      "scale_keyframes": [
+        { "frame": 0, "value": 86.0, "out_inf": 0.18 },
+        { "frame": 6, "value": 102.5, "type": "Continuous" },
+        { "frame": 11, "value": 100.0, "in_inf": 0.80 }
+      ],
+      "mutex_with": ["checklist_audit_card", "versus_split_card"],
+      "nfc_guardrails": { "padding_top_em": 0.30, "line_height": 0.78, "grapheme_cluster_safe": true }
+    },
+    "overshoot_spring_pop": {
+      "base_fps": 30,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body", "CTA"],
+      "allowed_modes": ["Proof", "Contrast"],
+      "preferred_industries": ["ecom", "tech_saas", "personal_brand"],
+      "shutter_override": true,
+      "shutter_angle": 180,
+      "mutex_with": [],
+      "nfc_guardrails": { "padding_top_em": 0.30, "line_height": 1.25 },
+      "scale_keyframes": [
+        { "frame": 0, "value": 0.0, "out_inf": 0.20 },
+        { "frame": 5, "value": 108.0, "type": "Continuous" },
+        { "frame": 9, "value": 97.0, "type": "Continuous" },
+        { "frame": 12, "value": 100.0, "in_inf": 0.75 }
+      ]
+    },
+    "per_word_stagger": {
+      "base_fps": 30,
+      "track_tier": "V8",
+      "allowed_roles": ["Body", "Hook"],
+      "allowed_modes": ["Expand", "Proof"],
+      "preferred_industries": ["personal_brand", "education", "tech_saas"],
+      "stagger_frames": 3,
+      "word_dur_frames": 8,
+      "pos_y_offset_px": [36, 0],
+      "scale": [94.0, 101.0, 100.0],
+      "mutex_with": [],
+      "nfc_guardrails": { "grapheme_safe": true, "word_spacing_em": 0.25 }
+    },
+    "mask_line_wipe": {
+      "base_fps": 30,
+      "track_tier": "V8",
+      "allowed_roles": ["Hook", "Body"],
+      "allowed_modes": ["Expand", "Proof"],
+      "preferred_industries": ["tech_saas", "real_estate", "beauty_spa", "education"],
+      "shutter_override": true,
+      "shutter_angle": 180,
+      "pos_y_offset_px": [110, 0],
+      "frames": 12,
+      "in_inf": 0.82,
+      "out_inf": 0.15,
+      "mutex_with": ["curved_arc"],
+      "nfc_guardrails": { "padding_top_em": 0.30, "line_height": 1.25 }
+    },
+    "gaussian_deblur_in": {
+      "base_fps": 30,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body"],
+      "allowed_modes": ["Expand"],
+      "preferred_industries": ["beauty_spa", "personal_brand", "real_estate"],
+      "gaussian_blur": [20.0, 0.0],
+      "repeat_edge": true,
+      "scale": [106.0, 100.0],
+      "opacity": [10.0, 100.0],
+      "frames": 10,
+      "mutex_with": [],
+      "nfc_guardrails": { "max_blur_px": 20.0 }
+    },
+    "tracking_expand": {
+      "base_fps": 30,
+      "track_tier": "V7",
+      "allowed_roles": ["CTA", "Hook", "Body"],
+      "allowed_modes": ["Expand"],
+      "preferred_industries": ["real_estate", "beauty_spa", "education"],
+      "tracking_em": [-0.04, 0.14],
+      "scale": [98.0, 100.0],
+      "frames": 16,
+      "mutex_with": ["script_font"],
+      "nfc_guardrails": { "max_tracking_em": 0.18, "forbid_script": true }
+    },
+    "turbulent_organic_jitter": {
+      "base_fps": 30,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body"],
+      "allowed_modes": ["Contrast"],
+      "preferred_industries": ["ecom", "personal_brand", "tech_saas"],
+      "amp_x_px": 4,
+      "amp_y_px": 2,
+      "amp_rot_deg": 1.2,
+      "frames": 9,
+      "mutex_with": [],
+      "nfc_guardrails": { "max_amp_y_px": 2, "max_rot_deg": 1.2 }
+    },
+    "optical_halation": {
+      "base_fps": 30,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body", "CTA"],
+      "allowed_modes": ["Proof", "Expand"],
+      "preferred_industries": ["tech_saas", "personal_brand", "beauty_spa"],
+      "bloom_blur_px": [32.0, 12.0],
+      "bloom_opacity_pct": [0.0, 85.0, 22.0],
+      "frames": 12,
+      "mutex_with": [],
+      "nfc_guardrails": { "max_end_bloom_opacity_pct": 22.0 }
+    },
+    "stacked_hollow_echo": {
+      "base_fps": 30,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body"],
+      "allowed_modes": ["Contrast", "Proof"],
+      "preferred_industries": ["ecom", "personal_brand", "tech_saas"],
+      "echo_offset_y_px": 42,
+      "stroke_width_px": 2.0,
+      "frames": 10,
+      "mutex_with": ["stack3_feather"],
+      "nfc_guardrails": { "max_stroke_width_px": 2.0 }
+    },
+    "glitch_rgb_split": {
+      "base_fps": 30,
+      "track_tier": "V7",
+      "allowed_roles": ["Body", "Hook"],
+      "allowed_modes": ["Contrast"],
+      "preferred_industries": ["tech_saas", "ecom"],
+      "rgb_offset_x_px": [14, -10, 5, 0],
+      "frames": 6,
+      "mutex_with": ["flash_out_4f"],
+      "nfc_guardrails": { "horizontal_only": true, "max_dx_px": 14 }
+    },
+    "behind_subject_z_depth": {
+      "base_fps": 30,
+      "track_tier": "V2",
+      "allowed_roles": ["Hook", "Body"],
+      "allowed_modes": ["Expand", "Contrast"],
+      "preferred_industries": ["personal_brand", "real_estate"],
+      "occlusion_ratio": [0.30, 0.50],
+      "pos_x_offset_px": [-90, 0],
+      "frames": 12,
+      "mutex_with": ["dual_polarity_card", "blend_overlay", "drop_shadow_when_blend_nonzero"],
+      "nfc_guardrails": { "max_occlusion_ratio": 0.50 }
+    },
+    "typewriter_cursor": {
+      "base_fps": 30,
+      "track_tier": "V8",
+      "allowed_roles": ["Body", "CTA"],
+      "allowed_modes": ["Proof", "Expand"],
+      "preferred_industries": ["tech_saas", "education"],
+      "graphemes_per_frame": 1.5,
+      "cursor_blink_frames": 8,
+      "mutex_with": [],
+      "nfc_guardrails": { "grapheme_cluster_safe": true }
+    },
+    "cross_cut_persistence": {
+      "base_fps": 30,
+      "track_tier": "V8",
+      "allowed_roles": ["Body"],
+      "allowed_modes": ["Expand", "Proof"],
+      "preferred_industries": ["personal_brand", "tech_saas", "education"],
+      "pre_cut_frames": -6,
+      "post_cut_frames": 12,
+      "scrim_alpha_pct": 40,
+      "mutex_with": [],
+      "nfc_guardrails": { "require_dark_scrim_over_broll": true }
+    },
+    "dviet_bridge_anchor": {
+      "base_fps": 60,
+      "track_tier": "V8",
+      "allowed_roles": ["Body", "Hook"],
+      "allowed_modes": ["Expand", "Contrast"],
+      "preferred_industries": ["personal_brand", "tech_saas", "education"],
+      "anchor_track": "V7",
+      "keyword_swap_delay_frames": 6,
+      "mutex_with": [],
+      "nfc_guardrails": { "grapheme_safe": true }
+    },
+    "dviet_word_push_up": {
+      "base_fps": 60,
+      "track_tier": "V8",
+      "allowed_roles": ["Hook", "Body"],
+      "allowed_modes": ["Proof", "Expand"],
+      "preferred_industries": ["personal_brand", "ecom", "beauty_spa"],
+      "frames": 4,
+      "anchor_push_y_px": -25,
+      "mutex_with": [],
+      "nfc_guardrails": { "padding_top_em": 0.30 }
+    },
+    "xuanart_blur_amber_glow": {
+      "base_fps": 60,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body"],
+      "allowed_modes": ["Proof", "Expand"],
+      "preferred_industries": ["tech_saas", "ecom", "personal_brand"],
+      "frames": 18,
+      "glow_color": "#FFB830",
+      "lowercase_tight_tracking_em": -0.03,
+      "mutex_with": ["flash_out_4f"],
+      "nfc_guardrails": { "max_blur_px": 20.0 }
+    },
+    "xuanart_rgb_chromatic_pulse": {
+      "base_fps": 60,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body"],
+      "allowed_modes": ["Contrast"],
+      "preferred_industries": ["tech_saas", "ecom"],
+      "frames": 14,
+      "rgb_split_px": 10,
+      "mutex_with": ["flash_out_4f"],
+      "nfc_guardrails": { "horizontal_only": true, "max_dx_px": 14 }
+    },
+    "xuanart_corner_bracket_wipe": {
+      "base_fps": 60,
+      "track_tier": "V8",
+      "allowed_roles": ["Body", "CTA"],
+      "allowed_modes": ["Proof", "Contrast"],
+      "preferred_industries": ["tech_saas", "education", "ecom"],
+      "wipe_frames": 6,
+      "hold_frames": 18,
+      "bracket_style": "corner_4",
+      "mutex_with": ["curved_arc"],
+      "nfc_guardrails": { "padding_top_em": 0.30 }
+    },
+    "xuanart_editorial_right_autocontrast": {
+      "base_fps": 60,
+      "track_tier": "V8",
+      "allowed_roles": ["Body", "Expand"],
+      "allowed_modes": ["Expand", "Contrast"],
+      "preferred_industries": ["personal_brand", "beauty_spa", "real_estate", "education"],
+      "anchor_zone": "right_third_shoulder",
+      "auto_contrast_luma_threshold": 145,
+      "keyword_accent_color": "#FF4D5E",
+      "mutex_with": [],
+      "nfc_guardrails": { "line_height": 1.25 }
+    },
+    "va_fam01_baseline_mask_slide": {
+      "source_presets": ["#1 Minimal Style", "#3 Clear Green", "#9 Fresh Simple", "#10 Wave"],
+      "base_fps": 60,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body"],
+      "allowed_modes": ["Expand", "Proof"],
+      "preferred_industries": ["personal_brand", "tech_saas", "ecom", "beauty_spa"],
+      "pos_y_offset_px": [58, 0],
+      "gaussian_blur": [16.0, 0.0],
+      "crop_bottom_baseline": true,
+      "optional_sine_wave_warp": true,
+      "frames": 22,
+      "mutex_with": [],
+      "nfc_guardrails": { "padding_top_em": 0.30, "line_height": 1.25 }
+    },
+    "va_fam02_diagonal_rotation_whip": {
+      "source_presets": ["#2 Orange", "#26 Speed Up"],
+      "base_fps": 60,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body", "CTA"],
+      "allowed_modes": ["Contrast", "Proof"],
+      "preferred_industries": ["ecom", "tech_saas", "personal_brand"],
+      "scale_keyframes": [148.0, 96.0, 100.0],
+      "rotation_deg": [-20.0, 1.5, 0.0],
+      "shutter_angle": 270,
+      "hdr_glow_color": "#FF5E1A",
+      "frames": 22,
+      "mutex_with": [],
+      "nfc_guardrails": { "padding_top_em": 0.30 }
+    },
+    "va_fam03_center_cursor_bars_expand": {
+      "source_presets": ["#4 Text Focused"],
+      "base_fps": 60,
+      "track_tier": "V8",
+      "allowed_roles": ["Hook", "Body", "CTA"],
+      "allowed_modes": ["Proof", "Expand"],
+      "preferred_industries": ["tech_saas", "education", "personal_brand"],
+      "crop_left_right_pct": [50.0, 0.0],
+      "cursor_bar_color": "#38BDF8",
+      "pin_circles": ["top_left", "bottom_right"],
+      "frames": 24,
+      "mutex_with": [],
+      "nfc_guardrails": { "padding_top_em": 0.30 }
+    },
+    "va_fam04_vertical_passthrough_crossover": {
+      "source_presets": ["#5 Modern Vibrant"],
+      "base_fps": 60,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body"],
+      "allowed_modes": ["Contrast", "Expand"],
+      "preferred_industries": ["tech_saas", "personal_brand", "ecom"],
+      "top_line_y_swap_px": [42, 0],
+      "bottom_line_y_swap_px": [-42, 0],
+      "gaussian_blur": [22.0, 0.0],
+      "frames": 25,
+      "mutex_with": [],
+      "nfc_guardrails": { "line_height": 1.25 }
+    },
+    "va_fam05_soft_wipe_glow_watermark": {
+      "source_presets": ["#6 Soft Motion", "#19 Simple Type", "#20 Bright Silver", "#32 MONEY $100"],
+      "base_fps": 60,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body", "CTA"],
+      "allowed_modes": ["Proof", "Expand"],
+      "preferred_industries": ["ecom", "real_estate", "personal_brand", "tech_saas"],
+      "wipe_angle_deg": -90,
+      "feather_px": 135,
+      "background_watermark_opacity": 0.14,
+      "frames": 26,
+      "mutex_with": [],
+      "nfc_guardrails": { "padding_top_em": 0.30 }
+    },
+    "va_fam06_overlapping_character_rollout": {
+      "source_presets": ["#15 Subtitles", "#16 Movement Fluid", "#22 Create Freely", "#23 Stay stunning", "#24 Made Simple", "#27 Edit Customize Presets", "#28 Text Spotlight", "#34 THE ESSENTIAL", "#35 Instant upgrades"],
+      "base_fps": 60,
+      "track_tier": "V8",
+      "allowed_roles": ["Hook", "Body", "CTA"],
+      "allowed_modes": ["Expand", "Proof", "Contrast"],
+      "preferred_industries": ["personal_brand", "tech_saas", "ecom", "education", "beauty_spa"],
+      "char_slide_from_left_px": -34,
+      "char_stagger_sec": 0.032,
+      "char_dur_sec": 0.16,
+      "full_opacity_at_progress": 0.38,
+      "mutex_with": [],
+      "nfc_guardrails": { "grapheme_cluster_safe": true }
+    },
+    "va_fam07_boundary_first_interleaved_unfold": {
+      "source_presets": ["#17 Next Chapter", "#25 Clean style", "#33 fresh / MINT"],
+      "base_fps": 60,
+      "track_tier": "V8",
+      "allowed_roles": ["Hook", "Body"],
+      "allowed_modes": ["Expand", "Contrast"],
+      "preferred_industries": ["personal_brand", "beauty_spa", "tech_saas"],
+      "order_mode": "outer_boundaries_to_center",
+      "inward_pinch_px": 24,
+      "frames": 23,
+      "mutex_with": [],
+      "nfc_guardrails": { "grapheme_cluster_safe": true }
+    },
+    "va_fam08_bottom_anchored_stepup_color_lerp": {
+      "source_presets": ["#7 Central Focus", "#11 Fully Customizable", "#18 New Creative Today", "#21 New Creative Underline"],
+      "base_fps": 60,
+      "track_tier": "V8",
+      "allowed_roles": ["Hook", "Body", "CTA"],
+      "allowed_modes": ["Expand", "Proof"],
+      "preferred_industries": ["personal_brand", "tech_saas", "education"],
+      "anchor_point": "bottom_center",
+      "scale_range_pct": [38.0, 100.0],
+      "step_up_dy_px": [16, 0],
+      "tint_lerp_rgb": ["#9E3814", "#FFFFFF"],
+      "mutex_with": [],
+      "nfc_guardrails": { "grapheme_cluster_safe": true }
+    },
+    "va_fam09_error_strikethrough_and_golden_bokeh": {
+      "source_presets": ["#8 Error", "#12 Colorful Text", "#13 VHS", "#14 Premium Text"],
+      "base_fps": 60,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body"],
+      "allowed_modes": ["Contrast", "Proof"],
+      "preferred_industries": ["tech_saas", "ecom", "personal_brand"],
+      "phase1_white_deblur_sec": 0.28,
+      "phase2_red_laser_strikethrough_sec": 0.28,
+      "golden_bokeh_morph_dilation_px": 22,
+      "mutex_with": [],
+      "nfc_guardrails": { "padding_top_em": 0.30 }
+    },
+    "va_fam10_3d_swivel_and_horizon_gradient_rise": {
+      "source_presets": ["#29 Energy Rising", "#30 Dynamic Rotating", "#31 Future Digital"],
+      "base_fps": 60,
+      "track_tier": "V7",
+      "allowed_roles": ["Hook", "Body", "CTA"],
+      "allowed_modes": ["Proof", "Expand"],
+      "preferred_industries": ["tech_saas", "ecom", "personal_brand", "real_estate"],
+      "swivel_y_deg": [-90.0, 0.0],
+      "vertical_horizon_gradient": ["#FFA500", "#DC3700", "#180600"],
+      "mutex_with": [],
+      "nfc_guardrails": { "grapheme_cluster_safe": true }
+    }
+  },
+  "dviet_45582_empirical_typography_laws": {
+    "corpus_scope": "19/19 @__dviet master videos (#01..#19, 45,582 native frames, 914.6s total duration)",
+    "all_caps_em_dash_kicker_share": 0.0,
+    "all_caps_em_dash_kicker_law": "0.0% ALL-CAPS em-dash/bullet kickers ('— ALL CAPS KICKER') exist in @__dviet across 45,582 frames. Replace mechanical corporate kickers with spoken lowercase micro-leads (>=2.6x scale contrast) or pure single-tier Hero breathing.",
+    "pill_badge_frame_share_dviet": 0.015,
+    "pill_badge_restraint_law": "< 1.5% of @__dviet frames carry frosted pill badges; reserve pills strictly for distinct technical specs, numbered step locks, or final CTA tokens — NEVER stamp decorative or duplicate badges.",
+    "swash_initial_hybrid": {
+      "rule": "Split display keyword into [0] + [1..n]: render index [0] ONLY when it is an unaccented ASCII Latin initial using mathematical/calligraphic swash glyphs (ℒ, 𝒩, 𝒬, ℋ, ℳ or SVN-Aaron Script / Playfair Swash at 1.28x-1.45x), and render slice [1..n] in 134/134 NFC-verified Be Vietnam Pro / Playfair Display Italic (padding_top_em >= 0.30, 0px stroke) so stacked Vietnamese diacritics never clip or tofu.",
+      "verified_swash_glyphs": ["ℒ", "𝒩", "𝒬", "ℋ", "ℳ"],
+      "ascii_only_index_0": true,
+      "diacritic_safe_body_slice": "[1..n]",
+      "fallback_when_index_0_accented": "Render full [0..n] word in Playfair Display BoldItalic or Be Vietnam Pro ExtraBoldItalic with -0.03em tracking and 0.30em top padding."
+    },
+    "syllable_stagger_60fps": {
+      "delta_frames_range_60fps": [8, 16],
+      "median_delta_frames_60fps": 12,
+      "delta_ms_range": [133.3, 266.7],
+      "onset_lock_source": "words_tl.json",
+      "max_premature_unspoken_lead_ms": 180,
+      "law": "Every sub-clause and Hero keyword inside kt01..kt12 MUST trigger on its exact words_tl.json spoken syllable onset (typical Δf = 8..16f @ 60fps); never pre-bake unspoken future rows 0.5s-4.8s early."
+    },
+    "dynamic_contrast_ratio_35_35_30": {
+      "hero_kinetic_share": 0.35,
+      "whisper_and_counterpoint_share": 0.35,
+      "studio_3d_plate_and_special_share": 0.30,
+      "tier_buckets": {
+        "hero_35pct": ["kt01_kiss_editorial_2line", "kt02_feather_swash_overlap", "kt03_per_word_nonlinear_bloom", "kt09_strike_myth_laser_2phase", "kt10_cursor_bars_pillar_gate"],
+        "whisper_counterpoint_35pct": ["kt04_ghost_to_focus_stack", "kt05_wall_spatial_counterpoint", "kt06_bridge_anchor_live_swap", "kt07_telescoping_char_rollout", "kt08_mist_evaporation_reveal", "kt12_whisper_or_directional_echo"],
+        "plate_and_special_30pct": ["frosted_glass_bento_steps", "skewed_3d_polaroid_trio", "isometric_3d_prompt_browser", "clinical_before_after_1_to_28", "course_3d_matte_asset_box", "tactile_review_glass_scorecard", "kt11_cranial_svg_arc_or_tilt"]
+      },
+      "law": "Maintain ~35% Hero Kinetic Display : ~35% Whisper/Counterpoint Micro-Typography : ~30% Full/Midground 3D Studio Plates & Cranial Arcs (+ >=12-20% clean zero-overlay breathing frames) so typography breathes like music rather than hammering every sentence at equal volume."
+    }
+  },
+  "anti_template_choreography_quotas_v71": {
+    "forbid_static_hero_png_stamp": true,
+    "mandatory_hero_fps": 60,
+    "mandatory_hero_output_format": "mov_prores4444_or_qtrle_rgba",
+    "max_consecutive_same_silhouette": 2,
+    "max_single_silhouette_share": 0.35,
+    "max_pill_badge_beat_share": 0.30,
+    "forbid_duplicate_pill_badge_text": true,
+    "forbid_all_caps_em_dash_kicker_spam": true,
+    "max_consecutive_same_entrance_style": 2,
+    "min_distinct_entrances_8plus_beats": 4,
+    "max_premature_unspoken_spoiler_ms": 180,
+    "enforce_persistent_bridge_bbox_clearance": true,
+    "schedule_planner": "typography_composer.plan_dviet_kinetic_beat_schedule",
+    "batch_renderer": "web_plate_builder.render_kinetic_typo_batch",
+    "gate_3c_veto_codes": [
+      "STATIC_HERO_PNG_STAMP",
+      "LAYOUT_SILHOUETTE_MONOTONY",
+      "PILL_BADGE_OVERUSE",
+      "ENTRANCE_STYLE_MONOTONY"
+    ]
+  },
+  "web_cinema_kinetic_12_templates": {
+    "kt01_kiss_editorial_2line": {
+      "code": "KT01",
+      "label": "2-Line Negative-Leading Editorial Kiss (0.78 Line-Height + Player-3 Air-Cushion)",
+      "render_mode": "mov_60fps_rgba",
+      "fps": 60,
+      "entrance_style": "player3_2line_stagger_kiss",
+      "layout_silhouette": "sil_01_kiss_2line_compact",
+      "default_roi": {
+        "x": 90,
+        "y": 250,
+        "width": 900,
+        "height": 320,
+        "rail": "upper_editorial_stage",
+        "alt_chest_roi": { "x": 90, "y": 1020, "width": 900, "height": 300, "rail": "chest_tactile_rail" }
+      },
+      "source_dviet_videos": [
+        "#06 (7666039448039099669: f_00022..f_00068)",
+        "#08 (7667598741888634132: f_01176..f_01195)",
+        "#14 (7677448217667063061: f_00002..f_00035)",
+        "#19 (7707653827016674580: f_00058..f_00078)"
+      ],
+      "syllable_trigger_fields": ["lead_onset_f", "hero_onset_f", "word_onsets_f", "hold_end_f"],
+      "format_skin_affinity": {
+        "formats": ["F1", "F2", "F5", "F6", "F8"],
+        "skins": ["S6", "S1", "S5", "S7", "S8"]
+      },
+      "choreography_spec": "Spoken lowercase sans lead (34-44px, #FAFAFA) glides up on lead_onset_f; oversized 0.78 kiss-leading Hero (84-124px, -0.035em tracking, 0px stroke) arrives on hero_onset_f (+8..14f @ 60fps) along Player-3 20f air-cushion Bezier."
+    },
+    "kt02_feather_swash_overlap": {
+      "code": "KT02",
+      "label": "Sub-Layer Feather=29 Masked Sans + Swash-Initial Serif/Script Overlap",
+      "render_mode": "mov_60fps_rgba",
+      "fps": 60,
+      "entrance_style": "feather29_wipe_swash_unfold",
+      "layout_silhouette": "sil_02_feather_swash_duet",
+      "default_roi": {
+        "x": 80,
+        "y": 230,
+        "width": 920,
+        "height": 360,
+        "rail": "upper_editorial_stage",
+        "alt_chest_roi": { "x": 90, "y": 980, "width": 900, "height": 340, "rail": "chest_tactile_rail" }
+      },
+      "source_dviet_videos": [
+        "#05 (7665298781344189716: f_00003..f_00041 ℒink)",
+        "#06 (7666039448039099669: f_00104..f_00146 ℒướt dạo)",
+        "#10 (7669054598971133204: f_00006..f_00046, f_01054..f_01396 Feather=29)",
+        "#14 (7677448217667063061: f_00840..f_01120)"
+      ],
+      "syllable_trigger_fields": ["base_word_onset_f", "feather_mask_engage_f", "swash_accent_onset_f", "optional_pill_onset_f"],
+      "format_skin_affinity": {
+        "formats": ["F1", "F2", "F4", "F5", "F6"],
+        "skins": ["S6", "S1", "S3", "S5"]
+      },
+      "choreography_spec": "Tight ExtraBold base word enters at base_word_onset_f; bottom CSS linear-gradient alpha mask (Feather = 29px, 0px black stroke) softens lower 42% right as Swash-Initial ([0] ℒ/𝒩/𝒬/ℋ/ℳ + [1..n] Playfair/BeVietnam Italic) sweeps in on swash_accent_onset_f (+10..16f) with Glow 2."
+    },
+    "kt03_per_word_nonlinear_bloom": {
+      "code": "KT03",
+      "label": "Non-Linear Gap-Bridge Puzzle & Word-by-Word Halation Bloom",
+      "render_mode": "mov_60fps_rgba",
+      "fps": 60,
+      "entrance_style": "nonlinear_gap_bridge_word_bloom",
+      "layout_silhouette": "sil_03_poster_gap_puzzle",
+      "default_roi": {
+        "x": 85,
+        "y": 980,
+        "width": 910,
+        "height": 350,
+        "rail": "chest_tactile_rail",
+        "alt_upper_roi": { "x": 85, "y": 240, "width": 910, "height": 350, "rail": "upper_editorial_stage" }
+      },
+      "source_dviet_videos": [
+        "#03 (7664835388476755220: f_00126..f_00196 'cứ [GAP] bật' -> 'Camera')",
+        "#10 (7669054598971133204: f_00006..f_00046 5-beat staggered build)",
+        "#18 (7706183278461570356: f_00972..f_00983 4f+28f halation)"
+      ],
+      "syllable_trigger_fields": ["left_anchor_onset_f", "right_anchor_onset_f", "center_hero_gap_onset_f", "tail_phrase_onset_f"],
+      "format_skin_affinity": {
+        "formats": ["F1", "F3", "F6", "F10"],
+        "skins": ["S6", "S1", "S3", "S7"]
+      },
+      "choreography_spec": "Left and right flanking micro-words lock first to frame a deliberate negative-space pocket; when the stressed noun is spoken at center_hero_gap_onset_f, the oversized Hero drops into the center gap with 4f attack + 28f phosphor halation decay."
+    },
+    "kt04_ghost_to_focus_stack": {
+      "code": "KT04",
+      "label": "Optical Depth Defocus-to-Sharp Stack & Receding Ghost Echo",
+      "render_mode": "mov_60fps_rgba",
+      "fps": 60,
+      "entrance_style": "optical_rack_deblur_stack",
+      "layout_silhouette": "sil_04_vertical_depth_stack",
+      "default_roi": {
+        "x": 110,
+        "y": 250,
+        "width": 860,
+        "height": 330,
+        "rail": "upper_editorial_stage",
+        "alt_chest_roi": { "x": 110, "y": 1000, "width": 860, "height": 320, "rail": "chest_tactile_rail" }
+      },
+      "source_dviet_videos": [
+        "#07 (7666801391284964628: f_00011..f_00035)",
+        "#16 (7688934517783989524: f_00103..f_00281 shallow DoF stack)",
+        "#18 (7706183278461570356: f_01064..f_01076 rack-focus pull)"
+      ],
+      "syllable_trigger_fields": ["ghost_pre_echo_f", "primary_focus_snap_f", "sub_line_settle_f"],
+      "format_skin_affinity": {
+        "formats": ["F1", "F4", "F6", "F7"],
+        "skins": ["S1", "S2", "S5", "S6", "S7"]
+      },
+      "choreography_spec": "Context line sits at 42% alpha + 6px optical defocus while foreground keyword snaps from 18px Gaussian blur + 1.06x scale to 0px razor focus over 12f on primary_focus_snap_f, flanked by 38%/14% receding depth echoes."
+    },
+    "kt05_wall_spatial_counterpoint": {
+      "code": "KT05",
+      "label": "Asymmetric 2/3 Negative-Wall Micro-Word Pop & Two-Point Spatial Hop",
+      "render_mode": "mov_60fps_rgba",
+      "fps": 60,
+      "entrance_style": "asymmetric_wall_2point_hop",
+      "layout_silhouette": "sil_05_asymmetric_wall_hop",
+      "default_roi": {
+        "x": 580,
+        "y": 310,
+        "width": 430,
+        "height": 340,
+        "rail": "asymmetric_wall_2_3",
+        "mirror_left_wall_roi": { "x": 70, "y": 310, "width": 430, "height": 340, "rail": "asymmetric_wall_2_3" }
+      },
+      "source_dviet_videos": [
+        "#07 (7666801391284964628: f_00200..f_00410 gesture-tracked wall text)",
+        "#08 (7667598741888634132: f_00196..f_00266)",
+        "#19 (7707653827016674580: f_00240..f_00490 asymmetric 1/3 sofa wall pops)"
+      ],
+      "syllable_trigger_fields": ["hop_point_a_onset_f", "hop_point_b_onset_f", "accent_tint_onset_f"],
+      "format_skin_affinity": {
+        "formats": ["F1", "F5", "F8", "F9"],
+        "skins": ["S6", "S5", "S8", "S4"]
+      },
+      "choreography_spec": "Designed for Left-1/3 or Right-1/3 asymmetric framing (or open upper corner): 1-3 lowercase words pop at coordinate A on hop_point_a_onset_f, then counter-balance at diagonal coordinate B (+110px dy) on hop_point_b_onset_f with subtle perspective(900px) wall tilt."
+    },
+    "kt06_bridge_anchor_live_swap": {
+      "code": "KT06",
+      "label": "Persistent Stem Anchor + Live Syllable Keyword Swap Across Clauses/Cuts",
+      "render_mode": "mov_60fps_rgba",
+      "fps": 60,
+      "entrance_style": "persistent_stem_slot_swap",
+      "layout_silhouette": "sil_06_inline_anchor_slot_swap",
+      "default_roi": {
+        "x": 95,
+        "y": 1040,
+        "width": 890,
+        "height": 240,
+        "rail": "chest_tactile_rail",
+        "alt_upper_roi": { "x": 95, "y": 270, "width": 890, "height": 240, "rail": "upper_editorial_stage" }
+      },
+      "source_dviet_videos": [
+        "#01 (7664447064352509204: f_00081..f_00162 'mình không' -> 'nổi tiếng' / 'followers' / 'set up', f_00925..f_00962)",
+        "#06 (7666039448039099669: f_00364..f_00370)",
+        "#16 (7688934517783989524: f_00003..f_00039)"
+      ],
+      "syllable_trigger_fields": ["anchor_stem_onset_f", "swap_slot_1_onset_f", "swap_slot_2_onset_f", "swap_slot_3_onset_f"],
+      "format_skin_affinity": {
+        "formats": ["F1", "F2", "F5", "F8", "F10"],
+        "skins": ["S6", "S4", "S5", "S8"]
+      },
+      "choreography_spec": "Compact invariant stem ('mình không', 'khóa chuẩn', 'bước') locks pixel-still across cuts (-2f..+11f bridge clearance safe) while right/bottom complement slot rotates cleanly through 2-3 spoken nouns via 8f vertical mask roll on exact word onsets."
+    },
+    "kt07_telescoping_char_rollout": {
+      "code": "KT07",
+      "label": "Grapheme-Safe Telescoping Character Rollout & Monospace Spec Tick",
+      "render_mode": "mov_60fps_rgba",
+      "fps": 60,
+      "entrance_style": "grapheme_telescoping_rollout",
+      "layout_silhouette": "sil_07_sleek_single_rail_rollout",
+      "default_roi": {
+        "x": 100,
+        "y": 1080,
+        "width": 880,
+        "height": 210,
+        "rail": "chest_tactile_rail",
+        "alt_upper_roi": { "x": 100, "y": 290, "width": 880, "height": 210, "rail": "upper_editorial_stage" }
+      },
+      "source_dviet_videos": [
+        "#11 (7669758857471741204: f_00015..f_00110 iOS typing + waveform labels)",
+        "#12 (7670574911680777492: f_00003..f_00081 search keyword rollout)",
+        "#16 (7688934517783989524: f_00187..f_00281 step spec line)"
+      ],
+      "syllable_trigger_fields": ["rollout_start_f", "grapheme_stagger_frames", "spec_tag_onset_f"],
+      "format_skin_affinity": {
+        "formats": ["F3", "F7", "F8", "F10"],
+        "skins": ["S8", "S4", "S5", "S2"]
+      },
+      "choreography_spec": "Unicode-NFC grapheme clusters (never splitting base vowel from tone/horn marks) telescope from -28px dx + -0.05em tracking into crisp optical kerning at 1.5-2.0f per grapheme, paired with optional single-occurrence monospace spec tag."
+    },
+    "kt08_mist_evaporation_reveal": {
+      "code": "KT08",
+      "label": "Sharp Anchor + Horizontal Gaussian Mist Evaporation Wipe",
+      "render_mode": "mov_60fps_rgba",
+      "fps": 60,
+      "entrance_style": "horizontal_mist_evaporation_wipe",
+      "layout_silhouette": "sil_08_sharp_to_mist_horizon",
+      "default_roi": {
+        "x": 90,
+        "y": 1020,
+        "width": 900,
+        "height": 260,
+        "rail": "chest_tactile_rail",
+        "alt_upper_roi": { "x": 90, "y": 260, "width": 900, "height": 260, "rail": "upper_editorial_stage" }
+      },
+      "source_dviet_videos": [
+        "#12 (7670574911680777492: f_02538..f_02584 'chữ' sharp + 'mờ ảo vl' horizontal feather mist)",
+        "#14 (7677448217667063061: f_01410..f_01590 lavender mist specimen)",
+        "#15 (7683763922234641684: f_00099..f_00156 blend texture dissolve)"
+      ],
+      "syllable_trigger_fields": ["sharp_anchor_onset_f", "mist_sweep_onset_f", "crystallize_or_evaporate_end_f"],
+      "format_skin_affinity": {
+        "formats": ["F1", "F2", "F4", "F6"],
+        "skins": ["S1", "S3", "S6", "S7"]
+      },
+      "choreography_spec": "Left anchor word locks 100% tack-sharp on sharp_anchor_onset_f while right emotional/sensory phrase sweeps through a dual-layer SVG feGaussianBlur (0px -> 14px -> 0px crystallize or soft 6px atmospheric tail) on mist_sweep_onset_f."
+    },
+    "kt09_strike_myth_laser_2phase": {
+      "code": "KT09",
+      "label": "2-Phase Myth-Bust Laser Strike -> Verified Truth Replacement",
+      "render_mode": "mov_60fps_rgba",
+      "fps": 60,
+      "entrance_style": "myth_strike_2phase_pivot",
+      "layout_silhouette": "sil_09_myth_strike_truth_pivot",
+      "default_roi": {
+        "x": 85,
+        "y": 240,
+        "width": 910,
+        "height": 330,
+        "rail": "upper_editorial_stage",
+        "alt_chest_roi": { "x": 85, "y": 990, "width": 910, "height": 320, "rail": "chest_tactile_rail" }
+      },
+      "source_dviet_videos": [
+        "#06 (7666039448039099669: f_00002..f_00044 crimson alert contrast)",
+        "#17 (7693026626333871381: f_00069..f_00142 'không phải thứ quyết định')",
+        "#19 (7707653827016674580: f_00210..f_00238 negation reset 'không.')"
+      ],
+      "syllable_trigger_fields": ["myth_phrase_onset_f", "crimson_laser_strike_f", "truth_reframe_onset_f"],
+      "format_skin_affinity": {
+        "formats": ["F1", "F2", "F3", "F4", "F8"],
+        "skins": ["S2", "S4", "S5", "S6", "S8"]
+      },
+      "choreography_spec": "Phase 1: misconception phrase enters neutral #FAFAFA at myth_phrase_onset_f. Phase 2 (on negation syllable crimson_laser_strike_f): SVG crimson/ruby (#FF4D5E/#E11D48) 3px optical laser draws 0->100% across myth while dimming it to 42% and snapping verified truth below at truth_reframe_onset_f."
+    },
+    "kt10_cursor_bars_pillar_gate": {
+      "code": "KT10",
+      "label": "Center-Out Optical Cursor Pillar Gate & Precision Lock Reveal",
+      "render_mode": "mov_60fps_rgba",
+      "fps": 60,
+      "entrance_style": "center_cursor_pillar_gate",
+      "layout_silhouette": "sil_10_symmetric_pillar_gate",
+      "default_roi": {
+        "x": 90,
+        "y": 255,
+        "width": 900,
+        "height": 280,
+        "rail": "upper_editorial_stage",
+        "alt_chest_roi": { "x": 90, "y": 1030, "width": 900, "height": 270, "rail": "chest_tactile_rail" }
+      },
+      "source_dviet_videos": [
+        "#02 (7664633717771488532: f_00660..f_00720 timeline playhead bar)",
+        "#16 (7688934517783989524: f_00027..f_00103 precision playhead cursor)",
+        "#19 (7707653827016674580: f_00285..f_00325 glass clip boundary bars)"
+      ],
+      "syllable_trigger_fields": ["gate_ignite_f", "pillar_part_onset_f", "sub_metric_onset_f"],
+      "format_skin_affinity": {
+        "formats": ["F2", "F4", "F5", "F7", "F10"],
+        "skins": ["S2", "S4", "S5", "S8"]
+      },
+      "choreography_spec": "Two 2px jewel-tinted vertical optical cursor bars ignite at X=540 on gate_ignite_f and part symmetrically along cubic-bezier(0.16, 1, 0.3, 1) over 18f on pillar_part_onset_f, unmasking crisp architectural/clinical/tech Hero typography via CSS clip-path."
+    },
+    "kt11_cranial_svg_arc_or_tilt": {
+      "code": "KT11",
+      "label": "Curved Cranial Halo SVG <textPath> Arc OR Corner-Pinned 3D Wall Tilt",
+      "render_mode": "mov_60fps_rgba",
+      "fps": 60,
+      "entrance_style": "svg_halo_arc_or_3d_wall_skew",
+      "layout_silhouette": "sil_11_curved_halo_or_3d_plane",
+      "default_roi": {
+        "x": 70,
+        "y": 160,
+        "width": 940,
+        "height": 360,
+        "rail": "upper_editorial_stage"
+      },
+      "source_dviet_videos": [
+        "#01 (7664447064352509204: f_00612..f_00740 '-20deg' eyelid contour)",
+        "#09 (7668334908615560469: f_00219..f_00288 3D corner-pinned wall neon)",
+        "#18 (7706183278461570356: f_00412..f_00457 cranial halo <textPath> 'cơn nhức đầu')",
+        "#19 (7707653827016674580: f_00045..f_00078 'bốn cách để cắt video' crown arc)"
+      ],
+      "syllable_trigger_fields": ["arc_sweep_onset_f", "secondary_arc_or_tilt_onset_f", "focus_settle_f"],
+      "format_skin_affinity": {
+        "formats": ["F1", "F6", "F9", "F10"],
+        "skins": ["S6", "S3", "S7", "S8"]
+      },
+      "choreography_spec": "Renders an authentic SVG <path> + <textPath> crown halo arching >= 65px CLEAR above hair_top_y (0.00% Cranial Lock violation) with progressive startOffset/mask reveal on arc_sweep_onset_f, OR a perspective(900px) rotateY(-14deg) rotateZ(-4deg) planar wall lockup."
+    },
+    "kt12_whisper_or_directional_echo": {
+      "code": "KT12",
+      "label": "26pt Quiet Whisper Rail OR Stepped Upward-Right Directional Glow Echo",
+      "render_mode": "mov_60fps_rgba",
+      "fps": 60,
+      "entrance_style": "whisper_slot_or_directional_echo",
+      "layout_silhouette": "sil_12_whisper_or_stepped_echo",
+      "default_roi": {
+        "x": 100,
+        "y": 1380,
+        "width": 880,
+        "height": 150,
+        "rail": "whisper_g2_sub_rail",
+        "alt_echo_roi": { "x": 120, "y": 260, "width": 840, "height": 300, "rail": "upper_editorial_stage" }
+      },
+      "source_dviet_videos": [
+        "#16 (7688934517783989524: f_00420..f_00960 quiet 1/5 bottom gold italic whisper)",
+        "#18 (7706183278461570356: f_01380..f_01455 quiet gratitude close)",
+        "#19 (7707653827016674580: f_01352..f_01373 'lặp lại' + 2 stepped upward-right glow echoes)"
+      ],
+      "syllable_trigger_fields": ["phrase_word_onsets_f", "echo_step_1_f", "echo_step_2_f"],
+      "format_skin_affinity": {
+        "formats": ["F1", "F3", "F6", "F7", "F8"],
+        "skins": ["S6", "S1", "S2", "S5", "S7"]
+      },
+      "choreography_spec": "Dual-mode dynamic contrast breather: Mode A renders ultra-clean 26-30pt R209 fixed-slot whisper words lighting from 46% -> 100% on exact phrase_word_onsets_f; Mode B renders Video #19's flat geometric keyword firing 2 stepped upward-right (+18px, -16px / +36px, -32px) directional blur glow echoes on echo_step_1_f/2_f."
+    }
+  }
+}
