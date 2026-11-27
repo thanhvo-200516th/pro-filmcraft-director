@@ -23,7 +23,7 @@ Supported Input Modes (auto-detected via `--input`):
   3. `fcproj_file`    (file ending in `.fcproj`)
 
 CLI Usage:
-  ~/.venvs/video-skills/bin/python3 scripts/tools/probe_and_align.py \
+  python3 scripts/tools/probe_and_align.py \
     --input <PATH_TO_RAW_VIDEO_OR_PROJECT_DIR_OR_FCPROJ> \
     --work <WORK_DIR> \
     [--tier {auto,fast,studio,full}] \
@@ -86,6 +86,8 @@ AUDIO_EXTS = {".wav", ".mp3", ".m4a", ".flac", ".aac", ".ogg", ".opus"}
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 RAW_MEDIA_EXTS = VIDEO_EXTS | AUDIO_EXTS
 DECODE_TIMEOUT_S = float(os.environ.get("PFD_DECODE_TIMEOUT_S") or 900.0)  # one ffmpeg 16 kHz decode; a hung decode must not hang the run
+_PROBE_TIMEOUT_S = 120.0  # ffprobe probes
+_RUN_TIMEOUT_S = 1800.0  # ffmpeg frame grabs / scans (the 16 kHz decode keeps DECODE_TIMEOUT_S)
 
 
 class ProbeMediaError(RuntimeError):
@@ -182,6 +184,7 @@ def detect_input_mode(input_path: Path) -> str:
         r = subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries", "stream=codec_type", "-of", "csv=p=0", str(input_path)],
             capture_output=True, text=True,
+            timeout=_PROBE_TIMEOUT_S, encoding="utf-8", errors="replace",
         )
         if r.returncode == 0 and any(t in r.stdout for t in ("video", "audio")):
             return "raw_video"
@@ -1486,8 +1489,25 @@ def classify_media_file(path: Path, base_dir: Path | None = None) -> str:
     return "other"
 
 
+def _stream_rotation(stream: dict[str, Any] | None) -> int:
+    """Container rotation of an ffprobe video stream in degrees (0 / 90 / 180 / 270): display matrix side data, then the legacy
+    `rotate` tag (same rule as fast_studio_compositor.stream_rotation)."""
+    for sd in (stream or {}).get("side_data_list") or []:
+        if isinstance(sd, dict) and sd.get("rotation") is not None:
+            try:
+                return int(round(float(sd["rotation"]))) % 360
+            except (TypeError, ValueError):
+                return 0
+    try:
+        return int(round(float(((stream or {}).get("tags") or {}).get("rotate") or 0))) % 360
+    except (TypeError, ValueError):
+        return 0
+
+
 def probe_single_media(path: Path, base_dir: Path | None = None) -> tuple[str, dict[str, Any]]:
-    """Run ffprobe (or PIL for images) on a single file and return normalized metadata."""
+    """Run ffprobe (or PIL for images) on a single file and return normalized metadata. Video `w` / `h` are the DISPLAY size: a
+    +-90 deg container rotation swaps them (ffmpeg autorotates on decode, so frames read at w x h are not scrambled); `rotation`
+    keeps the degrees."""
     key = str(path.relative_to(base_dir)) if (base_dir and path.is_relative_to(base_dir)) else path.name
     category = classify_media_file(path, base_dir)
     ext = path.suffix.lower()
@@ -1529,6 +1549,7 @@ def probe_single_media(path: Path, base_dir: Path | None = None) -> tuple[str, d
         ],
         capture_output=True,
         text=True,
+        timeout=_PROBE_TIMEOUT_S, encoding="utf-8", errors="replace",
     )
     data = json.loads(proc.stdout) if proc.stdout else {}
     fmt = data.get("format") or {}
@@ -1566,10 +1587,15 @@ def probe_single_media(path: Path, base_dir: Path | None = None) -> tuple[str, d
     sample_rate = int(a_stream["sample_rate"]) if a_stream and a_stream.get("sample_rate") else None
     channels = int(a_stream["channels"]) if a_stream and a_stream.get("channels") else None
 
+    rotation = _stream_rotation(v_stream)
+    disp_w, disp_h = (v_stream or {}).get("width"), (v_stream or {}).get("height")
+    if rotation % 180 == 90:
+        disp_w, disp_h = disp_h, disp_w
     info: dict[str, Any] = {
         "dur": dur,
-        "w": (v_stream or {}).get("width"),
-        "h": (v_stream or {}).get("height"),
+        "w": disp_w,
+        "h": disp_h,
+        "rotation": rotation,
         "fps": fps_rat if v_stream else "0/0",
         "fps_num": fps_num,
         "category": category,
@@ -1634,6 +1660,7 @@ def measure_audio_lufs_and_silences(
         ],
         capture_output=True,
         text=True,
+        timeout=_RUN_TIMEOUT_S, encoding="utf-8", errors="replace",
     )
     log = (proc.stdout or "") + "\n" + (proc.stderr or "")
 
@@ -1867,8 +1894,8 @@ def _detect_faces_haar(
                         boxes_cv.append([rx, ry, rx + rw, ry + rh])
                 if boxes_cv:
                     return "haar_cascade", boxes_cv
-        except Exception:
-            pass
+        except (cv2.error, OSError, ValueError) as exc:
+            print(f"WARNING: OpenCV Haar cascade face detection failed ({type(exc).__name__}: {exc}); trying the NumPy fallback", file=sys.stderr)
 
     # 2) Pure-NumPy integral-image Viola-Jones fallback (works on OpenCV 5.0+ where CascadeClassifier was removed)
     try:
@@ -1922,8 +1949,8 @@ def _detect_faces_haar(
 
         if boxes_np:
             return "haar_numpy", boxes_np
-    except Exception:
-        pass
+    except (cv2.error, OSError, ValueError, KeyError, IndexError, AttributeError, TypeError, ET.ParseError) as exc:
+        print(f"WARNING: NumPy Haar face detection failed ({type(exc).__name__}: {exc}); no face boxes", file=sys.stderr)
 
     return None, []
 
@@ -1972,6 +1999,7 @@ def _decode_sampled_rgb_frames(
                 "-",
             ],
             capture_output=True,
+            timeout=_RUN_TIMEOUT_S,
         )
         if proc.returncode == 0 and len(proc.stdout) >= frame_bytes:
             return np.frombuffer(proc.stdout[:frame_bytes], dtype=np.uint8).reshape(th_h, th_w, 3).copy()
@@ -2479,8 +2507,8 @@ def probe_broll_safe_zones(
             th_w = min(270, w_src)
             th_h = max(16, int(round(h_src * (th_w / float(w_src)))))
             rgb_samples = [cv2.resize(rgb_full, (th_w, th_h), interpolation=cv2.INTER_AREA)]
-        except Exception:
-            pass
+        except (OSError, ValueError, cv2.error, Image.DecompressionBombError) as exc:
+            print(f"WARNING: could not load image {path} for subject framing ({type(exc).__name__}: {exc})", file=sys.stderr)
     elif ext in VIDEO_EXTS:
         dur = max(0.1, float(pinfo.get("dur") or 0.0))
         rgb_samples = _decode_sampled_rgb_frames(
@@ -3029,6 +3057,7 @@ def audit_broll_media(path: Path, pinfo: dict[str, Any], flat_std_min: float = 3
                 "-",
             ],
             capture_output=True,
+            timeout=_RUN_TIMEOUT_S,
         )
         if proc.returncode == 0 and len(proc.stdout) >= w * h:
             gray = np.frombuffer(proc.stdout[: w * h], dtype=np.uint8).reshape(h, w).astype(np.float32)
@@ -3095,7 +3124,7 @@ def _decode_downsampled_gray_stream(
         "gray",
         "-",
     ]
-    proc = subprocess.run(cmd, capture_output=True)
+    proc = subprocess.run(cmd, capture_output=True, timeout=_RUN_TIMEOUT_S)
     frame_sz = th_w * th_h
     if proc.returncode != 0 or frame_sz <= 0 or len(proc.stdout) < frame_sz * 2:
         return np.empty((0, 0, 0), dtype=np.uint8), sample_fps
@@ -4297,6 +4326,7 @@ def _grab_video_frame(job: tuple[str, Path, float, Path, int]) -> tuple[str, Pat
             str(out_path),
         ],
         capture_output=True,
+        timeout=_RUN_TIMEOUT_S,
     )
     return label, out_path, video_path
 
@@ -4595,7 +4625,7 @@ def _child_pids() -> list[int]:
                     continue
     else:
         try:
-            out = subprocess.run(["ps", "-A", "-o", "pid=,ppid=,pgid="], capture_output=True, text=True, timeout=10).stdout
+            out = subprocess.run(["ps", "-A", "-o", "pid=,ppid=,pgid="], capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace").stdout
             rows = [tuple(int(x) for x in ln.split()) for ln in out.splitlines() if len(ln.split()) == 3]
         except (OSError, subprocess.SubprocessError, ValueError):
             rows = []
@@ -4693,6 +4723,7 @@ def detect_visual_cuts(media_path: Path, threshold: float = VISUAL_SCENE_THRESHO
         ["ffmpeg", "-hide_banner", "-nostats", "-i", str(media_path), "-an", "-vf",
          f"scale=320:-2,select='gt(scene,{threshold})',showinfo", "-f", "null", "-"],
         capture_output=True, text=True, check=False,
+        timeout=_RUN_TIMEOUT_S, encoding="utf-8", errors="replace",
     )
     raw = [float(x) for x in re.findall(r"pts_time:\s*([-\d.]+)", proc.stderr or "")]
     return {
@@ -4702,6 +4733,29 @@ def detect_visual_cuts(media_path: Path, threshold: float = VISUAL_SCENE_THRESHO
         "raw_count": len(raw),
         "cuts": cluster_cut_times(raw, gap_s),
     }
+
+
+# v7.9.3: Look S (the default look) is drawn at 1080x1920 and mastered at 60 fps; flag a smaller / slower source at probe time
+LOOK_S_MIN_SHORT_SIDE = 1080
+LOOK_S_MIN_FPS = 60.0
+_FPS_TOL = 0.1  # 59.94 counts as 60
+
+
+def look_s_source_check(width: int | None, height: int | None, fps: float | None) -> dict[str, Any]:
+    """Early Look S source check: short side < 1080 (below 1080p) or fps < 60 -> warnings with the remedy (warn only, never fail)."""
+    w, h, f = int(width or 0), int(height or 0), float(fps or 0.0)
+    short = min(w, h)
+    low_res = 0 < short < LOOK_S_MIN_SHORT_SIDE
+    low_fps = 0.0 < f and f + _FPS_TOL < LOOK_S_MIN_FPS
+    warns = []
+    if low_res:
+        warns.append(f"Look S source is {w}x{h} (below 1080p): the 1080x1920 master upscales it and looks softer; re-export the "
+                     "source at 1080p (1080x1920) or upscale it before rendering")
+    if low_fps:
+        warns.append(f"Look S source is {f:g} fps < {LOOK_S_MIN_FPS:g} fps: the 60 fps master repeats frames; re-export at 60 fps "
+                     "(or frame-interpolate) if motion must be smooth")
+    return {"width": w, "height": h, "fps": f, "min_short_side": LOOK_S_MIN_SHORT_SIDE, "min_fps": LOOK_S_MIN_FPS,
+            "low_res": low_res, "low_fps": low_fps, "ok": not (low_res or low_fps), "warnings": warns}
 
 
 def loudness_audit_warnings(lufs: float | None, true_peak: float | None) -> list[str]:
@@ -5112,6 +5166,9 @@ def probe_and_align(
             audit_warnings.append(f"no audio stream in {key}: ASR skipped, words_tl.json is written empty (0 words)")
         fps_num = float(pinfo.get("fps_num") or 30.0) if has_video else 30.0
         fps_grid = snap_fps_grid(fps_num)
+        look_s_source = look_s_source_check(pinfo.get("w"), pinfo.get("h"), pinfo.get("fps_num")) if has_video else None
+        if look_s_source:
+            audit_warnings.extend(look_s_source["warnings"])
 
         # v7.4: persist the probe BEFORE any ASR so a hung/killed run still leaves usable telemetry
         early_probe_path = out_dir / "media_probe.json"
@@ -5353,6 +5410,7 @@ def probe_and_align(
             "fps": fps_num,
             "fps_grid": fps_grid,
             "resolution": {"width": pinfo.get("w"), "height": pinfo.get("h")},
+            "look_s_source": look_s_source,
             "duration_sec": duration_sec,
             "backup_path": None,
             "script_source": script_info["source_path"],

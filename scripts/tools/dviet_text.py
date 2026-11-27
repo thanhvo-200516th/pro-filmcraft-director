@@ -95,8 +95,8 @@ def _family_file(family: str, style: str) -> str | None:
             path = Path(tc._resolve_typo_font_path(family, style))
             if fam_key in _alnum(path.stem):
                 return path.name
-        except Exception:  # noqa: BLE001
-            pass
+        except (OSError, ValueError, TypeError, ImportError) as exc:
+            print(f"WARNING: font resolver failed for {family!r}/{style!r} ({type(exc).__name__}: {exc}); scanning font dirs", file=sys.stderr)
         dirs = list(getattr(tc, "FONT_SEARCH_DIRS", []))
     else:
         dirs = [Path.home() / ".local/share/fonts"]

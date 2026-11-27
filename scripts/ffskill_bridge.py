@@ -46,7 +46,8 @@ def run_ffskill_tool(tool_name: str, args: list[str], parse_json: bool = True) -
     cmd = [sys.executable, str(script_path), *args]
     if parse_json and "--json" not in args and "--json-brief" not in args:
         cmd.append("--json")
-    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace",
+                          timeout=1800)
     if proc.returncode != 0 and not proc.stdout.strip():
         raise RuntimeError(f"ffmpeg-skill {tool_name} failed ({proc.returncode}): {proc.stderr.strip()}")
     if parse_json:
@@ -59,7 +60,7 @@ def ffskill_doctor() -> dict[str, Any]:
     _require_ffskill()
     proc = subprocess.run(
         [sys.executable, str(FFSKILL_SCRIPTS / "_contract.py"), "doctor", "--json"],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace", check=True, timeout=120,
     )
     return json.loads(proc.stdout)
 

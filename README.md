@@ -132,7 +132,7 @@ pro-filmcraft-director/
 │       └── fc_export.py                       # Xuất .mp4 từ .fcproj (chỉ các trường hợp của Rule A1)
 ├── templates/
 │   └── edit_plan_viewer.html                  # Giao diện HTML xem & duyệt Edit Plan trực quan
-└── tests/                                     # 19 bộ kiểm thử, mỗi bộ chạy độc lập và thoát 0 khi đạt (danh sách ở mục 4)
+└── tests/                                     # 25 bộ kiểm thử, mỗi bộ chạy độc lập và thoát 0 khi đạt (danh sách ở mục 4)
 ```
 
 ---
@@ -208,6 +208,12 @@ for t in tests/test_*.py; do ~/.venvs/video-skills/bin/python3 "$t" || break; do
 | `test_text_legibility_v79.py` | khoảng cách từ khi blur-in / scale-in trên plate Chrome và FilmCraft (**chạy lâu, > 5 phút; chạy cuối**) |
 | `test_audit_core_v791.py` | v7.9.1: Gate 3 FAIL / SKIPPED, video 0 byte / hỏng, không có tiếng, timeout giải mã, CLI `studio_recipe`, help `tiktok_loud`, `--display` |
 | `test_look_s_driver_v791.py` | v7.9.1: đường compositor Look S (dọn ffmpeg con, ghép plate, kiểm hình học, cache matte, font fallback, NFD) |
+| `test_hook_auto_v792.py` | v7.9.2: B-roll hook tĩnh tự có push + pan + glint (frame diff `>= 2.0`, trần `+25 %`), hộp sản phẩm u2netp / dự phòng luma, chữ hook dời khỏi sản phẩm, lùi về sân khấu sản phẩm khi không còn dải trống, bước zoom `snap_punch` khi dưới sàn `2.0`, cờ `--no-hook-motion` / `--no-product-safe-text` / `--no-stage-fallback` |
+| `test_rootcause_broll_v793.py` | v7.9.3: vệt lạ ngắn trong B-roll (`transient_spans`, `scan_broll_transients`), `plan_broll` không dùng lại giây nguồn, giữ `broll` / `broll_ss` tường minh, CLI dùng lại -> exit `2` (`--allow-broll-reuse`), cảnh báo sớm nguồn Look S độ phân giải / fps thấp |
+| `test_rootcause_compile_v793.py` | v7.9.3: limiter / đỉnh giọng `studio_14`, mực plate V2 theo alpha + motion, Gate 5 FACE_ROOM theo `--scenes`, tỉ lệ Gate 3B, cửa sổ cắt SFX |
+| `test_rootcause_typo_v793.py` | v7.9.3: `workspace_context` -> dải sọ thật, `scenes` cấm ray ngực khi thấy mặt, chữ `kt12` / `kt10` đọc được, `allow_drop_accent` |
+| `test_pipeline_v794.py` | v7.9.4: nguồn xoay `rotate 90` đọc theo kích thước hiển thị (A-roll điện thoại không bị từ chối, B-roll không vỡ khung), `--overlays-from-plan` / `overlays_from_plan`, `--emit-overlays` / `--emit-scenes`, `--alpha-fps` trong hash segment, ngân sách `plan_broll` mỗi lượt, cảnh báo hook vẫn dưới sàn `2.0` |
+| `test_contracts_v794.py` | v7.9.4: hợp đồng `workspace_context` (dạng phẳng và dạng bundle chọn đúng A-roll) và khoá cảnh `t0` / `t1` trên dữ liệu thật e2e_v791 (planner, `_scene_spans`, `face_visibility_at`) |
 | `test_portability_v791.py` | v7.9.1: chữ `G2` theo sàn `64 px`, trần flash và khoảng cách vacuum `20 s`, `tiktok_loud` `-1.0 dBTP` / `14 dB`, một hợp đồng lint B-roll, tìm Chrome, runner plate, xoá metadata, font, `rules.json` vendor |
 | `test_loudness_v75.py` | bảng độ to `tiktok_loud`, hồi quy `platform`, verdict trên clip tổng hợp `<= 3 s` |
 | `test_ducking.py` | `duck_keyframes`: đơn điệu, độ sâu, gộp khoảng nghỉ `< 1.5 s`, tất định |

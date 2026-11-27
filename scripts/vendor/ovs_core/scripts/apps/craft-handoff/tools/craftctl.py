@@ -20,6 +20,7 @@ import secrets
 import shutil
 import socket
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -132,7 +133,15 @@ class Craft:
         return reply.get("result")
 
     def cmd(self, command: str, params: dict | None = None):
-        return self.rpc("engine.execute", {"command": command, "params": params or {}})
+        # FilmCraft >= 0.20 answers "still starting; send the request again" while its engine boots: retry that reply only.
+        deadline = time.monotonic() + float(os.environ.get("CRAFT_START_WAIT_S", "60"))
+        while True:
+            try:
+                return self.rpc("engine.execute", {"command": command, "params": params or {}})
+            except CraftError as exc:
+                if "still starting" not in str(exc) or time.monotonic() >= deadline:
+                    raise
+                time.sleep(0.5)
 
     def pipeline(self, cmds: list[tuple[str, dict]], batch: int = 100) -> None:
         """Gửi dồn nhiều lệnh không cần đọc kết quả (đặt keyframe…): FilmCraft xử lý ~45 ms / lệnh khi gửi từng lệnh,
@@ -158,8 +167,8 @@ class Craft:
     def close(self) -> None:
         try:
             self.cmd("app.quit")
-        except Exception:
-            pass
+        except (CraftError, OSError, ValueError) as exc:  # app may already be gone; still terminate below
+            print(f"craftctl: warning: app.quit failed ({type(exc).__name__}: {exc})", file=sys.stderr)
         try:
             self.proc.wait(timeout=10)
         except subprocess.TimeoutExpired:

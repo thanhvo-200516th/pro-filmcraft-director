@@ -10,10 +10,12 @@ import subprocess
 import sys
 
 
-def measure(path):
+def measure(path, source_in=0.0, duration=None):
+    """Peak / RMS of the used window [source_in, source_in + duration] (v7.9.3: was the whole file, so a loud head or tail the
+    clip never plays read as clipping). duration=None measures to the end of the file."""
     probe = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'a:0',
                             '-show_entries', 'stream=channels', '-of', 'json', str(path)],
-                           capture_output=True, check=False)
+                           capture_output=True, check=False, timeout=120)
     if probe.returncode:
         raise ValueError(probe.stderr.decode('utf-8', errors='replace'))
     streams = json.loads(probe.stdout).get('streams', [])
@@ -21,7 +23,8 @@ def measure(path):
         raise ValueError('No audio stream')
     channels = int(streams[0]['channels'])
     proc = subprocess.Popen(
-        ['ffmpeg', '-v', 'error', '-i', str(path), '-map', '0:a:0', '-vn', '-f', 'f32le',
+        ['ffmpeg', '-v', 'error', '-ss', f'{max(0.0, float(source_in)):.6f}',
+         *(['-t', f'{float(duration):.6f}'] if duration is not None else []), '-i', str(path), '-map', '0:a:0', '-vn', '-f', 'f32le',
          '-acodec', 'pcm_f32le', '-ar', '48000', 'pipe:1'],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     peak = power = count = 0
@@ -64,7 +67,9 @@ def audit(events, base, duration=None, do_measure=False):
             row['tail_past_video_seconds'] = round(start+length-duration, 6)
         if do_measure and not row['missing']:
             try:
-                row.update(measure(path))
+                source_in = float(event.get('sourceIn', 0) or 0)
+                row.update(measure(path, source_in, length))
+                row['measured_window'] = [round(source_in, 6), round(source_in + length, 6)]
                 # v7.7.0: clipping is judged on the post-gain peak (clip gain_db from the manifest, default 0 dB)
                 gain_db = float(event.get('gain_db') or 0.0)
                 row['gain_db'] = gain_db

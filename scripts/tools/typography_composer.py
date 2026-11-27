@@ -2293,6 +2293,7 @@ def resolve_dual_rail_safe_y(
     canvas_h: float = 1920.0,
     is_broll: bool = False,
     z_plane: str = "foreground",
+    allow_chest_rail: bool = True,
 ) -> dict[str, Any]:
     """
     `v7.0` **Dual-Rail Safe-Y Coordinator & Hard `Cranial Lock`** (`1080x1920` native physics):
@@ -2429,6 +2430,8 @@ def resolve_dual_rail_safe_y(
             best_chest_clear = score
             best_chest_y = yc
     chest_true_clear = _min_clearance(best_chest_y)
+    if not allow_chest_rail:  # v7.9.3: the face is on screen and the chest rail is unusable (workspace_context / scenes)
+        chest_true_clear = -1e9
 
     # 4. Select optimal collision-free rail
     pref = str(preferred_rail or "auto").strip().lower()
@@ -6624,6 +6627,110 @@ def _kt05_ink_x_in_plate(plate_w: float, left_text: str, main_text: str, accent_
     return min(a for a, _ in spans), max(b for _, b in spans)
 
 
+FACE_SCENE_MODES = frozenset({"P", "B", "S", "A1", "N"})  # Look S scene modes showing the speaker (H / A2 = full-screen B-roll)
+PIP_SCENE_MODES = frozenset({"H", "A2"})  # Look S modes drawn with render_squircle_pip_window over the B-roll
+LOOK_S_PIP_RECTS = {"br": (700, 1446, 1012, 1836), "bl": (68, 1446, 380, 1836)}  # = look_s_render.PIP_RECTS (1080x1920 px)
+PIP_INK_GAP_PX = 24.0  # x-shift fallback: the ink ends this far before the PiP window
+PIP_SAFE_X = (50.0, 1030.0)  # ... and stays inside this horizontal safe zone (the planner's ink clamp)
+
+
+def _json_arg(obj: Any) -> Any:
+    """A dict / list as is, else a JSON file path (None stays None)."""
+    if obj is None or isinstance(obj, (dict, list)):
+        return obj
+    return json.loads(Path(obj).read_text(encoding="utf-8"))
+
+
+def _aroll_framing(doc: dict[str, Any], by_media: dict[str, Any]) -> tuple[dict[str, Any], float, float]:
+    """v7.9.4: (framing, source w, source h) of the A-roll in a bundle `subject_framing` map: the detected entry whose path
+    names the A-roll (`a-roll` / `aroll`), else the first detected one. Its size comes from `artifacts.media_probe` (w / h of that
+    media), else from the face bbox px / norm; ({}, 0, 0) when nothing was detected."""
+    faces = [(rel, sf) for rel, sf in by_media.items() if isinstance(sf, dict) and sf.get("detected")]
+    if not faces:
+        return {}, 0.0, 0.0
+    rel, sf = next(((r, f) for r, f in faces if "a-roll" in r.lower() or "aroll" in r.lower()), faces[0])
+    probe_path = (doc.get("artifacts") or {}).get("media_probe")
+    try:
+        probed = json.loads(Path(probe_path).read_text(encoding="utf-8")) if probe_path else {}
+    except (OSError, ValueError):
+        probed = {}
+    info = (probed.get(rel) if isinstance(probed, dict) else None) or {}
+    src_w, src_h = float(info.get("w") or 0), float(info.get("h") or 0)
+    px, nm = sf.get("face_bbox_px"), sf.get("face_bbox_norm")
+    if (src_w <= 0 or src_h <= 0) and px and nm and nm[2] > nm[0] and nm[3] > nm[1]:
+        src_w = round((px[2] - px[0]) / (nm[2] - nm[0]))
+        src_h = round((px[3] - px[1]) / (nm[3] - nm[1]))
+    return sf, float(src_w), float(src_h)
+
+
+def face_zone_from_workspace_context(
+    workspace_context: dict[str, Any] | str | Path | None, canvas_w: float = 1080.0, canvas_h: float = 1920.0
+) -> dict[str, Any] | None:
+    """v7.9.3: the measured face of `probe_and_align` `workspace_context.subject_framing` (SOURCE px of `resolution`) in SEQUENCE px
+    (cover fit of the source into `canvas_w x canvas_h`): `{hair_top_y, chin_y, face_bbox, chest_rail_usable, scale}`; None when no
+    face was detected or the source size is unknown. v7.9.4: a bundle context (`subject_framing = {<media path>: {...}}`) uses
+    the A-roll entry (`_aroll_framing`) scaled by that media's own size, not `resolution` (the sequence size)."""
+    doc = _json_arg(workspace_context) or {}
+    sf = doc.get("subject_framing") or {}
+    if "detected" in sf:  # raw_video context: flat framing of the one input, `resolution` is its size
+        res = doc.get("resolution") or {}
+        src_w, src_h = float(res.get("width") or 0), float(res.get("height") or 0)
+    else:
+        sf, src_w, src_h = _aroll_framing(doc, sf)
+    hair = sf.get("hair_top_y_px", sf.get("hairline_y_px"))
+    chin = sf.get("chin_y_px")
+    if not sf.get("detected") or src_w <= 0 or src_h <= 0 or hair is None or chin is None:
+        return None
+    k = max(canvas_w / src_w, canvas_h / src_h)
+    off_x, off_y = 0.5 * (canvas_w - src_w * k), 0.5 * (canvas_h - src_h * k)
+    bbox = sf.get("face_bbox_px")
+    chest = ((sf.get("dual_rail_zones") or {}).get("chest_tactile_rail") or {})
+    return {
+        "hair_top_y": round(float(hair) * k + off_y, 1),
+        "chin_y": round(float(chin) * k + off_y, 1),
+        "face_bbox": [round(float(v) * k + (off_x if i % 2 == 0 else off_y), 1) for i, v in enumerate(bbox)] if bbox else None,
+        "chest_rail_usable": chest.get("usable") is not False,
+        "scale": round(k, 6),
+    }
+
+
+def _scene_spans(scenes: Any) -> list[tuple[float, float, str, str]]:
+    """`(start, end, MODE, pip)` of a studio_recipe scenes doc (`{"scenes": [...]}`, a bare list or a JSON path); rows keyed
+    `start` / `end` or `t0` / `t1` (as look_s_render accepts)."""
+    doc = _json_arg(scenes)
+    rows = (doc.get("scenes") or []) if isinstance(doc, dict) else (doc or [])
+    return [(float(r.get("start", r.get("t0"))), float(r.get("end", r.get("t1"))), str(r.get("mode") or "").strip().upper(),
+             str(r.get("pip") or "br")) for r in rows]
+
+
+def _face_visible(spans: list[tuple[float, float, str, str]], t0: float, t1: float) -> bool:
+    """True when any scene overlapping `[t0, t1]` shows the face; a beat outside every scene counts as face-visible."""
+    hits = [mode for a, b, mode, _pip in spans if a < t1 and b > t0]
+    return not hits or any(mode in FACE_SCENE_MODES for mode in hits)
+
+
+def _pip_boxes(spans: list[tuple[float, float, str, str]], t0: float, t1: float) -> list[tuple[int, int, int, int]]:
+    """PiP window rects of the H / A2 scenes overlapping `[t0, t1]`."""
+    return sorted({LOOK_S_PIP_RECTS.get(pip, LOOK_S_PIP_RECTS["br"]) for a, b, mode, pip in spans
+                   if a < t1 and b > t0 and mode in PIP_SCENE_MODES})
+
+
+def _ink_hits_pip(x0: float, y0: float, x1: float, y1: float, boxes: Sequence[Sequence[float]]) -> bool:
+    return any(x0 < bx1 and x1 > bx0 and y0 < by1 and y1 > by0 for bx0, by0, bx1, by1 in boxes)
+
+
+def _shift_clear_of_pip(x0: float, x1: float, boxes: Sequence[Sequence[float]]) -> float | None:
+    """x offset that ends the ink PIP_INK_GAP_PX before a right PiP (or starts it after a left one) inside the safe box
+    PIP_SAFE_X; None when the ink is too wide."""
+    dx = 0.0
+    for bx0, _by0, bx1, _by1 in boxes:
+        if (bx0 + bx1) / 2.0 >= 540.0:
+            dx = min(dx, bx0 - PIP_INK_GAP_PX - x1)
+        else:
+            dx = max(dx, bx1 + PIP_INK_GAP_PX - x0)
+    return dx if (x0 + dx >= PIP_SAFE_X[0] - 1e-6 and x1 + dx <= PIP_SAFE_X[1] + 1e-6) else None
+
+
 def plan_dviet_kinetic_beat_schedule(
     beats: Sequence[dict[str, Any] | str],
     words_tl: Any = None,
@@ -6637,6 +6744,8 @@ def plan_dviet_kinetic_beat_schedule(
     out_dir: str | Path | None = None,
     world_id: str | None = None,
     video_seed: int = 0,
+    workspace_context: dict[str, Any] | str | Path | None = None,
+    scenes: dict[str, Any] | Sequence[dict[str, Any]] | str | Path | None = None,
 ) -> dict[str, Any]:
     """
     `v7.1` **Syllable-Locked `@__dviet` Kinetic Beat Choreography Planner**:
@@ -6653,6 +6762,11 @@ def plan_dviet_kinetic_beat_schedule(
           5. **Dual-Rail `0%` Cranial Lock Coordinates:** Uses `resolve_dual_rail_safe_y` to assign collision-free
              `upper_editorial_stage` / `chest_tactile_rail` / `wall_third` coordinates and emits `batch_jobs` ready for
              `web_plate_builder.render_kinetic_typo_batch`.
+      - v7.9.3: `workspace_context` (dict / path) supplies the measured face (`face_zone_from_workspace_context`, source px scaled
+        to the sequence) when no `cranial_zone` is given; `scenes` (studio_recipe scenes.json) marks each beat face-visible (modes
+        P/B/S/A1/N) or not (H/A2). A face-visible beat never takes the chest rail unless the context says it is usable. Without
+        face data the default band is flagged `stats.cranial_lock_status = "assumed_default"`. `stats.dropped_text` lists text a
+        plate would not draw; a dropped `accent_text` raises ValueError unless the beat sets `allow_drop_accent: true`.
     """
     fps_i = max(24, int(round(float(fps))))
     fmt_code = _FORMAT_MODE_ALIASES.get(str(format_mode or "F1").strip().lower(), str(format_mode or "F1").strip().upper())
@@ -6713,6 +6827,16 @@ def plan_dviet_kinetic_beat_schedule(
             cz_hair, cz_chin = float(cranial_zone[0]), float(cranial_zone[1])
         elif len(cranial_zone) >= 4:
             cz_face_bbox = [float(x) for x in cranial_zone[:4]]
+    cz_source = "cranial_zone" if (cz_hair is not None or cz_chin is not None or cz_face_bbox is not None) else None
+    face_zone = face_zone_from_workspace_context(workspace_context) if workspace_context is not None else None
+    if face_zone is not None and cz_source is None:
+        cz_hair, cz_chin, cz_source = face_zone["hair_top_y"], face_zone["chin_y"], "workspace_context"
+    scene_spans = _scene_spans(scenes) if scenes is not None else []
+    face_aware = face_zone is not None or bool(scene_spans)
+    chest_usable_with_face = bool(face_zone and face_zone["chest_rail_usable"])
+    dropped_all: list[dict[str, Any]] = []
+    dropped_blocking: list[dict[str, Any]] = []
+    dropped_check_errors: list[dict[str, Any]] = []
 
     # Select dynamic contrast templates (`kt01..kt12`)
     assigned_templates = _select_kinetic_templates_for_beats(norm_beats, video_seed=video_seed)
@@ -6980,14 +7104,28 @@ def plan_dviet_kinetic_beat_schedule(
         b_macro = bd.get("macro_subject_bbox") or cz_macro_bbox
         is_broll = bool(bd.get("is_broll", False))
         cam_mode = str(bd.get("cam_mode") or "center").strip().lower()
+        if bd.get("hair_top_y") is not None or bd.get("chin_y") is not None or bd.get("face_bbox"):
+            cranial_src = "beat"
+        elif cz_source is not None:
+            cranial_src = cz_source
+        elif is_broll or z_plane == "behind_subject":
+            cranial_src = "none"
+        else:
+            cranial_src = "assumed_default"
+        # v7.9.3: a face-visible beat keeps off the chest rail unless the measured framing leaves room under the chin
+        face_visible = (_face_visible(scene_spans, clip_at_s, clip_at_s + dur_s) if scene_spans else True) if face_aware else None
+        forbid_chest = face_visible is True and not chest_usable_with_face
 
         pref_rail = str(bd.get("preferred_rail") or tpl_meta["default_rail"] or "auto").strip().lower()
         if pref_rail == "auto":
-            pref_rail = "upper_editorial_stage" if (idx % 3 != 2) else "chest_tactile_rail"
+            pref_rail = "upper_editorial_stage" if (idx % 3 != 2 or forbid_chest) else "chest_tactile_rail"
+        if forbid_chest and pref_rail in ("chest", "chest_tactile_rail", "lower", "bottom"):
+            pref_rail = "upper_editorial_stage"
 
-        eff_text_sz = 32.0 if tpl_id == "kt12_whisper_or_directional_echo" else (52.0 if tpl_id == "kt05_wall_spatial_counterpoint" else 74.0)
+        # v7.9.3: the kt12 whisper renders at >= TEXT_FLOOR_PX since v7.8.0; the old 32 px estimate hid its real ink height
+        eff_text_sz = float(TEXT_FLOOR_PX) if tpl_id == "kt12_whisper_or_directional_echo" else (52.0 if tpl_id == "kt05_wall_spatial_counterpoint" else 74.0)
         n_lines_est = 2 if (accent_clean and tpl_id != "kt06_bridge_anchor_live_swap") else 1
-        rail_res = resolve_dual_rail_safe_y(
+        rail_kw: dict[str, Any] = dict(
             hair_top_y=b_hair,
             chin_y=b_chin,
             preferred_rail="upper" if pref_rail == "wall_third" else pref_rail,
@@ -7001,7 +7139,9 @@ def plan_dviet_kinetic_beat_schedule(
             lead_size=28.0,
             is_broll=is_broll,
             z_plane=z_plane,
+            allow_chest_rail=not forbid_chest,
         )
+        rail_res = resolve_dual_rail_safe_y(**rail_kw)
 
         plate_w = int(tpl_meta["width"])
         plate_h = int(tpl_meta["height"])
@@ -7023,6 +7163,21 @@ def plan_dviet_kinetic_beat_schedule(
             rail_label = str(rail_res["rail"])
             pos_x = 540.0
             ink_x0, ink_x1 = max(50.0, pos_x - 360.0), min(1030.0, pos_x + 360.0)
+
+        # v7.9.3: the H / A2 squircle PiP window is an exclusion box -- move to the upper stage, else slide the ink clear of it
+        pip_boxes = _pip_boxes(scene_spans, clip_at_s, clip_at_s + dur_s) if scene_spans else []
+        if pip_boxes and _ink_hits_pip(ink_x0, rail_res["ink_y_span"][0], ink_x1, rail_res["ink_y_span"][1], pip_boxes):
+            up_res = resolve_dual_rail_safe_y(**{**rail_kw, "preferred_rail": "upper", "allow_chest_rail": False})
+            dx_pip = _shift_clear_of_pip(ink_x0, ink_x1, pip_boxes)
+            if not _ink_hits_pip(ink_x0, up_res["ink_y_span"][0], ink_x1, up_res["ink_y_span"][1], pip_boxes) and (
+                up_res["cranial_lock_verified"] or not rail_res["cranial_lock_verified"] or dx_pip is None
+            ):
+                rail_res = up_res
+                if rail_label != "wall_third":
+                    rail_label = str(up_res["rail"])
+            elif dx_pip is not None:
+                pos_x, ink_x0, ink_x1 = round(pos_x + dx_pip, 1), ink_x0 + dx_pip, ink_x1 + dx_pip
+        pip_hit = bool(pip_boxes) and _ink_hits_pip(ink_x0, rail_res["ink_y_span"][0], ink_x1, rail_res["ink_y_span"][1], pip_boxes)
 
         pos_y = float(rail_res["y"])
         iy0, iy1 = float(rail_res["ink_y_span"][0]), float(rail_res["ink_y_span"][1])
@@ -7088,6 +7243,20 @@ def plan_dviet_kinetic_beat_schedule(
             "duration_sec": dur_s,
         }
 
+        # v7.9.3: no silent text drop -- the plate HTML is checked for every kicker / accent the beat carries
+        dropped: list[dict[str, str]] = []
+        if accent_clean or kicker_clean:
+            try:
+                dropped = _wpb().kt_dropped_text(tpl_id, props_obj)
+            except Exception as exc:  # the plate cannot be built here (e.g. missing font): reported, not hidden
+                dropped_check_errors.append({"beat_index": idx, "template": tpl_id, "error": f"{type(exc).__name__}: {exc}"})
+        allow_drop = bd.get("allow_drop_accent") is True
+        for d in dropped:
+            row = {"beat_index": idx, "template": tpl_id, **d}
+            dropped_all.append(row)
+            if d["field"] == "accent_text" and not allow_drop:
+                dropped_blocking.append(row)
+
         craft_clip_obj: dict[str, Any] = {
             "name": f"KT{idx + 1:02d} · {tpl_meta['short_code']} · {(main_clean or accent_clean)[:18]}",
             "src": out_mov_path,
@@ -7128,7 +7297,10 @@ def plan_dviet_kinetic_beat_schedule(
             "props": props_obj,
             "typo_kinetic_meta": typo_meta_obj,
             "craft_clip": craft_clip_obj,
+            "dropped_text": dropped,
         }
+        if allow_drop:
+            job_obj["allow_drop_accent"] = True
 
         planned_beats.append(
             {
@@ -7151,6 +7323,10 @@ def plan_dviet_kinetic_beat_schedule(
                 "pos": [pos_x, plate_center_y],
                 "ink_bbox_screen": ink_bbox_screen,
                 "cranial_lock_verified": bool(rail_res["cranial_lock_verified"]),
+                "cranial_source": cranial_src,
+                "face_visible": face_visible,
+                "pip_intersect": pip_hit,
+                "dropped_text": dropped,
                 "kicker_at_s": kicker_at_s if kicker_clean else None,
                 "main_at_s": main_at_s,
                 "accent_at_s": accent_at_s if accent_clean else None,
@@ -7174,6 +7350,19 @@ def plan_dviet_kinetic_beat_schedule(
         sil_dist[s_k] = sil_dist.get(s_k, 0) + 1
         bkt_dist[b_k] = bkt_dist.get(b_k, 0) + 1
 
+    if dropped_blocking:
+        raise ValueError(
+            "[v7.9.3 DROPPED_ACCENT_TEXT] the plate would not draw accent_text: "
+            + "; ".join(f"beat {r['beat_index'] + 1} {r['template']} '{r['text']}'" for r in dropped_blocking)
+            + " -- pick a template that draws it, move it into main_text, or set allow_drop_accent: true on the beat"
+        )
+    cran_srcs = [pb["cranial_source"] for pb in planned_beats]
+    if "assumed_default" in cran_srcs:
+        cranial_status = "assumed_default"
+    elif not any(c in ("beat", "cranial_zone", "workspace_context") for c in cran_srcs):
+        cranial_status = "not_applicable"
+    else:
+        cranial_status = "verified" if all(pb["cranial_lock_verified"] for pb in planned_beats) else "violated"
     max_sil_cnt = max(sil_dist.values()) if sil_dist else 0
     return {
         "version": "7.1",
@@ -7193,6 +7382,13 @@ def plan_dviet_kinetic_beat_schedule(
             "fabricated_kickers_blocked": fabricated_kickers_blocked,
             "max_syllable_onset_drift_frames": round(max_onset_drift_f, 3),
             "cranial_lock_100pct": all(bool(pb["cranial_lock_verified"]) for pb in planned_beats),
+            "cranial_lock_status": cranial_status,
+            "cranial_sources": {c: cran_srcs.count(c) for c in sorted(set(cran_srcs))},
+            "face_zone_px": face_zone,
+            "pip_intersections": sum(1 for pb in planned_beats if pb["pip_intersect"]),
+            "chest_rail_face_beats": sum(1 for pb in planned_beats if pb["face_visible"] and pb["rail"] == "chest_tactile_rail"),
+            "dropped_text": dropped_all,
+            "dropped_text_check_errors": dropped_check_errors,
         },
         "beats": planned_beats,
         "batch_jobs": batch_jobs,

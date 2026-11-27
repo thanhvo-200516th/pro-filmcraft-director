@@ -66,7 +66,7 @@ def _check(name: str, ok: bool, detail: str, remedy: str, required: bool = True)
 
 def _first_line(cmd: list[str]) -> str:
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=20, check=False)
+        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20, check=False)
         return ((r.stdout or r.stderr).strip().splitlines() or [""])[0]
     except (OSError, subprocess.TimeoutExpired):
         return ""
@@ -85,7 +85,7 @@ def _font_names() -> str:
 
 def _first_line_all(cmd: list[str]) -> str:
     try:
-        return subprocess.run(cmd, capture_output=True, text=True, timeout=30, check=False).stdout
+        return subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30, check=False).stdout
     except (OSError, subprocess.TimeoutExpired):
         return ""
 
@@ -111,7 +111,7 @@ def hf_hub_dir() -> Path:
 
 def _python_imports(py: str) -> dict[str, dict[str, object]]:
     try:
-        r = subprocess.run([py, "-c", _IMPORT_PROBE, *REQUIRED_IMPORTS], capture_output=True, text=True, timeout=180, check=False)
+        r = subprocess.run([py, "-c", _IMPORT_PROBE, *REQUIRED_IMPORTS], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180, check=False)
         return json.loads(r.stdout.strip().splitlines()[-1])
     except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError, IndexError):
         return {}

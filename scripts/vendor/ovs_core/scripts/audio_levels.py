@@ -84,7 +84,7 @@ def load_rules(path: Path | str = DEFAULT_RULES) -> dict:
 
 # ---------- đo ----------
 def _ffmpeg(args: list[str]) -> str:
-    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-nostdin", *args], capture_output=True, text=True)
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-nostdin", *args], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=1800)
     if r.returncode:
         raise SystemExit(f"ffmpeg lỗi: {r.stderr.strip().splitlines()[-1] if r.stderr.strip() else r.returncode}")
     return r.stderr
@@ -114,7 +114,7 @@ def short_term(path: str | Path) -> list[tuple[float, float]]:
     """[(giây, LUFS ngắn hạn)] mỗi 0,1 s, bỏ 3 s đầu (cửa sổ chưa đầy)."""
     err = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-nostdin", "-i", str(path), "-vn", "-af",
                           "ebur128=metadata=1:framelog=quiet,ametadata=mode=print:key=lavfi.r128.S:file=-", "-f", "null", "-"],
-                         capture_output=True, text=True).stdout
+                         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=1800).stdout
     out, t = [], 0.0
     for line in err.splitlines():
         if "pts_time:" in line:
@@ -171,7 +171,7 @@ def _atempo(f: float) -> str:
 
 def _is_mono(path: str | Path) -> bool:
     r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a:0", "-show_entries", "stream=channels", "-of",
-                        "csv=p=0", str(path)], capture_output=True, text=True)
+                        "csv=p=0", str(path)], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
     return r.stdout.strip() == "1"
 
 
@@ -181,7 +181,7 @@ def decode(path: str | Path, start: float, src_dur: float, speed: float = 1.0, c
     af = ",".join(x for x in ("pan=stereo|c0=c0|c1=c0" if _is_mono(path) else "", _atempo(speed) if speed != 1.0 else "", chain) if x)
     cmd = ["ffmpeg", "-hide_banner", "-nostdin", "-v", "error", "-ss", f"{start:.4f}", "-t", f"{src_dur:.4f}", "-i", str(path),
            "-vn", *(["-af", af] if af else []), "-f", "f32le", "-ar", str(SR), "-ac", "2", "-"]
-    r = subprocess.run(cmd, capture_output=True)
+    r = subprocess.run(cmd, capture_output=True, timeout=1800)
     if r.returncode:
         raise SystemExit(f"ffmpeg lỗi khi giải mã {path}: {r.stderr.decode(errors='replace').strip()}")
     return np.frombuffer(r.stdout, dtype="<f4").reshape(-1, 2)
@@ -242,7 +242,7 @@ def render_stems(spec: dict, spec_dir: Path, rules: dict, bgm_chain: bool = Fals
 
 def write_wav(path: Path, x: np.ndarray) -> None:
     r = subprocess.run(["ffmpeg", "-hide_banner", "-nostdin", "-v", "error", "-y", "-f", "f32le", "-ar", str(SR), "-ac", "2",
-                        "-i", "-", "-c:a", "pcm_f32le", str(path)], input=x.astype("<f4").tobytes(), capture_output=True)
+                        "-i", "-", "-c:a", "pcm_f32le", str(path)], input=x.astype("<f4").tobytes(), capture_output=True, timeout=1800)
     if r.returncode:
         raise SystemExit(f"không ghi được {path}: {r.stderr.decode(errors='replace').strip()}")
 

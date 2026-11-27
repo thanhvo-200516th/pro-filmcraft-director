@@ -29,3 +29,8 @@ tmp/
 *.wav
 *.npz
 *.npy
+
+# Generated test fixtures (tests/test_ports.py now writes to a temp dir; the two hand-written inputs stay tracked)
+tests/fixtures_ports/*
+!tests/fixtures_ports/events_sample.json
+!tests/fixtures_ports/words_tl_sample.json

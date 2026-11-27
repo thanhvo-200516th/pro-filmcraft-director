@@ -50,7 +50,7 @@ class PlanError(ValueError):
 def _probe(path: Path) -> dict[str, Any]:
     r = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration:stream=codec_type", "-of", "json", str(path)],
-        capture_output=True, text=True, check=False,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, timeout=120,
     )
     if r.returncode != 0:
         raise PlanError(f"ffprobe failed on {path}: {r.stderr.strip()[-200:]}")
@@ -93,7 +93,7 @@ def _extract_voice(src: Path, out_wav: Path) -> Path:
     out_wav.parent.mkdir(parents=True, exist_ok=True)
     r = subprocess.run(
         ["ffmpeg", "-y", "-v", "error", "-i", str(src), "-vn", "-ac", "2", "-ar", "48000", "-c:a", "pcm_s16le", str(out_wav)],
-        capture_output=True, text=True, check=False,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, timeout=1800,
     )
     if r.returncode != 0 or not out_wav.is_file():
         raise PlanError(f"could not extract voice from {src}: {r.stderr.strip()[-200:]}")
@@ -102,7 +102,9 @@ def _extract_voice(src: Path, out_wav: Path) -> Path:
 
 def _resolve_plate(src: str, plan_dir: Path, media_dir: Path) -> Path | None:
     p = Path(src)
-    for cand in ([p] if p.is_absolute() else [plan_dir / p, media_dir / p, media_dir / p.name]):
+    # relative plate paths may be relative to the planner's cwd (out_dir="work/plates"), the plan folder or the media folder;
+    # missing the cwd case silently swapped every kt plate for a native text proxy (v7.9.4 e2e run)
+    for cand in ([p] if p.is_absolute() else [p, plan_dir / p, media_dir / p, plan_dir / p.name, media_dir / p.name]):
         if cand.is_file():
             return cand.resolve()
     return None

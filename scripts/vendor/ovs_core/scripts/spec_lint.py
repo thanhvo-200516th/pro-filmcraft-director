@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Kiểm spec .craft.json TRƯỚC khi dựng FilmCraft (học từ ghost-editor render_report / finals: mỗi lỗi có mã + cách sửa).
 
-    ~/.venvs/video-skills/bin/python spec_lint.py work/kb06.craft.json --words work/words_tl.json [--json]
+    python3 spec_lint.py work/kb06.craft.json --words work/words_tl.json [--json]
 
 Mức:
   HARD  — fc_build_fast sẽ hỏng hoặc project sai chắc chắn → dừng build (mã thoát 2).
@@ -31,7 +31,7 @@ VIDEO_EXT = {".mp4", ".mov", ".mkv", ".webm"}
 @lru_cache(maxsize=None)
 def media_size(path: str) -> tuple[int, int] | None:
     r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height",
-                        "-of", "csv=p=0", path], capture_output=True, text=True)
+                        "-of", "csv=p=0", path], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
     try:
         w, h = (int(x) for x in r.stdout.strip().split(",")[:2])
         return w, h
@@ -42,7 +42,7 @@ def media_size(path: str) -> tuple[int, int] | None:
 @lru_cache(maxsize=None)
 def media_dur(path: str) -> float | None:
     r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
     try:
         return float(r.stdout.strip())
     except ValueError:

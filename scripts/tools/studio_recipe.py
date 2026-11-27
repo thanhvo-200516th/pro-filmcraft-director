@@ -236,15 +236,15 @@ def _text_sync(texts: list[dict], words, mo: dict) -> list[dict]:
 
 
 def check_text_legibility(items: list[dict], preset: dict | None = None, H: int = 1920) -> list[dict]:
-    """`text_min_size` for EVERY overlay text (hook texts, card labels, plate captions): `font_px` x plate `scale` >= 64 px, glyph box (`glyph_px` / `glyph_frac`) >= 3.3 % of H; `decorative: true` only lowers it to a warning (v4 K1: labels 10-27 px)."""
+    """`text_min_size` for EVERY overlay text (hook texts, card labels, plate captions): `font_px` x plate `scale` >= 64 px, glyph box (`glyph_px` / `glyph_frac`) >= 3.3 % of H; `decorative: true` only lowers it to a warning (v4 K1: labels 10-27 px). v7.9.3 `text_contrast`: optional measured `contrast` (web_plate_builder.text_contrast_ratio) < 3:1 error, < 4.5:1 warn."""
     mo, bad = (preset or _load())["pacing"]["motion"], []
     for e in items:
-        sev, t0, px = "warn" if e.get("decorative") else "error", e.get("t_ms", 0) / 1000, e["font_px"] * e.get("scale", 1.0) if "font_px" in e else None
-        fr = e["glyph_px"] / H if "glyph_px" in e else e.get("glyph_frac")
+        sev, t0, px, fr, cr = "warn" if e.get("decorative") else "error", e.get("t_ms", 0) / 1000, e["font_px"] * e.get("scale", 1.0) if "font_px" in e else None, e["glyph_px"] / H if "glyph_px" in e else e.get("glyph_frac"), e.get("contrast")
         if px is not None and px < mo["min_font_px"] - 1e-6:
             bad.append(_f("text_min_size", f"text '{e.get('id')}' font {px:.0f} px (font x plate scale) < {mo['min_font_px']} px", sev, t0, value=round(px, 1), limit=mo["min_font_px"], id=e.get("id")))
         if fr is not None and fr < mo["min_text_box_frac"]:
             bad.append(_f("text_min_size", f"text '{e.get('id')}' glyph box {fr:.4f} < {mo['min_text_box_frac']} of frame height", sev, t0, value=round(fr, 4), limit=mo["min_text_box_frac"], id=e.get("id")))
+        bad += [_f("text_contrast", f"text '{e.get('id')}' contrast {cr:.2f}:1 against its background < {lim}:1: heavier weight, stronger shadow / halo or a scrim", "error" if cr < mr else "warn", t0, value=round(cr, 2), limit=lim, id=e.get("id")) for mr, wr in [(mo.get("min_contrast_ratio", 3.0), mo.get("warn_contrast_ratio", 4.5))] if cr < wr for lim in [mr if cr < mr else wr]] if cr is not None else []
     return bad
 
 

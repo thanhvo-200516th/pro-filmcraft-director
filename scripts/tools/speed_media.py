@@ -48,7 +48,7 @@ def choose_speed(total_seconds: float, steps: tuple[float, ...] = SPEED_STEPS, m
 def probe(path: Path) -> dict:
     out = subprocess.run([FFPROBE, "-v", "error", "-show_entries",
                           "stream=codec_type,width,height,r_frame_rate,avg_frame_rate,duration:format=duration",
-                          "-of", "json", str(path)], capture_output=True, text=True).stdout
+                          "-of", "json", str(path)], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120).stdout
     try:
         d = json.loads(out)
         info: dict = {"duration": float(d["format"]["duration"])}
@@ -104,7 +104,7 @@ def cmd_apply(a: argparse.Namespace) -> int:
         return 2
     graph, codec = _out_graph(speed, a.fps, "video" in info, "audio" in info)
     dst.parent.mkdir(parents=True, exist_ok=True)
-    r = subprocess.run([FFMPEG, "-y", "-v", "error", "-nostdin", "-i", str(src), *graph, *codec, str(dst)], capture_output=True, text=True)
+    r = subprocess.run([FFMPEG, "-y", "-v", "error", "-nostdin", "-i", str(src), *graph, *codec, str(dst)], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=1800)
     if r.returncode != 0:
         print(f"ffmpeg failed: {r.stderr[-500:]}", file=sys.stderr)
         return 1

@@ -37,7 +37,7 @@ DEFAULTS = {"noise_db": -35.0, "min_silence": 0.3, "pad_before": 0.07, "pad_afte
 
 def probe_streams(path: Path) -> dict:
     out = subprocess.run([FFPROBE, "-v", "error", "-show_entries", "stream=codec_type:format=duration", "-of", "json", str(path)],
-                         capture_output=True, text=True).stdout
+                         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120).stdout
     try:
         d = json.loads(out)
         kinds = {s["codec_type"] for s in d.get("streams", [])}
@@ -50,7 +50,7 @@ def detect_silences(path: Path, noise_db: float, min_silence: float, dur: float)
     """[(silence_start, silence_end)] from ffmpeg silencedetect; a silence running to EOF ends at the file duration."""
     err = subprocess.run([FFMPEG, "-hide_banner", "-nostdin", "-vn", "-i", str(path), "-af",
                           f"silencedetect=n={noise_db}dB:d={min_silence}", "-f", "null", "-"],
-                         capture_output=True, text=True).stderr
+                         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=1800).stderr
     starts = [float(x) for x in re.findall(r"silence_start: (-?[\d.]+)", err)]
     ends = [float(x) for x in re.findall(r"silence_end: ([\d.]+)", err)]
     ends += [dur] * (len(starts) - len(ends))
@@ -161,7 +161,7 @@ def cmd_apply(a: argparse.Namespace) -> int:
         script = Path(td) / "graph.txt"
         script.write_text(graph, encoding="utf-8")
         r = subprocess.run([FFMPEG, "-y", "-v", "error", "-nostdin", "-i", str(src), "-filter_complex_script", str(script),
-                            *maps, *codec, str(dst)], capture_output=True, text=True)
+                            *maps, *codec, str(dst)], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=1800)
     if r.returncode != 0:
         print(f"ffmpeg failed: {r.stderr[-500:]}", file=sys.stderr)
         return 1

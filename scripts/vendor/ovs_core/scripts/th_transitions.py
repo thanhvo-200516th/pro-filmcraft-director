@@ -198,7 +198,7 @@ def camera_continue(fx, clip: dict, cue_sfx: bool = True, before: dict | None = 
 
 @lru_cache(maxsize=64)
 def _src_len(src: str) -> float:
-    r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", src], capture_output=True, text=True)
+    r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", src], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
     try:
         return float(r.stdout.strip())
     except ValueError:

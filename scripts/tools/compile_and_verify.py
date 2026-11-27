@@ -72,8 +72,20 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, NamedTuple
 
-_VENV_SITE = Path.home() / f".venvs/video-skills/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages"
-if _VENV_SITE.is_dir() and str(_VENV_SITE) not in sys.path:
+def _venv_root_from_env() -> Path | None:
+    """Venv root named by `FILMCRAFT_VENV_PYTHON` (a python binary) or `PFD_VENV` (a venv dir or python binary)."""
+    for key in ("FILMCRAFT_VENV_PYTHON", "PFD_VENV"):
+        raw = os.environ.get(key)
+        if raw:
+            p = Path(raw).expanduser()
+            return p.parent.parent if p.is_file() else p
+    return None
+
+
+# Env first; an already-active venv needs nothing; the legacy ~/.venvs path is only the last fallback.
+_VENV_ROOT = _venv_root_from_env() or (None if sys.prefix != sys.base_prefix else Path.home() / ".venvs/video-skills")
+_VENV_SITE = _VENV_ROOT / f"lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages" if _VENV_ROOT else None
+if _VENV_SITE is not None and _VENV_SITE.is_dir() and str(_VENV_SITE) not in sys.path:
     sys.path.append(str(_VENV_SITE))
 
 import cv2
@@ -179,7 +191,24 @@ V70_MICRO_BRIDGE_ALIASES: dict[str, str] = {
     "rack_focus": "rack_focus_bridge_13f",
 }
 
-VENV_PY = Path(os.environ.get("FILMCRAFT_VENV_PYTHON", str(Path.home() / ".venvs/video-skills/bin/python3")))
+
+def _resolve_venv_python() -> Path:
+    """`FILMCRAFT_VENV_PYTHON` / `PFD_VENV`, else the running interpreter, else the legacy ~/.venvs path if it exists."""
+    env_py = os.environ.get("FILMCRAFT_VENV_PYTHON")
+    if env_py:
+        return Path(env_py).expanduser()
+    pfd = os.environ.get("PFD_VENV")
+    if pfd:
+        p = Path(pfd).expanduser()
+        return p if p.is_file() else p / "bin" / "python3"
+    if sys.executable:
+        return Path(sys.executable)
+    return Path.home() / ".venvs/video-skills/bin/python3"
+
+
+VENV_PY = _resolve_venv_python()
+_PROBE_TIMEOUT_S = 120.0  # ffprobe / fc-match style probes
+_RUN_TIMEOUT_S = 1800.0  # ffmpeg passes and the FilmCraft / fc_build / edit_rules / spec_lint / audit_sfx helper CLIs
 SKILL_ROOT = Path(__file__).resolve().parents[2]
 HAAR_CASCADE_XML = SKILL_ROOT / "data" / "haarcascade_frontalface_default.xml"
 
@@ -307,6 +336,7 @@ def _filmcraft_render_smoke(cli_cmd: list[str], project: Path, seconds: float, o
         r = subprocess.run(
             [*cli_cmd, "--project", str(project), "render", "--seconds", f"{seconds:.2f}", "--out", str(out_png)],
             capture_output=True, text=True, check=False, timeout=timeout_s,
+            encoding="utf-8", errors="replace",
         )
     except subprocess.TimeoutExpired:
         return 124, {"ok": False, "error": f"filmcraft_cli.py timed out after {timeout_s}s"}
@@ -405,6 +435,7 @@ def probe_media_duration(path_str: str) -> float | None:
         capture_output=True,
         text=True,
         check=False,
+        timeout=_PROBE_TIMEOUT_S, encoding="utf-8", errors="replace",
     )
     if r.returncode != 0:
         return None
@@ -454,6 +485,7 @@ def decode_mono_48k(path_str: str) -> np.ndarray:
         capture_output=True,
         text=True,
         check=False,
+        timeout=_PROBE_TIMEOUT_S, encoding="utf-8", errors="replace",
     )
     try:
         ch = max(1, int((r_ch.stdout or "2").split()[0]))
@@ -479,6 +511,7 @@ def decode_mono_48k(path_str: str) -> np.ndarray:
         ],
         capture_output=True,
         check=False,
+        timeout=_RUN_TIMEOUT_S,
     )
     if r.returncode != 0 or not r.stdout:
         return np.zeros(0, dtype=np.float64)
@@ -784,6 +817,7 @@ def select_steady_state_bgm_offset(
         ],
         capture_output=True,
         check=False,
+        timeout=_RUN_TIMEOUT_S,
     )
     if r.returncode != 0 or not r.stdout:
         return {"selected_in_s": 0.0, "lra_lu": 0.0, "lra_at_0_lu": 0.0, "candidates_tested": 0, "changed": False}
@@ -854,6 +888,7 @@ def measure_ebur128(wav_path: Path) -> dict[str, float]:
         capture_output=True,
         text=True,
         check=False,
+        timeout=_RUN_TIMEOUT_S, encoding="utf-8", errors="replace",
     )
     err = r.stderr
     if r.returncode != 0 or "Summary:" not in err:
@@ -1030,6 +1065,7 @@ def apply_vocal_chest_warmth_185hz(
         ],
         capture_output=True,
         check=False,
+        timeout=_RUN_TIMEOUT_S,
     )
     if r.returncode == 0 and out_wav.is_file() and out_wav.stat().st_size > 256:
         return out_wav
@@ -2302,6 +2338,38 @@ def voice_delta_window(rules_path: Path, init_vb_trim: float) -> tuple[float, fl
     return float(vp["min"]) + 0.08 - base, float(vp["max"]) - 0.08 - base
 
 
+def voice_pretrim_db(rules_path: Path, init_vb_trim: float) -> float:
+    """v7.9.3: voice share of the initial pre-trim, clamped so the planned voice peak (`voice_peak_dbfs.target` + trim) stays
+    inside the rules' window (0.08 dB inner margin). studio_14 asked +1.28 dB on top of the -4 dBFS plan (-2.72 > -3.0 max)."""
+    lo, hi = voice_delta_window(rules_path, 0.0)
+    return round(max(lo, min(hi, float(init_vb_trim))), 2)
+
+
+def voice_peak_retrim_delta(
+    stems_check: list[dict[str, Any]] | None,
+    rules_path: Path,
+    lufs: float,
+    target_lufs: float,
+    tol_lu: float = 0.45,
+) -> float:
+    """v7.9.3 post-pass-1 retrim: dB that brings a FAIL `voice_peak` stem back inside `voice_peak_dbfs` (0.08 dB inner margin),
+    clamped so `lufs + delta` stays within `target_lufs +/- tol_lu` (the mix follows the voice; BGM moves with it). 0.0 = no retrim."""
+    item = next((s for s in stems_check or [] if s.get("id") == "voice_peak"), None)
+    if not item or item.get("status") != "FAIL" or not _is_num(item.get("value")) or not math.isfinite(float(lufs)):
+        return 0.0
+    vp = json.loads(Path(rules_path).read_text(encoding="utf-8"))["params"]["audio"]["voice_peak_dbfs"]
+    peak = float(item["value"])
+    if peak > float(vp["max"]):
+        want = float(vp["max"]) - 0.08 - peak
+    elif peak < float(vp["min"]):
+        want = float(vp["min"]) + 0.08 - peak
+    else:
+        return 0.0
+    lo = float(target_lufs) - tol_lu - float(lufs)
+    hi = float(target_lufs) + tol_lu - float(lufs)
+    return round(max(min(lo, 0.0), min(max(hi, 0.0), want)), 2)
+
+
 # ==============================================================================
 # [P1] Gate 5 Deep Visual Rigor (`full` mode):
 #      1. Blank Render (`grayscale_std >= 10.0`) & Frozen B-Roll (`mean(|f2-f1|) >= 0.8`)
@@ -2582,6 +2650,7 @@ def _extract_gray_270x480(video_path: str, time_s: float) -> np.ndarray | None:
         ],
         capture_output=True,
         check=False,
+        timeout=_RUN_TIMEOUT_S,
     )
     if r.returncode != 0 or len(r.stdout) < 270 * 480:
         return None
@@ -2596,6 +2665,7 @@ def resolve_installed_font_path(family: str, style: str) -> str | None:
         capture_output=True,
         text=True,
         check=False,
+        timeout=_PROBE_TIMEOUT_S, encoding="utf-8", errors="replace",
     )
     cand = (r.stdout or "").strip()
     if cand and Path(cand).is_file():
@@ -2677,10 +2747,127 @@ def _extract_context_face_norm(context_doc: dict[str, Any] | None) -> list[float
     if isinstance(sf, dict):
         if isinstance(sf.get("face_bbox_norm"), list) and len(sf["face_bbox_norm"]) == 4:
             return [float(x) for x in sf["face_bbox_norm"]]
-        for sub in sf.values():
-            if isinstance(sub, dict) and isinstance(sub.get("face_bbox_norm"), list) and len(sub["face_bbox_norm"]) == 4:
-                return [float(x) for x in sub["face_bbox_norm"]]
+        # v7.9.4 bundle map {<media path>: framing}: the A-roll entry (path names `a-roll` / `aroll`), else the first face, as
+        # typography_composer._aroll_framing does; the norm bbox is already relative to that clip's own size
+        faces = [(str(rel), sub) for rel, sub in sf.items()
+                 if isinstance(sub, dict) and isinstance(sub.get("face_bbox_norm"), list) and len(sub["face_bbox_norm"]) == 4]
+        if faces:
+            _rel, sub = next(((r, f) for r, f in faces if "a-roll" in r.lower() or "aroll" in r.lower()), faces[0])
+            return [float(x) for x in sub["face_bbox_norm"]]
     return None
+
+
+# v7.9.3 Gate 5: real V2 plate ink + face visibility windows
+LOOK_S_PIP_RECTS = {"br": (700.0, 1446.0, 1012.0, 1836.0), "bl": (68.0, 1446.0, 380.0, 1836.0)}  # mirrors look_s_render.PIP_RECTS
+FACE_FULL_MODES = frozenset({"P", "B", "S", "A1", "N"})  # Look S modes with the speaker visible full-frame
+FACE_PIP_MODES = frozenset({"H", "A2"})  # full-screen B-roll: the face is only inside the PiP rect
+PLATE_INK_ALPHA_MIN = 24  # mirrors look_s_render.INK_ALPHA_MIN
+_KT_PROXY_NAME_RE = re.compile(r"^\s*KT(\d+)\s*·\s*(kt\d+)\b", re.I)
+_KT_PLATE_FILE_RE = re.compile(r"(?:^|[_\-])kt_?\d{2}", re.I)
+
+
+@lru_cache(maxsize=256)
+def _plate_alpha_ink_px(src: str, t0: float, t1: float) -> tuple[tuple[int, int, int, int], int, int] | None:
+    """Union of the opaque pixels (alpha > PLATE_INK_ALPHA_MIN) of an alpha plate over [t0, t1] at 10 fps, in plate px, with the
+    plate (w, h). None when unreadable or fully transparent in that window."""
+    pr = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "json", src],
+        capture_output=True, text=True, check=False, timeout=_PROBE_TIMEOUT_S, encoding="utf-8", errors="replace",
+    )
+    try:
+        st = json.loads(pr.stdout or "{}")["streams"][0]
+        w, h = int(st["width"]), int(st["height"])
+    except (json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError):
+        return None
+    cmd = ["ffmpeg", "-v", "error", "-ss", f"{max(0.0, t0):.3f}", "-t", f"{max(0.1, t1 - t0):.3f}", "-i", src,
+           "-vf", "fps=10", "-f", "rawvideo", "-pix_fmt", "rgba", "-"]
+    try:
+        r = subprocess.run(cmd, capture_output=True, check=False, timeout=_RUN_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        return None
+    n = len(r.stdout) // (w * h * 4)
+    if r.returncode != 0 or n == 0:
+        return None
+    m = (np.frombuffer(r.stdout[: n * w * h * 4], np.uint8).reshape(n, h, w, 4)[..., 3] > PLATE_INK_ALPHA_MIN).any(axis=0)
+    ys, xs = np.nonzero(m)
+    if not xs.size:
+        return None
+    return (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1), w, h
+
+
+def measure_plate_ink_bbox(
+    clip: dict[str, Any],
+    tau: float,
+    seq_w: float = 1080.0,
+    seq_h: float = 1920.0,
+    position: Any = None,
+) -> tuple[float, float, float, float] | None:
+    """v7.9.3: screen ink box of an alpha plate clip (V2 kinetic `.mov`): union of the plate's opaque pixels from clip-local `tau`
+    (settled) to the clip end, projected through FilmCraft `motion` (anchor defaults to the plate centre, `position` overrides
+    the motion position, e.g. a text proxy's position). None when invisible (opacity < 25), missing or unreadable."""
+    src = str(clip.get("src") or "")
+    if not src or not Path(src).is_file():
+        return None
+    if float(_eval_kf_param(clip.get("opacity"), tau, 100.0)) < 25.0:
+        return None
+    c_in, c_dur = float(clip.get("in", 0.0) or 0.0), float(clip.get("dur", 0.0) or 0.0)
+    got = _plate_alpha_ink_px(src, round(c_in + max(0.0, tau), 3), round(c_in + max(c_dur, tau + 0.1), 3))
+    if got is None:
+        return None
+    (x0, y0, x1, y1), w, h = got
+    mot = dict(clip.get("motion") or {})
+    mot.setdefault("anchor", [w / 2.0, h / 2.0])
+    if position is not None:
+        mot["position"] = position
+    mot.setdefault("position", clip.get("position") or [seq_w / 2.0, seq_h / 2.0])
+    proj = {"motion": mot}
+    sx0, sy0 = _motion_transform_point(proj, tau, float(x0), float(y0), seq_w, seq_h)
+    sx1, sy1 = _motion_transform_point(proj, tau, float(x1), float(y1), seq_w, seq_h)
+    return round(min(sx0, sx1), 1), round(min(sy0, sy1), 1), round(max(sx0, sx1), 1), round(max(sy0, sy1), 1)
+
+
+def load_scenes(path: str | Path | None) -> list[dict[str, Any]] | None:
+    """`--scenes scenes.json` (studio_recipe output `{scenes: [...]}` or a bare list) -> scene list; None when not given."""
+    if not path:
+        return None
+    doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    scenes = doc.get("scenes") if isinstance(doc, dict) else doc
+    if not isinstance(scenes, list):
+        raise ValueError(f"--scenes {path}: expected a list or {{'scenes': [...]}}")
+    return [s for s in scenes if isinstance(s, dict)]
+
+
+def face_visibility_at(
+    ts: float,
+    scenes: list[dict[str, Any]] | None,
+    face_windows: Any = None,
+) -> tuple[str | None, tuple[float, float, float, float] | None]:
+    """v7.9.3: where the speaker's face is visible at `ts`. ("full", None) in Look S modes P/B/S/A1/N (or an unknown mode),
+    ("pip", rect) in H/A2 full-screen B-roll (face only inside the PiP rect), ("none", None) outside every `meta.face_windows`
+    window, (None, None) when neither scenes nor windows say anything (legacy: the A-roll face bands apply)."""
+    for sc in scenes or []:
+        try:
+            s0, s1 = float(sc.get("start", sc.get("t0"))), float(sc.get("end", sc.get("t1")))  # look_s_render accepts both
+        except (TypeError, ValueError):
+            continue
+        if s0 <= ts < s1:
+            mode = str(sc.get("mode") or "").upper()
+            if mode in FACE_PIP_MODES:
+                return "pip", LOOK_S_PIP_RECTS.get(str(sc.get("pip") or "br"), LOOK_S_PIP_RECTS["br"])
+            return "full", None
+    if isinstance(face_windows, list):
+        for w in face_windows:
+            if isinstance(w, (list, tuple)) and len(w) >= 2 and _is_num(w[0]) and _is_num(w[1]):
+                w0, w1 = float(w[0]), float(w[1])
+            elif isinstance(w, dict) and _is_num(w.get("start", w.get("at"))):
+                w0 = float(w.get("start", w.get("at")))
+                w1 = float(w["end"]) if _is_num(w.get("end")) else w0 + (float(w["dur"]) if _is_num(w.get("dur")) else 0.0)
+            else:
+                continue
+            if w0 <= ts < w1:
+                return "full", None
+        return "none", None
+    return None, None
 
 
 def run_full_visual_rigor_gate5(
@@ -2688,6 +2875,7 @@ def run_full_visual_rigor_gate5(
     qa_frames_dir: Path,
     planned_16: list[tuple[float, str]],
     context_doc: dict[str, Any] | None = None,
+    scenes: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """
     Package 2 (`full` mode) Gate 5 Visual Proof:
@@ -2853,7 +3041,123 @@ def run_full_visual_rigor_gate5(
     safe_zone_warnings: list[dict[str, Any]] = []
     face_room_warnings: list[dict[str, Any]] = []
     text_clips_audited = 0
+    plate_clips_audited = 0
+    plate_text_proxies: list[dict[str, Any]] = []
     r208_exempt_count = 0
+    # v7.9.3: face visibility windows (--scenes, else context scenes, else meta.face_windows; none = legacy everywhere)
+    if scenes is None and isinstance(context_doc, dict) and isinstance(context_doc.get("scenes"), list):
+        scenes = [s for s in context_doc["scenes"] if isinstance(s, dict)]
+    face_windows = (spec.get("meta") or {}).get("face_windows") if isinstance(spec.get("meta"), dict) else None
+
+    # V2+ alpha plates (kinetic `.mov`), and the folders they live in (to recognise text proxies of a plate)
+    plate_clips: list[tuple[str, dict[str, Any]]] = []
+    for tr in tracks:
+        if tr.get("type") != "video" or tr is v1_track:
+            continue
+        for cl in tr.get("clips", []):
+            src = str(cl.get("src") or "")
+            if (src and Path(src).suffix.lower() in (".mov", ".webm", ".mkv") and Path(src).is_file()
+                    and (_load_sidecar_typo_meta(src) is not None or _KT_PLATE_FILE_RE.search(Path(src).name))):
+                plate_clips.append((str(tr.get("name", "")), cl))
+    plate_dirs = sorted({str(Path(str(cl["src"])).parent) for _, cl in plate_clips})
+
+    def _proxy_plate_of(cname: str) -> Path | None:
+        m = _KT_PROXY_NAME_RE.match(cname)
+        if not m:
+            return None
+        fname = f"kt_{int(m.group(1)):02d}_{m.group(2).lower()}.mov"
+        return next((Path(d) / fname for d in plate_dirs if (Path(d) / fname).is_file()), None)
+
+    def _audit_ink_box(tname: str, ln: str, cname: str, c_at: float, c_dur: float, t_probe: float,
+                       ink: tuple[float, float, float, float], cur_px: float, cur_py: float,
+                       size_fix: tuple[str, float, str], source: str) -> None:
+        nonlocal r208_exempt_count
+        ix0, iy0, ix1, iy1 = ink
+        # (a) Safe-Zone Check (`x: 50..1030, y: 140..1760`)
+        out_sides: list[str] = []
+        fix_parts: list[str] = []
+        if ix0 < SAFE_ZONE_BOX["x_min"] or ix1 > SAFE_ZONE_BOX["x_max"]:
+            ink_w = max(1.0, ix1 - ix0)
+            max_safe_w = SAFE_ZONE_BOX["x_max"] - SAFE_ZONE_BOX["x_min"]
+            if ink_w > max_safe_w:
+                fix_parts.append(f"reduce {size_fix[0]} to {math.floor(size_fix[1] * (max_safe_w / ink_w))}{size_fix[2]}")
+            else:
+                dx = (SAFE_ZONE_BOX["x_min"] - ix0) if ix0 < SAFE_ZONE_BOX["x_min"] else (SAFE_ZONE_BOX["x_max"] - ix1)
+                fix_parts.append(f"move pos_x to {round(cur_px + dx, 1)}")
+            out_sides.append(f"x={ix0:.0f}..{ix1:.0f}")
+        if iy0 < SAFE_ZONE_BOX["y_min"] or iy1 > SAFE_ZONE_BOX["y_max"]:
+            dy = (SAFE_ZONE_BOX["y_min"] - iy0) if iy0 < SAFE_ZONE_BOX["y_min"] else (SAFE_ZONE_BOX["y_max"] - iy1)
+            fix_parts.append(f"move pos_y to {round(cur_py + dy, 1)}")
+            out_sides.append(f"y={iy0:.0f}..{iy1:.0f}")
+        if out_sides:
+            safe_zone_warnings.append(
+                {
+                    "track": tname,
+                    "clip": cname,
+                    "at": round(c_at, 3),
+                    "ink_bbox": [ix0, iy0, ix1, iy1],
+                    "violation": ", ".join(out_sides),
+                    "source": source,
+                    "fix": f"move/resize clip '{cname}' (at={c_at:.2f}s): " + ", ".join(fix_parts),
+                }
+            )
+
+        # (b) Ruling `R208`: exempt `< 1.5s` opening hook titles from Face-Room check
+        if (ln != "text_low") and (
+            (c_at < 1.5 and (c_at + c_dur) <= 1.60) or ("hook" in cname.lower() and c_at < 1.5 and c_dur <= 1.55)
+        ):
+            r208_exempt_count += 1
+            return
+
+        # Face-Room only where the face is visible (v7.9.3): A-roll eye/mouth bands, or the PiP rect on H/A2 B-roll scenes
+        vis, pip_rect = face_visibility_at(t_probe, scenes, face_windows)
+        if vis == "none":
+            return
+        if vis == "pip" and pip_rect is not None:
+            bands: dict[str, tuple[float, float, float, float]] | None = {"face": pip_rect, "pip_rect": pip_rect}
+            band_names: tuple[str, ...] = ("pip_rect",)
+        else:
+            bands = _face_bands_at(t_probe)
+            band_names = ("eye_band", "mouth_band")
+        if bands is None:
+            return
+
+        for band_name in band_names:
+            bx0, by0, bx1, by1 = bands[band_name]
+            exp_x0, exp_y0 = bx0 - FACE_MARGIN_PX, by0 - FACE_MARGIN_PX
+            exp_x1, exp_y1 = bx1 + FACE_MARGIN_PX, by1 + FACE_MARGIN_PX
+            ov_x = min(ix1, exp_x1) - max(ix0, exp_x0)
+            ov_y = min(iy1, exp_y1) - max(iy0, exp_y0)
+            if ov_x > 2.0 and ov_y > 2.0:
+                face_mid_y = 0.5 * (bands["face"][1] + bands["face"][3])
+                if band_name == "pip_rect":
+                    # Move above the PiP window
+                    safe_y = max(SAFE_ZONE_BOX["y_min"] + 44.0, round(cur_py - (iy1 - (by0 - 18.0)), 1))
+                elif ln != "text_low" and cur_py <= face_mid_y:
+                    # Move above eye_band
+                    target_bottom = bands["eye_band"][1] - 18.0
+                    safe_y = max(SAFE_ZONE_BOX["y_min"] + 44.0, round(cur_py - (iy1 - target_bottom), 1))
+                else:
+                    # Move below mouth_band
+                    target_top = bands["mouth_band"][3] + 18.0
+                    safe_y = min(SAFE_ZONE_BOX["y_max"] - 20.0, round(cur_py + (target_top - iy0), 1))
+
+                face_room_warnings.append(
+                    {
+                        "track": tname,
+                        "clip": cname,
+                        "at": round(c_at, 3),
+                        "probe_t": t_probe,
+                        "band": band_name,
+                        "overlap_px": round(ov_y, 1),
+                        "ink_bbox": [ix0, iy0, ix1, iy1],
+                        "band_bbox": [round(bx0, 1), round(by0, 1), round(bx1, 1), round(by1, 1)],
+                        "safe_y": safe_y,
+                        "source": source,
+                        "fix": f"move clip '{cname}' (at={c_at:.2f}s) pos_y to {safe_y}",
+                    }
+                )
+                break
 
     for tr in tracks:
         if tr.get("type") != "text":
@@ -2868,92 +3172,44 @@ def run_full_visual_rigor_gate5(
             cname = str(cl.get("name") or cl.get("text") or "Text")
             tau_settle = min(0.30, max(0.12, c_dur * 0.40))
             t_probe = round(c_at + tau_settle, 3)
-            ink = measure_text_clip_ink_bbox(cl, tau_settle, seq_w, seq_h)
+            pos_val = _eval_kf_param(cl.get("position"), tau_settle, [seq_w / 2.0, seq_h / 2.0])
+            cur_px, cur_py = float(pos_val[0]), float(pos_val[1])
+            # v7.9.3: a text proxy standing in for a V2 plate (`KTnn · ktXX` with `kt_nn_ktXX.mov` on disk) is audited with the
+            # plate's real alpha ink at the proxy's position, and flagged
+            proxy_plate = _proxy_plate_of(cname)
+            ink = None
+            if proxy_plate is not None:
+                ink = measure_plate_ink_bbox({"src": str(proxy_plate), "in": 0.0, "dur": c_dur, "opacity": cl.get("opacity")},
+                                             tau_settle, seq_w, seq_h, position=[cur_px, cur_py])
+                plate_text_proxies.append({"track": tname, "clip": cname, "at": round(c_at, 3), "plate": str(proxy_plate),
+                                           "ink_bbox": list(ink) if ink else None})
+            source = "plate_alpha" if ink is not None else "pil_glyph"
+            if ink is None:
+                ink = measure_text_clip_ink_bbox(cl, tau_settle, seq_w, seq_h)
             if ink is None:
                 continue
             text_clips_audited += 1
-            ix0, iy0, ix1, iy1 = ink
-            pos_val = _eval_kf_param(cl.get("position"), tau_settle, [seq_w / 2.0, seq_h / 2.0])
-            cur_px, cur_py = float(pos_val[0]), float(pos_val[1])
+            size_now = float(_eval_kf_param(cl.get("size"), tau_settle, 52.0))
+            _audit_ink_box(tname, ln, cname, c_at, c_dur, t_probe, ink, cur_px, cur_py, ("size", size_now, "px"), source)
 
-            # (a) Safe-Zone Check (`x: 50..1030, y: 140..1760`)
-            out_sides: list[str] = []
-            fix_parts: list[str] = []
-            if ix0 < SAFE_ZONE_BOX["x_min"] or ix1 > SAFE_ZONE_BOX["x_max"]:
-                ink_w = max(1.0, ix1 - ix0)
-                max_safe_w = SAFE_ZONE_BOX["x_max"] - SAFE_ZONE_BOX["x_min"]
-                if ink_w > max_safe_w:
-                    new_sz = math.floor(float(_eval_kf_param(cl.get("size"), tau_settle, 52.0)) * (max_safe_w / ink_w))
-                    fix_parts.append(f"reduce size to {new_sz}px")
-                else:
-                    dx = (SAFE_ZONE_BOX["x_min"] - ix0) if ix0 < SAFE_ZONE_BOX["x_min"] else (SAFE_ZONE_BOX["x_max"] - ix1)
-                    fix_parts.append(f"move pos_x to {round(cur_px + dx, 1)}")
-                out_sides.append(f"x={ix0:.0f}..{ix1:.0f}")
-            if iy0 < SAFE_ZONE_BOX["y_min"] or iy1 > SAFE_ZONE_BOX["y_max"]:
-                dy = (SAFE_ZONE_BOX["y_min"] - iy0) if iy0 < SAFE_ZONE_BOX["y_min"] else (SAFE_ZONE_BOX["y_max"] - iy1)
-                fix_parts.append(f"move pos_y to {round(cur_py + dy, 1)}")
-                out_sides.append(f"y={iy0:.0f}..{iy1:.0f}")
-
-            if out_sides:
-                fix_str = f"move/resize clip '{cname}' (at={c_at:.2f}s): " + ", ".join(fix_parts)
-                safe_zone_warnings.append(
-                    {
-                        "track": tname,
-                        "clip": cname,
-                        "at": round(c_at, 3),
-                        "ink_bbox": [ix0, iy0, ix1, iy1],
-                        "violation": ", ".join(out_sides),
-                        "fix": fix_str,
-                    }
-                )
-
-            # (b) Ruling `R208`: exempt `< 1.5s` opening hook titles from Face-Room check
-            is_r208_hook_exempt = (ln != "text_low") and (
-                (c_at < 1.5 and (c_at + c_dur) <= 1.60)
-                or ("hook" in cname.lower() and c_at < 1.5 and c_dur <= 1.55)
-            )
-            if is_r208_hook_exempt:
-                r208_exempt_count += 1
-                continue
-
-            # Check Face-Room against A-roll `eye_band` & `mouth_band` on non-B-roll frames
-            bands = _face_bands_at(t_probe)
-            if bands is None:
-                continue
-
-            for band_name in ("eye_band", "mouth_band"):
-                bx0, by0, bx1, by1 = bands[band_name]
-                exp_x0, exp_y0 = bx0 - FACE_MARGIN_PX, by0 - FACE_MARGIN_PX
-                exp_x1, exp_y1 = bx1 + FACE_MARGIN_PX, by1 + FACE_MARGIN_PX
-                ov_x = min(ix1, exp_x1) - max(ix0, exp_x0)
-                ov_y = min(iy1, exp_y1) - max(iy0, exp_y0)
-                if ov_x > 2.0 and ov_y > 2.0:
-                    face_mid_y = 0.5 * (bands["face"][1] + bands["face"][3])
-                    if ln != "text_low" and cur_py <= face_mid_y:
-                        # Move above eye_band
-                        target_bottom = bands["eye_band"][1] - 18.0
-                        safe_y = max(SAFE_ZONE_BOX["y_min"] + 44.0, round(cur_py - (iy1 - target_bottom), 1))
-                    else:
-                        # Move below mouth_band
-                        target_top = bands["mouth_band"][3] + 18.0
-                        safe_y = min(SAFE_ZONE_BOX["y_max"] - 20.0, round(cur_py + (target_top - iy0), 1))
-
-                    fix_str = f"move clip '{cname}' (at={c_at:.2f}s) pos_y to {safe_y}"
-                    face_room_warnings.append(
-                        {
-                            "track": tname,
-                            "clip": cname,
-                            "at": round(c_at, 3),
-                            "probe_t": t_probe,
-                            "band": band_name,
-                            "overlap_px": round(ov_y, 1),
-                            "ink_bbox": [ix0, iy0, ix1, iy1],
-                            "band_bbox": [round(bx0, 1), round(by0, 1), round(bx1, 1), round(by1, 1)],
-                            "safe_y": safe_y,
-                            "fix": fix_str,
-                        }
-                    )
-                    break
+    # v7.9.3: V2 kinetic plates measured from their real alpha (projected through motion anchor / position / scale)
+    for tname, cl in plate_clips:
+        c_at = float(cl.get("at", 0.0))
+        c_dur = float(cl.get("dur", 0.5))
+        if c_dur <= 0.05:
+            continue
+        cname = str(cl.get("name") or Path(str(cl.get("src"))).name)
+        tau_settle = min(0.30, max(0.12, c_dur * 0.40))
+        t_probe = round(c_at + tau_settle, 3)
+        ink = measure_plate_ink_bbox(cl, tau_settle, seq_w, seq_h)
+        if ink is None:
+            continue
+        plate_clips_audited += 1
+        mot = cl.get("motion") if isinstance(cl.get("motion"), dict) else {}
+        mpos = _eval_kf_param(mot.get("position"), tau_settle, cl.get("position") or [seq_w / 2.0, seq_h / 2.0])
+        scale_now = float(_eval_kf_param(mot.get("scale"), tau_settle, 100.0))
+        _audit_ink_box(tname, _lane(tname), cname, c_at, c_dur, t_probe, ink, float(mpos[0]), float(mpos[1]),
+                       ("motion.scale", scale_now, "%"), "plate_alpha")
 
     return {
         "executed": True,
@@ -2966,6 +3222,9 @@ def run_full_visual_rigor_gate5(
         "aroll_qa_faces_detected": len(qa_face_by_time),
         "aroll_qa_frames_total": len(aroll_qa_indices),
         "text_clips_audited": text_clips_audited,
+        "plate_clips_audited": plate_clips_audited,
+        "plate_text_proxies": plate_text_proxies,
+        "face_scope": "scenes" if scenes else ("meta.face_windows" if isinstance(face_windows, list) else "all_frames"),
         "r208_hook_exempt_clips": r208_exempt_count,
         "safe_zone_warnings": safe_zone_warnings,
         "face_room_warnings": face_room_warnings,
@@ -5554,9 +5813,11 @@ def audit_cranial_exclusion(
 
         ib_scr = _normalize_bbox_screen_px(tkm.get("ink_bbox_screen") or cl_obj.get("ink_bbox_screen"), seq_w, seq_h)
         if ib_scr is not None:
-            dx = (cur_px - float(tkm["pos_x"])) if _is_num(tkm.get("pos_x")) else 0.0
-            dy = (cur_py - float(tkm["pos_y"])) if _is_num(tkm.get("pos_y")) else 0.0
-            return (round(ib_scr[0] + dx, 1), round(ib_scr[1] + dy, 1), round(ib_scr[2] + dx, 1), round(ib_scr[3] + dy, 1))
+            # v7.9.3: ink_bbox_screen is the placement at scale 100 around (pos_x, pos_y); motion.scale grows it around the position
+            ref_x = float(tkm["pos_x"]) if _is_num(tkm.get("pos_x")) else cur_px
+            ref_y = float(tkm["pos_y"]) if _is_num(tkm.get("pos_y")) else cur_py
+            return (round(cur_px + mscale * (ib_scr[0] - ref_x), 1), round(cur_py + mscale * (ib_scr[1] - ref_y), 1),
+                    round(cur_px + mscale * (ib_scr[2] - ref_x), 1), round(cur_py + mscale * (ib_scr[3] - ref_y), 1))
 
         src_s = str(cl_obj.get("src") or "")
         if src_s and _probe_image_opaque_bbox(src_s) is not None:
@@ -5773,6 +6034,12 @@ def resolve_audio_profile(name: str | None) -> dict[str, Any]:
     if key not in profiles:
         raise ValueError(f"unknown --audio-profile {key!r}; expected one of {sorted(profiles)}")
     return profiles[key]
+
+
+def profile_limiter_db(prof: dict[str, Any]) -> float:
+    """Default master limiter ceiling of an audio profile: `limiter_db_v793` when present (v7.9.3, studio_14 -1.3 dB: the old
+    `limiter_db` -2.2 was copied from `platform` and kept Look S below -14 LUFS), else `limiter_db`."""
+    return float(prof.get("limiter_db_v793", prof["limiter_db"]))
 
 
 def _lufs_target_shift(audio_profile: str | None, target_lufs: float) -> float:
@@ -7414,7 +7681,7 @@ def run_edit_rules_json(cmd: list[str]) -> list[dict[str, Any]]:
     edit_rules exits 0 when clean and 1 when it reports LỖI items; any other exit code, a non-list output,
     or exit 1 without a LỖI item (a traceback after partial output) is a crash.
     """
-    r = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    r = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=_RUN_TIMEOUT_S, encoding="utf-8", errors="replace")
     tail = (r.stderr or r.stdout or "").strip()[-300:]
     try:
         items = json.loads(r.stdout)
@@ -7724,6 +7991,7 @@ def _run_self_tests() -> int:
                 str(clip_mp4),
             ],
             check=True,
+            timeout=_RUN_TIMEOUT_S,
         )
         bridge_spec: dict[str, Any] = {
             "name": "v70_micro_bridge_smoke",
@@ -7783,6 +8051,7 @@ def _run_self_tests() -> int:
             capture_output=True,
             text=True,
             check=False,
+            timeout=_RUN_TIMEOUT_S, encoding="utf-8", errors="replace",
         )
         assert r_b.returncode == 0, f"fc_build_fast failed: {r_b.stderr or r_b.stdout}"
         mb_res = inject_micro_bridge_adjustment_layers_fcproj(out_fcproj, san_st["micro_bridges_planned"], fps=60.0)
@@ -8026,6 +8295,12 @@ def parse_args() -> argparse.Namespace:
         help="Execution rigor tier: `fast` (P0 Express Physics + v7.1 Audits), `full` (P0+P1+P2 Studio Proof), or `auto` (default)",
     )
     ap.add_argument(
+        "--scenes",
+        help="v7.9.3 optional `scenes.json` (studio_recipe): Gate 5 FACE_ROOM applies the A-roll eye/mouth bands only in modes "
+        "P/B/S/A1/N and only the PiP rect in H/A2 full-screen B-roll scenes (default: context `scenes`, then spec "
+        "`meta.face_windows`, else every frame)",
+    )
+    ap.add_argument(
         "--context",
         help="Optional `workspace_context.json` from `probe_and_align.py` (provides `subject_framing` / `face_metrics` in source px, "
         "`cranial_zone` & `recommended_compile_tier`). Without it, `workspace_context.json` in --work or next to --words (or the "
@@ -8105,7 +8380,7 @@ def parse_args() -> argparse.Namespace:
         default=True,
         help="Trim main text clips ending 1..12 frames past a V1 cut back to cut_t - 1/fps (default: enabled; exempts `persistent_bridge` clips)",
     )
-    ap.add_argument("--limiter", type=float, default=None, help="Master hard_limiter ceiling in dB (default: -2.2, or the --audio-profile ceiling)")
+    ap.add_argument("--limiter", type=float, default=None, help="Master hard_limiter ceiling in dB (default: the --audio-profile ceiling, limiter_db_v793 when present: platform -2.2, studio_14 -1.3, tiktok_loud -1.2)")
     ap.add_argument("--strict-rules", action="store_true", help="Fail build if edit_rules.py or v7.0 Cranial/CRI-100 audits report errors")
     ap.add_argument(
         "--hook-gates", action="store_true",
@@ -8129,7 +8404,7 @@ def parse_args() -> argparse.Namespace:
     if args.target_lufs is None:
         args.target_lufs = float(audio_prof["target_lufs"])
     if args.limiter is None:
-        args.limiter = float(audio_prof["limiter_db"])
+        args.limiter = profile_limiter_db(audio_prof)
     args.tp_ceiling = float(audio_prof["true_peak_dbtp"])
     args.audio_no_ducking = bool(audio_prof.get("no_ducking"))
     return args
@@ -8263,6 +8538,9 @@ def main() -> int:
             raise FileNotFoundError(f"Portable root directory not found: {portable_root}")
 
         context_doc = json.loads(context_path.read_text(encoding="utf-8")) if context_path else None
+        if args.scenes and not Path(args.scenes).is_file():
+            raise FileNotFoundError(f"Scenes file not found: {args.scenes}")
+        scenes_list = load_scenes(args.scenes)
         words_src_path = words_path
         if words_path:
             words_path = normalize_words_file(words_path, work_dir)
@@ -8368,13 +8646,16 @@ def main() -> int:
                 capture_output=True,
                 text=True,
                 check=False,
+                timeout=_RUN_TIMEOUT_S, encoding="utf-8", errors="replace",
             )
             if r_plan.returncode != 0:
                 raise RuntimeError(f"audio_levels.py plan failed:\n{r_plan.stderr or r_plan.stdout}")
             lufs_target_shift = _lufs_target_shift(args.audio_profile, args.target_lufs)
             init_vb_trim = round(-0.72 + lufs_target_shift, 2)
             init_sfx_trim = round(-0.50 + min(0.50, lufs_target_shift * 0.5), 2)
-            adjust_spec_audio_gains(levels_path, init_vb_trim, init_sfx_trim)
+            # v7.9.3: the voice share is clamped to the voice_peak window (BGM keeps the full LUFS shift)
+            init_voice_trim = voice_pretrim_db(effective_rules, init_vb_trim)
+            adjust_spec_audio_gains(levels_path, init_voice_trim, init_sfx_trim, delta_bgm_db=init_vb_trim)
         else:
             # Strip any leftover `tier` keys on audio clips if no audio_levels plan ran
             clean_doc = json.loads(sanitized_path.read_text(encoding="utf-8"))
@@ -8384,6 +8665,7 @@ def main() -> int:
                         cl.pop("tier", None)
             levels_path.write_text(json.dumps(clean_doc, ensure_ascii=False, indent=2), encoding="utf-8")
             init_vb_trim, init_sfx_trim = 0.0, 0.0
+            init_voice_trim = 0.0
 
         timings["audio_plan_and_pretrim"] = round(time.perf_counter() - t0, 3)
         summary["outputs"]["levels_spec"] = str(levels_path)
@@ -8397,7 +8679,7 @@ def main() -> int:
         lint_cmd = [py, str(SPEC_LINT_PY), str(levels_path), "--json"]
         if words_path:
             lint_cmd += ["--words", str(words_path)]
-        r_lint = subprocess.run(lint_cmd, capture_output=True, text=True, check=False)
+        r_lint = subprocess.run(lint_cmd, capture_output=True, text=True, check=False, timeout=_RUN_TIMEOUT_S, encoding="utf-8", errors="replace")
         if not r_lint.stdout.strip():
             raise RuntimeError(f"spec_lint.py failed to produce output:\n{r_lint.stderr}")
         lint_items = json.loads(r_lint.stdout)
@@ -8724,6 +9006,7 @@ def main() -> int:
                     capture_output=True,
                     text=True,
                     check=False,
+                    timeout=_RUN_TIMEOUT_S, encoding="utf-8", errors="replace",
                 )
                 timings["gate4_fc_build_fast"] = round(timings["gate4_fc_build_fast"] + (time.perf_counter() - t_b), 3)
                 if r_build.returncode != 0 or not build_report_path.is_file():
@@ -8775,7 +9058,7 @@ def main() -> int:
             if attempt == 0:
                 qa_cmd += ["--frames-dir", str(qa_frames_dir), "--times", *qa_time_strs]
 
-            r_qa = subprocess.run(qa_cmd, capture_output=True, text=True, check=False)
+            r_qa = subprocess.run(qa_cmd, capture_output=True, text=True, check=False, timeout=_RUN_TIMEOUT_S, encoding="utf-8", errors="replace")
             timings["gate5_fc_fast_qa_and_frames"] = round(
                 timings["gate5_fc_fast_qa_and_frames"] + (time.perf_counter() - t_q), 3
             )
@@ -8810,7 +9093,7 @@ def main() -> int:
                 ]
                 if use_bgm_chain:
                     stems_cmd.append("--bgm-chain")
-                r_stems = subprocess.run(stems_cmd, capture_output=True, text=True, check=False)
+                r_stems = subprocess.run(stems_cmd, capture_output=True, text=True, check=False, timeout=_RUN_TIMEOUT_S, encoding="utf-8", errors="replace")
                 if r_stems.returncode != 0:
                     raise RuntimeError(f"audio_levels.py stems failed:\n{r_stems.stderr or r_stems.stdout}")
 
@@ -8827,7 +9110,7 @@ def main() -> int:
                     if role_name in audio_roles and (stems_dir / f"{role_name}.wav").is_file():
                         chk_cmd += [f"--{role_name}", str(stems_dir / f"{role_name}.wav")]
 
-                r_chk = subprocess.run(chk_cmd, capture_output=True, text=True, check=False)
+                r_chk = subprocess.run(chk_cmd, capture_output=True, text=True, check=False, timeout=_RUN_TIMEOUT_S, encoding="utf-8", errors="replace")
                 m_json = re.search(r"(\[\s*\{.*\}\s*\])\s*$", r_chk.stdout, re.S)
                 if m_json:
                     stems_check_res = json.loads(m_json.group(1))
@@ -8848,8 +9131,14 @@ def main() -> int:
                 and post_aac_tp_dbtp > args.tp_ceiling + 1e-6
             )
             need_pcm_tp_step = bool(audio_roles and ebur_metrics["true_peak_dbtp"] > args.tp_ceiling + 1e-6)
+            # v7.9.3: LUFS on target but the voice stem peak FAILs -> retrim the voice (+ BGM, gap kept) inside +/- 0.45 LU
+            voice_peak_delta = (
+                voice_peak_retrim_delta(stems_check_res, effective_rules, ebur_metrics["lufs"], float(args.target_lufs))
+                if audio_roles and not need_lufs_retrim else 0.0
+            )
+            need_voice_peak_retrim = abs(voice_peak_delta) >= 0.01
 
-            if attempt == 0 and (need_lufs_retrim or need_r35_limiter_step or need_pcm_tp_step):
+            if attempt == 0 and (need_lufs_retrim or need_r35_limiter_step or need_pcm_tp_step or need_voice_peak_retrim):
                 vb_delta = 0.0
                 voice_delta = 0.0
                 bgm_delta = 0.0
@@ -8857,13 +9146,18 @@ def main() -> int:
                 if need_lufs_retrim:
                     vb_delta = round(float(args.target_lufs) - ebur_metrics["lufs"], 2)
                     # Keep voice_peak strictly inside the rules' window (default [-4.92, -3.08] dBFS) after initial_pretrim
-                    vd_lo, vd_hi = voice_delta_window(effective_rules, init_vb_trim)
+                    vd_lo, vd_hi = voice_delta_window(effective_rules, init_voice_trim)
                     voice_delta = round(max(vd_lo, min(vd_hi, vb_delta)), 2)
                     bgm_delta = round(vb_delta + (vb_delta - voice_delta) * 1.25, 2)
                     sfx_delta = round(max(-3.0, min(0.45, vb_delta * 0.65)), 2)
                     closed_loop_delta = vb_delta
                     adjust_spec_audio_gains(levels_path, voice_delta, sfx_delta, delta_bgm_db=bgm_delta)
                     patch_fcproj_audio_gains(build_fcproj, voice_delta, sfx_delta, delta_bgm_db=bgm_delta)
+                elif need_voice_peak_retrim:
+                    voice_delta = bgm_delta = voice_peak_delta
+                    adjust_spec_audio_gains(levels_path, voice_delta, 0.0, delta_bgm_db=bgm_delta)
+                    patch_fcproj_audio_gains(build_fcproj, voice_delta, 0.0, delta_bgm_db=bgm_delta)
+                    print(f"🔁 [Voice-Peak Re-Trim] voice_peak FAIL with I={ebur_metrics['lufs']:.2f} LUFS on target -> voice/BGM {voice_delta:+.2f} dB")
                 if need_r35_limiter_step and post_aac_tp_dbtp is not None:
                     step_down = max(0.15, round(post_aac_tp_dbtp - (args.tp_ceiling - 0.1), 2))
                     effective_limiter_db = round(effective_limiter_db - step_down, 2)
@@ -8897,6 +9191,7 @@ def main() -> int:
                 qa_frames_dir=qa_frames_dir,
                 planned_16=planned_16,
                 context_doc=context_doc,
+                scenes=scenes_list,
             )
             timings["gate5_full_visual_rigor"] = round(time.perf_counter() - t_vr, 3)
             summary["visual_rigor"] = vis_rigor
@@ -8930,11 +9225,20 @@ def main() -> int:
                 concerns.append(f"{msg_fr} — Fix: {fr_item['fix']}")
                 print(f"   ⚠️  [Gate 5 FACE_ROOM] {msg_fr} — Fix: {fr_item['fix']}")
 
+            for px_item in vis_rigor["plate_text_proxies"]:
+                msg_px = (f"PLATE_TEXT_PROXY: '{px_item['clip']}' (at={px_item['at']:.2f}s) is a text proxy of V2 plate "
+                          f"{Path(px_item['plate']).name} (audited with the plate's alpha ink)")
+                fix_px = f"put {Path(px_item['plate']).name} back on V2 so the .fcproj shows the same plate as the master"
+                _add_diag("gate5_visual_rigor", "WARN", "PLATE_TEXT_PROXY", msg_px, fix_px)
+                concerns.append(f"{msg_px} — Fix: {fix_px}")
+                print(f"   ⚠️  [Gate 5 PLATE_TEXT_PROXY] {msg_px} — Fix: {fix_px}")
+
             print(
                 f"👁️  [Gate 5 Deep Pixel Rigor] ({timings['gate5_full_visual_rigor']:.2f}s): "
                 f"min_std={vis_rigor['min_grayscale_std']:.1f}, broll_checked={vis_rigor['broll_clips_checked']} "
                 f"(frozen={len(vis_rigor['frozen_broll'])}), faces={vis_rigor['aroll_qa_faces_detected']}/{vis_rigor['aroll_qa_frames_total']}, "
-                f"text_ink={vis_rigor['text_clips_audited']} (face_warns={len(vis_rigor['face_room_warnings'])}, safe_warns={len(vis_rigor['safe_zone_warnings'])})"
+                f"text_ink={vis_rigor['text_clips_audited']}, plate_ink={vis_rigor['plate_clips_audited']}, "
+                f"face_scope={vis_rigor['face_scope']} (face_warns={len(vis_rigor['face_room_warnings'])}, safe_warns={len(vis_rigor['safe_zone_warnings'])})"
             )
         else:
             summary["visual_rigor"] = {"executed": False, "reason": "tier=fast"}
@@ -8997,7 +9301,7 @@ def main() -> int:
         }
         summary["audio_mastering"] = {
             "target_lufs": args.target_lufs,
-            "initial_pretrim_db": {"voice_bgm": init_vb_trim, "sfx": init_sfx_trim},
+            "initial_pretrim_db": {"voice_bgm": init_vb_trim, "voice": init_voice_trim, "sfx": init_sfx_trim},
             "measured_lufs": ebur_metrics["lufs"],
             "measured_lra_lu": ebur_metrics["lra"],
             "measured_true_peak_dbtp": ebur_metrics["true_peak_dbtp"],
@@ -9030,6 +9334,7 @@ def main() -> int:
             capture_output=True,
             text=True,
             check=False,
+            timeout=_RUN_TIMEOUT_S, encoding="utf-8", errors="replace",
         )
         sfx_json_path = sfx_qa_dir / "audit_sfx.json"
         if r_sfx.returncode != 0 or not sfx_json_path.is_file():
@@ -9166,8 +9471,8 @@ def main() -> int:
         summary["completed_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
         try:
             write_editor_report_md(editor_report_path, summary)
-        except Exception:
-            pass
+        except (OSError, ValueError, TypeError, KeyError, AttributeError) as rep_exc:
+            print(f"WARNING: could not write editor report {editor_report_path}: {type(rep_exc).__name__}: {rep_exc}", file=sys.stderr)
         serialized_err = json.dumps(summary, ensure_ascii=False, indent=2)
         summary_path.write_text(serialized_err, encoding="utf-8")
         compile_report_path.write_text(serialized_err, encoding="utf-8")

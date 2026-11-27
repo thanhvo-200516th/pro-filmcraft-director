@@ -39,12 +39,21 @@ for p in (str(SCRIPTS_DIR), str(TOOLS_DIR)):
 W, H = 1080, 1920
 
 # sha256 of the pre-change renders on `_legacy_inputs()` (see module docstring)
-GOLDEN = {
+GOLDEN_CV5 = {
     "cleaner_no_alpha": "18e9c68b8e309f73191660c366cd877200d9ebe41b5d010fba0a023e248d963a",
     "full_head_card": "31a9a44412b18b63ecbab8ec13be26dee384af137705a61963f1c23d0648a27f",
     "squircle_pip": "1cbe6afafd60d673d943a63195c7d0e8b6d4481bfda4039b38a062ef2d477a55",
     "bottom_flush": "f5bb3a73616d5f84a2defd2d69c274ba979f3cc20438c66dff2f08e5d7b5bd01",
 }
+# OpenCV 4.x (pinned by requirements.txt since v7.9.1) resamples a few bits differently; these were taken from the
+# committed v7.9.1 compositor (7f7b482, bit-identical to the pre-change render under OpenCV 5) on opencv-python-headless 4.14.
+GOLDEN_CV4 = {
+    "cleaner_no_alpha": "18e9c68b8e309f73191660c366cd877200d9ebe41b5d010fba0a023e248d963a",
+    "full_head_card": "9f2a90c9ae30cbd7fbb6b916b9a81396d8565ecc085e8728898dde3f4ba0d58d",
+    "squircle_pip": "1cbe6afafd60d673d943a63195c7d0e8b6d4481bfda4039b38a062ef2d477a55",
+    "bottom_flush": "3221dae349dc3cb2c1dba3917d48917a35e77bd2cd465ff430fa50ca4c3cedb7",
+}
+GOLDEN = GOLDEN_CV5 if int(cv2.__version__.split(".")[0]) >= 5 else GOLDEN_CV4
 
 
 # ---------------------------------------------------------------------------------------------- synthetic inputs

@@ -5817,8 +5817,13 @@ def _build_kt10_cursor_bars_pillar_gate(props: dict[str, Any], width: int, heigh
     kicker_at_s = float(props.get("kicker_at_s", 0.02))
     main_at_s = float(props.get("main_at_s", 0.08 if kicker else 0.03))
     exit_dur_s = float(props.get("exit_dur_s", 0.14))
+    # v7.9.3: accent_text was silently dropped; it now lands under the gate as a secondary line on its spoken onset
+    accent_text = nfc(props.get("accent_text", "")).strip()
+    acc_raw = props.get("accent_at_s")
+    accent_at_s = float(acc_raw) if acc_raw is not None else main_at_s + 0.30
 
     helper_html = f'<div class="kt10-helper kt-diacritic-safe" id="kt10Helper">{esc(kicker)}</div>' if kicker else ""
+    accent_html = f'<div class="kt10-accent kt-diacritic-safe" id="kt10Accent">{esc(accent_text)}</div>' if accent_text else ""
     pillar_h = max(84, round(hero_px * 1.24))
 
     css = _kt_shared_css(pal, width, "center", theme=theme_mode, sec_px=secondary_text_px(props)) + f"""
@@ -5828,6 +5833,16 @@ def _build_kt10_cursor_bars_pillar_gate(props: dict[str, Any], width: int, heigh
       color: {primary_ink};
       margin-bottom: -0.18em;
       text-shadow: {helper_shadow};
+    }}
+
+    .kt10-accent {{
+      font-family: 'Be Vietnam Pro', sans-serif;
+      font-size: {helper_px}px;
+      font-weight: 600;
+      color: {primary_ink};
+      margin-top: -0.12em;
+      text-shadow: {helper_shadow};
+      opacity: 0;
     }}
 
     .kt10-gate-wrap {{
@@ -5892,6 +5907,7 @@ def _build_kt10_cursor_bars_pillar_gate(props: dict[str, Any], width: int, heigh
           <span class="kt10-pin kt10-pin-bot"></span>
         </div>
       </div>
+      {accent_html}
       {_kt_optional_pill_html(props)}
     </div>
     """
@@ -5899,6 +5915,7 @@ def _build_kt10_cursor_bars_pillar_gate(props: dict[str, Any], width: int, heigh
     js = f"""
     const KICK_AT = {kicker_at_s};
     const MAIN_AT = {main_at_s};
+    const ACC_AT = {accent_at_s};
     const EXIT_DUR = {exit_dur_s};
     const GLOW_IN = {json.dumps(pal["glow_inner"])};
     const GLOW_OUT = {json.dumps(pal["glow_outer"])};
@@ -5907,7 +5924,7 @@ def _build_kt10_cursor_bars_pillar_gate(props: dict[str, Any], width: int, heigh
     window.__setFrame = function(frameIdx, totalFrames, fps) {{
       const safeFps = Math.max(1, Number(fps) || 60);
       const clipDurSec = totalFrames <= 1 ? 0 : totalFrames / safeFps;
-      const tSec = resolveSceneTimeSec(frameIdx, totalFrames, safeFps, MAIN_AT + 0.9);
+      const tSec = resolveSceneTimeSec(frameIdx, totalFrames, safeFps, Math.max(MAIN_AT + 0.9, ACC_AT + 0.4));
 
       const rig = document.getElementById("ktRig");
       if (rig) {{
@@ -5921,6 +5938,13 @@ def _build_kt10_cursor_bars_pillar_gate(props: dict[str, Any], width: int, heigh
         const pK = timeProgress(tSec, KICK_AT, 0.22, velvetC2);
         helper.style.opacity = String(pK.toFixed(4));
         helper.style.transform = `translate3d(0, ${{((1 - pK) * 14).toFixed(2)}}px, 0)`;
+      }}
+
+      const accEl = document.getElementById("kt10Accent");
+      if (accEl) {{
+        const pA = timeProgress(tSec, ACC_AT, 0.22, velvetC2);
+        accEl.style.opacity = String(pA.toFixed(4));
+        accEl.style.transform = `translate3d(0, ${{((1 - pA) * 12).toFixed(2)}}px, 0)`;
       }}
 
       const pGate = timeProgress(tSec, MAIN_AT, 0.34, velvetC2);
@@ -6393,6 +6417,10 @@ def _build_kt11_cranial_svg_arc_or_tilt(props: dict[str, Any], width: int, heigh
 
 
 # 12. `kt12_whisper_or_directional_echo` (`SIL_WHISPER_ECHO`, default 1080x440)
+KT12_WHISPER_DARK_WEIGHT = 600  # v7.9.3: >= 600 over A-roll / busy dark footage (400 was illegible in e2e_v791)
+KT12_WHISPER_DARK_HALO = "0 0 2px rgba(0, 0, 0, 0.85), 0 0 12px rgba(0, 0, 0, 0.72), 0 4px 18px rgba(0, 0, 0, 0.55)"
+
+
 def _build_kt12_whisper_or_directional_echo(props: dict[str, Any], width: int, height: int) -> str:
     theme_mode, is_light, primary_ink, hero_shadow, helper_shadow = _kt_theme_tokens(props)
     mode = nfc(props.get("mode", "whisper")).lower()
@@ -6408,13 +6436,22 @@ def _build_kt12_whisper_or_directional_echo(props: dict[str, Any], width: int, h
         if props.get("main_size"):
             whisper_px = enforce_min_text_px(int(props["main_size"]), forced=True, label="kt12 whisper")
         else:
-            whisper_px = enforce_min_text_px(_auto_typo_px(main_text, width, min_px=MIN_OVERLAY_FONT_PX, max_px=80, char_factor=0.52))
+            fit_text = max(main_text, nfc(props.get("accent_text", "")).strip(), key=len)  # v7.9.3: both whisper lines fit
+            whisper_px = enforce_min_text_px(_auto_typo_px(fit_text, width, min_px=MIN_OVERLAY_FONT_PX, max_px=80, char_factor=0.52))
         main_at_s = float(props.get("main_at_s", 0.02))
         reveal_style = nfc(props.get("reveal", "feather_wipe")).lower()
+        # v7.9.3: the whisper drew its first clause only (accent_text dropped) at weight 400 with a 0.5-alpha shadow -- illegible over
+        # A-roll. The accent is a second whisper line; the dark theme (A-roll / busy footage) gets weight 600 and a tight dark halo.
+        accent_text = nfc(props.get("accent_text", "")).strip()
+        acc_raw = props.get("accent_at_s")
+        accent_at_s = (float(acc_raw) if acc_raw is not None else main_at_s + 0.28) if accent_text else main_at_s
+        whisper_shadow = helper_shadow if is_light else KT12_WHISPER_DARK_HALO
+        sub_html = f'<div class="kt12-whisper-line" id="kt12WhisperSub">{esc(accent_text)}</div>' if accent_text else ""
 
         css = f"""
         .kt12-whisper-rig {{
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
           max-width: {int(width * 0.90)}px;
@@ -6424,7 +6461,7 @@ def _build_kt12_whisper_or_directional_echo(props: dict[str, Any], width: int, h
 
         .kt12-whisper-line {{
           font-family: 'Be Vietnam Pro', sans-serif;
-          font-weight: {"500" if is_light else "400"};
+          font-weight: {"500" if is_light else str(KT12_WHISPER_DARK_WEIGHT)};
           font-size: {whisper_px}px;
           line-height: 1.32;
           letter-spacing: -0.01em;
@@ -6432,8 +6469,8 @@ def _build_kt12_whisper_or_directional_echo(props: dict[str, Any], width: int, h
           -webkit-text-stroke: 0px transparent !important;
           padding: 0.32em 0.25em;
           text-align: center;
-          /* Subtle natural ambient legibility shadow ONLY — 0 heavy glow, 0 pill */
-          text-shadow: {helper_shadow};
+          /* Dark halo for legibility (no glow, no pill, no stroke) */
+          text-shadow: {whisper_shadow};
           will-change: opacity, transform, -webkit-mask-image;
         }}
         """
@@ -6441,11 +6478,13 @@ def _build_kt12_whisper_or_directional_echo(props: dict[str, Any], width: int, h
         body = f"""
         <div class="kt12-whisper-rig" id="ktRig">
           <div class="kt12-whisper-line" id="kt12Whisper">{esc(main_text)}</div>
+          {sub_html}
         </div>
         """
 
         js = f"""
         const MAIN_AT = {main_at_s};
+        const ACC_AT = {accent_at_s};
         const REVEAL_STYLE = {json.dumps(reveal_style)};
         const EXIT_DUR = {exit_dur_s};
 
@@ -6453,7 +6492,7 @@ def _build_kt12_whisper_or_directional_echo(props: dict[str, Any], width: int, h
           const safeFps = Math.max(1, Number(fps) || 60);
           const clipDurSec = totalFrames <= 1 ? 0 : totalFrames / safeFps;
           const fade4fSec = 4 / safeFps;
-          const tSec = resolveSceneTimeSec(frameIdx, totalFrames, safeFps, MAIN_AT + 0.7);
+          const tSec = resolveSceneTimeSec(frameIdx, totalFrames, safeFps, Math.max(MAIN_AT, ACC_AT) + 0.7);
 
           const rig = document.getElementById("ktRig");
           if (rig) {{
@@ -6462,14 +6501,15 @@ def _build_kt12_whisper_or_directional_echo(props: dict[str, Any], width: int, h
             rig.style.filter = "none";
           }}
 
-          const el = document.getElementById("kt12Whisper");
-          if (el) {{
+          for (const [elId, AT] of [["kt12Whisper", MAIN_AT], ["kt12WhisperSub", ACC_AT]]) {{
+            const el = document.getElementById(elId);
+            if (!el) continue;
             if (REVEAL_STYLE === "fade") {{
-              const pF = timeProgress(tSec, MAIN_AT, fade4fSec, velvetC2);
+              const pF = timeProgress(tSec, AT, fade4fSec, velvetC2);
               el.style.opacity = String(pF.toFixed(4));
               el.style.transform = `translate3d(0, ${{((1 - pF) * 8).toFixed(2)}}px, 0)`;
             }} else {{
-              const pW = timeProgress(tSec, MAIN_AT, 0.22, velvetC2);
+              const pW = timeProgress(tSec, AT, 0.22, velvetC2);
               const s1 = Math.max(0, pW * 124 - 24);
               const s2 = Math.min(100, pW * 124);
               const mask = `linear-gradient(90deg, rgba(0,0,0,1) ${{s1.toFixed(1)}}%, rgba(0,0,0,0) ${{s2.toFixed(1)}}%)`;
@@ -7406,6 +7446,65 @@ def build_template_html(
     return _BUILDERS[key](clean_props, w, h)
 
 
+KT_CHECKED_TEXT_FIELDS = ("kicker", "accent_text")  # main_text is required by every builder (`_prop_or_demo` raises without it)
+
+
+def kt_dropped_text(template: str, props: dict[str, Any]) -> list[dict[str, str]]:
+    """v7.9.3: the kicker / accent_text of `props` the built plate never draws (a silent text drop), as `[{field, text}]`.
+    A field counts as drawn when every word of it appears in the page's visible markup (tags, <style> and <script> removed,
+    whitespace ignored, case-folded), so per-word / per-character spans still count."""
+    doc = build_template_html(template, props)
+    body = re.sub(r"<(script|style)\b.*?</\1>", " ", doc, flags=re.S | re.I)
+    drawn = re.sub(r"\s+", "", html.unescape(re.sub(r"<[^>]+>", " ", body))).casefold()
+    out: list[dict[str, str]] = []
+    for field in KT_CHECKED_TEXT_FIELDS:
+        txt = nfc(props.get(field) or "").strip()
+        if txt and any(tok.casefold() not in drawn for tok in txt.split()):
+            out.append({"field": field, "text": txt})
+    return out
+
+
+def _rel_luminance(rgb: Any) -> Any:
+    """WCAG relative luminance of sRGB values in 0..255 (scalar triple or an ...x3 array)."""
+    import numpy as np  # lazy: only the contrast check needs numpy
+
+    c = np.asarray(rgb, dtype=np.float64) / 255.0
+    lin = np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+    return lin[..., 0] * 0.2126 + lin[..., 1] * 0.7152 + lin[..., 2] * 0.0722
+
+
+CONTRAST_BG_PERCENTILE = 90.0  # the background patch judged: p90 luminance under light ink, p10 under dark ink (busy footage)
+
+
+def text_contrast_ratio(base_frame: Any, ink_bbox: Sequence[float], text_hex: str = "#FAFAFA", *,
+                        percentile: float = CONTRAST_BG_PERCENTILE) -> float | None:
+    """v7.9.3: WCAG contrast ratio of `text_hex` ink against the background under `ink_bbox` ([x0, y0, x1, y1] frame px) of
+    `base_frame` (image path, PIL image or HxWx3 uint8 array). A busy background is judged by its worst patch: the `percentile`
+    luminance nearest the ink (light ink: the bright tail, dark ink: the dark tail). None without a frame or an empty box."""
+    if base_frame is None:
+        return None
+    import numpy as np
+
+    if isinstance(base_frame, (str, Path)):
+        from PIL import Image
+
+        with Image.open(base_frame) as im:
+            arr = np.asarray(im.convert("RGB"))
+    else:
+        arr = np.asarray(base_frame.convert("RGB") if hasattr(base_frame, "convert") else base_frame)[..., :3]
+    h, w = arr.shape[:2]
+    x0, y0 = max(0, int(ink_bbox[0])), max(0, int(ink_bbox[1]))
+    x1, y1 = min(w, int(math.ceil(ink_bbox[2]))), min(h, int(math.ceil(ink_bbox[3])))
+    if x1 <= x0 or y1 <= y0:
+        return None
+    hx = nfc(text_hex).lstrip("#")
+    ink_l = float(_rel_luminance([int(hx[i:i + 2], 16) for i in (0, 2, 4)]))
+    bg = _rel_luminance(arr[y0:y1, x0:x1].reshape(-1, 3))
+    bg_l = float(np.percentile(bg, percentile if ink_l >= 0.5 else 100.0 - percentile))
+    hi, lo = max(ink_l, bg_l), min(ink_l, bg_l)
+    return round((hi + 0.05) / (lo + 0.05), 3)
+
+
 ENGINE_TIMEOUT_BASE_S = 120.0     # Chrome launch + page loads
 ENGINE_TIMEOUT_PER_FRAME_S = 0.5  # [UOC] per rendered frame and worker (a 240-frame 60 fps kt plate takes ~20-40 s on one tab)
 
@@ -7867,6 +7966,13 @@ def render_kinetic_typo_batch(
                 f"Unknown kinetic typography template '{tpl}'. Available: {', '.join(KINETIC_TYPO_TEMPLATES.keys())}"
             )
         props = normalize_props_nfc(job.get("props") or {})
+        dropped = kt_dropped_text(tpl, props)  # v7.9.3: fail before Chrome instead of shipping a plate without its accent
+        if any(d["field"] == "accent_text" for d in dropped) and not (job.get("allow_drop_accent") or props.get("allow_drop_accent")):
+            raise ValueError(
+                f"[v7.9.3 DROPPED_ACCENT_TEXT] '{tpl}' would not draw accent_text "
+                f"{[d['text'] for d in dropped if d['field'] == 'accent_text']} ({job.get('out')}); pick a template that draws it "
+                "or set allow_drop_accent: true on the job"
+            )
         kt_spec = KINETIC_TYPO_TEMPLATES.get(
             tpl,
             {
@@ -7951,7 +8057,11 @@ def render_kinetic_typo_batch(
             "placement_rail": nfc(job.get("placement_rail") or props.get("placement_rail") or default_rail),
             "z_plane": nfc(job.get("z_plane") or props.get("z_plane") or default_z),
             "syllable_triggers": props.get("syllable_triggers") or _extract_syllable_triggers(tpl, props),
+            "dropped_text": dropped,
         }
+        if job.get("base_frame") and job.get("ink_bbox_screen"):  # v7.9.3: measured contrast for check_text_legibility
+            typo_meta["contrast"] = text_contrast_ratio(job["base_frame"], job["ink_bbox_screen"],
+                                                        "#14171F" if theme_mode == "light" else "#FAFAFA")
         meta_records.append((out_path, typo_meta))
 
     engine_results = render_web_plates_batch(

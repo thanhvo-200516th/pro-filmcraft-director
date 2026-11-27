@@ -4122,7 +4122,7 @@ def _render_zoom_clip_via_ffmpeg(track: SmoothCameraTrack, src: np.ndarray, seco
             raise RuntimeError("ffmpeg encode failed in zoom self-test")
         dec = subprocess.run(
             [ffmpeg, "-v", "error", "-i", str(mp4), "-f", "rawvideo", "-pix_fmt", "gray", "-"],
-            capture_output=True, check=True,
+            capture_output=True, check=True, timeout=1800,
         )
     flat = np.frombuffer(dec.stdout, dtype=np.uint8)
     return [flat[i * w * h:(i + 1) * w * h].reshape(h, w) for i in range(flat.size // (w * h))]

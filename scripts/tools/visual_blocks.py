@@ -37,7 +37,7 @@ if __name__ == "__main__":
         import numpy as _np_probe  # noqa: F401
         from PIL import Image as _pil_probe  # noqa: F401
     except ImportError:
-        _venv_py = os.path.expanduser("~/.venvs/video-skills/bin/python3")
+        _venv_py = os.path.expanduser(os.environ.get("PFD_VENV_PYTHON") or "~/.venvs/video-skills/bin/python3")  # env override first
         if os.path.isfile(_venv_py) and os.path.abspath(sys.executable) != os.path.abspath(_venv_py):
             os.execv(_venv_py, [_venv_py, *sys.argv])
 

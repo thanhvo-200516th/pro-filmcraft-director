@@ -109,7 +109,7 @@ def _gain_curve(gain, n: int) -> np.ndarray:
 def sfx_profile(ev: dict) -> dict | None:
     """Đỉnh / lúc bắt đầu nghe thấy của một SFX (giây trên timeline) + mức đỉnh dB; None nếu không giải mã được."""
     p = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{ev['in']:.4f}", "-t", f"{ev['dur']:.4f}", "-i", ev.get("path", ev["src"]),
-                        "-ac", "1", "-ar", "48000", "-f", "s16le", "-"], capture_output=True)
+                        "-ac", "1", "-ar", "48000", "-f", "s16le", "-"], capture_output=True, timeout=1800)
     x = np.frombuffer(p.stdout, np.int16).astype(np.float32) / 32768 if p.returncode == 0 else np.zeros(0, np.float32)
     if len(x) < 240:
         return None
@@ -132,7 +132,7 @@ def render_measure_clip(video: Path, out: Path, fps: float) -> Path:
     w, h = MEASURE_SIZE
     r = subprocess.run(["ffmpeg", "-y", "-v", "error", "-nostdin", "-i", str(video), "-an", "-vf", f"fps={fps:g},scale={w}:{h}",
                         "-c:v", "libx264", "-preset", "ultrafast", "-crf", "30", "-pix_fmt", "yuv420p", str(out)],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=1800)
     if r.returncode != 0:
         raise RuntimeError(f"cannot render the measuring clip from {video}: {r.stderr[-300:]}")
     return out
@@ -143,7 +143,7 @@ def export_fcproj(fcproj: Path, out: Path) -> Path:
     if not FC_EXPORT.is_file():
         raise RuntimeError(f"{fcproj.name} needs an export first, but {FC_EXPORT.name} is not installed next to qa_sync.py: "
                            "export the mp4 yourself and pass it with --video")
-    r = subprocess.run([sys.executable, str(FC_EXPORT), str(fcproj), str(out)], capture_output=True, text=True)
+    r = subprocess.run([sys.executable, str(FC_EXPORT), str(fcproj), str(out)], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=1800)
     if r.returncode != 0 or not out.is_file():
         raise RuntimeError(f"fc_export.py failed (rc={r.returncode}): {(r.stderr or r.stdout)[-300:]}")
     return out
@@ -151,7 +151,7 @@ def export_fcproj(fcproj: Path, out: Path) -> Path:
 
 def video_signal(mp4: Path) -> tuple[np.ndarray, np.ndarray]:
     raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(mp4), "-vf", "scale=54:96,format=gray", "-f", "rawvideo", "-"],
-                         capture_output=True, check=True).stdout
+                         capture_output=True, check=True, timeout=1800).stdout
     a = np.frombuffer(raw, np.uint8).reshape(-1, 96, 54).astype(np.float32)
     return a.mean(axis=(1, 2)), np.r_[0, np.abs(np.diff(a, axis=0)).mean(axis=(1, 2))]
 

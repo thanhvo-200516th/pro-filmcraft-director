@@ -40,7 +40,7 @@ WAV_PRESET = "Waveform Audio 48 kHz 24-bit"
 def measure_loudness(wav: Path) -> dict:
     err = subprocess.run(
         ["ffmpeg", "-hide_banner", "-nostdin", "-i", str(wav), "-af", "ebur128=peak=true", "-f", "null", "-"],
-        capture_output=True, text=True, check=False
+        capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, timeout=1800
     ).stderr
     summary = err[err.rfind("Summary:"):]
     get = lambda key: float(re.search(rf"{key}:\s+(-?[\d.]+|-inf)", summary).group(1))  # noqa: E731
@@ -173,7 +173,7 @@ def run_fast_qa(
         cmd = [str(VENV_PY), str(audit_script), str(man), "--measure"]
         if video_end:
             cmd += ["--video-duration", f"{video_end:.3f}"]
-        res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, timeout=1800)
         if res.returncode == 0:
             rep = json.loads(res.stdout)
             clips_clipped = [f["path"] for f in rep.get("files", []) if f.get("clipping")]

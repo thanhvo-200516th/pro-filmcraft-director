@@ -70,7 +70,7 @@ def sfx_info(path: Path) -> dict:
     if key in _INFO_CACHE:
         return _INFO_CACHE[key]
     pcm = subprocess.run([FFMPEG, "-v", "error", "-nostdin", "-i", key, "-f", "s16le", "-ac", "1", "-ar", "48000", "-"],
-                         capture_output=True).stdout
+                         capture_output=True, timeout=1800).stdout
     x = np.abs(np.frombuffer(pcm, np.int16).astype(np.float32) / 32768)
     if len(x) == 0:
         raise ValueError(f"cannot decode {path}")

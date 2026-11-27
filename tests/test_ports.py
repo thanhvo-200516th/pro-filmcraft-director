@@ -3,13 +3,15 @@
 Tests for the stateless ported tools (P2): silence_cut, speed_media, sfx_auto, qa_sync + sfx_shift,
 broll_from_video (+ presets/broll_lint_contract.json, presets/pain_keywords.json, presets/sfx_catalog.json).
 
-All media is synthesized with ffmpeg / numpy at run time into tests/fixtures_ports/ (media extensions are gitignored).
+All media and generated JSON are synthesized with ffmpeg / numpy at run time into a temporary directory (removed at exit);
+only the two hand-written inputs events_sample.json / words_tl_sample.json are read from tests/fixtures_ports/.
 No whisper, no network, no FilmCraft.
 """
 from __future__ import annotations
 
 import json
 import math
+import atexit
 import re
 import shutil
 import subprocess
@@ -25,8 +27,10 @@ import numpy as np
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TOOLS = SKILL_ROOT / "scripts" / "tools"
 PRESETS = SKILL_ROOT / "presets"
-FIX = Path(__file__).resolve().parent / "fixtures_ports"
-FIX.mkdir(exist_ok=True)
+_FIX_TMP = tempfile.TemporaryDirectory(prefix="fixtures_ports_")
+atexit.register(_FIX_TMP.cleanup)
+FIX = Path(_FIX_TMP.name)
+FIX_STATIC = Path(__file__).resolve().parent / "fixtures_ports"  # tracked, hand-written, read-only inputs
 
 FFMPEG = shutil.which("ffmpeg") or "ffmpeg"
 FFPROBE = shutil.which("ffprobe") or "ffprobe"
@@ -239,7 +243,7 @@ def test_03_sfx_auto() -> None:
     with tempfile.TemporaryDirectory() as td:
         root = Path(td) / "lib with space"
         _synth_sfx_library(root, catalog)
-        events = FIX / "events_sample.json"
+        events = FIX_STATIC / "events_sample.json"
         outs = {}
         for seed in (0, 1):
             out = Path(td) / f"cues{seed}.json"
@@ -412,7 +416,7 @@ def test_06_broll_analyze_and_check() -> None:
     sys.path.insert(0, str(TOOLS))
     import broll_from_video as bv
 
-    tr = FIX / "words_tl_sample.json"
+    tr = FIX_STATIC / "words_tl_sample.json"
     with tempfile.TemporaryDirectory() as td_s:
         td = Path(td_s)
         out = td / "broll_plan.json"

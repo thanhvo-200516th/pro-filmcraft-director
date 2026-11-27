@@ -199,7 +199,7 @@ def _binary_version() -> str:
     if not binary:
         return ""
     try:
-        r = subprocess.run([binary, "--version"], capture_output=True, text=True, timeout=20, check=False)
+        r = subprocess.run([binary, "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20, check=False)
         return ((r.stdout or r.stderr).strip().splitlines() or [""])[0]
     except (OSError, subprocess.TimeoutExpired):
         return ""
@@ -335,7 +335,8 @@ def _do_export(args: argparse.Namespace, display: str) -> dict[str, Any]:
     project = absolute_path(head[0] if head else args.project)
     cmd = [sys.executable, str(Path(__file__).resolve().parent / "fc_export.py"), str(project), str(absolute_path(out))]
     cmd += (["--crf", str(args.crf)] if args.crf is not None else []) + (["--lufs", str(args.lufs)] if args.lufs is not None else [])
-    r = subprocess.run(cmd, capture_output=True, text=True, check=False, env={**os.environ, "CRAFT_DISPLAY": display})
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, timeout=1800,
+                       env={**os.environ, "CRAFT_DISPLAY": display})
     last = (r.stdout.strip().splitlines() or [""])[-1]
     if r.returncode != 0:
         raise FcliError(r.returncode if r.returncode in (EXIT_CONTROL, EXIT_USAGE) else EXIT_CONTROL, (r.stderr or r.stdout).strip()[-500:])

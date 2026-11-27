@@ -59,7 +59,7 @@ import tempfile
 import unicodedata
 import warnings
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import cv2
 import numpy as np
@@ -103,13 +103,16 @@ def _parse_rate(txt: str | None) -> float:
 
 
 def probe_video(path: Path | str) -> dict[str, Any]:
-    """ffprobe facts of a media file: {width, height, fps, duration, has_audio, codec}. Raises FileNotFoundError (no file) or
-    ValueError (ffprobe failed, no video stream, no width/height or no frame rate)."""
+    """ffprobe facts of a media file: {width, height, fps, duration, has_audio, codec, rotation}. width / height are the DISPLAY size:
+    a container rotation of +-90 deg (display matrix side data or the legacy `rotate` tag, e.g. a portrait phone clip stored 1920x1080)
+    swaps them, matching what ffmpeg decodes (autorotate is on by default; never pass -noautorotate when decoding at this size).
+    Raises FileNotFoundError (no file) or ValueError (ffprobe failed, no video stream, no width/height or no frame rate)."""
     vp = Path(path)
     if not vp.is_file():
         raise FileNotFoundError(f"input not found: {vp}")
     pr = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate:format=duration",
+        ["ffprobe", "-v", "error", "-show_entries",
+         "stream=codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate:stream_tags=rotate:stream_side_data=rotation:format=duration",
          "-of", "json", str(vp)],
         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=_PROBE_TIMEOUT_S,
     )
@@ -130,8 +133,26 @@ def probe_video(path: Path | str) -> dict[str, Any]:
         dur = float((doc.get("format") or {}).get("duration") or 0.0)
     except ValueError:
         dur = 0.0
+    rot = stream_rotation(video)
+    if rot % 180 == 90:
+        w, h = h, w
     return {"width": w, "height": h, "fps": round(fps, 4), "duration": round(dur, 4),
-            "has_audio": any(s.get("codec_type") == "audio" for s in streams), "codec": video.get("codec_name")}
+            "has_audio": any(s.get("codec_type") == "audio" for s in streams), "codec": video.get("codec_name"), "rotation": rot}
+
+
+def stream_rotation(stream: dict[str, Any]) -> int:
+    """Container rotation of an ffprobe video stream in degrees (0, 90, 180, 270): display matrix side data first, then the legacy
+    `rotate` tag; 0 when absent or unreadable."""
+    for sd in stream.get("side_data_list") or []:
+        if isinstance(sd, dict) and sd.get("rotation") is not None:
+            try:
+                return int(round(float(sd["rotation"]))) % 360
+            except (TypeError, ValueError):
+                return 0
+    try:
+        return int(round(float((stream.get("tags") or {}).get("rotate") or 0))) % 360
+    except (TypeError, ValueError):
+        return 0
 
 
 def check_look_s_geometry(width: int, height: int) -> dict[str, Any]:
@@ -897,8 +918,8 @@ def _fit_italic(font_path: Path, weight: str, text: str, target_w: int):
         f = ImageFont.truetype(str(font_path), sz)
         try:
             f.set_variation_by_name(weight)
-        except Exception:  # static font or unknown axis name: keep the default instance
-            pass
+        except (OSError, ValueError) as exc:  # static font or unknown axis name: keep the default instance
+            print(f"WARNING: font {font_path} has no variation {weight!r} ({type(exc).__name__}: {exc}); using the default instance", file=sys.stderr)
         return f
 
     size = 100
@@ -948,8 +969,8 @@ def render_gradient_italic_headline(
         fs = ImageFont.truetype(str(fp), int(sub_size))
         try:
             fs.set_variation_by_name(weight)
-        except Exception:
-            pass
+        except (OSError, ValueError) as exc:
+            print(f"WARNING: font {fp} has no variation {weight!r} ({type(exc).__name__}: {exc}); using the default instance", file=sys.stderr)
         ms = Image.new("L", (W, H), 0)
         ImageDraw.Draw(ms).text((center_xy[0] + sub_dxy[0], center_xy[1] + sub_dxy[1]), sub, font=fs, fill=255)
         s3 = (np.asarray(ms, np.float32) / 255.0)[:, :, None]
@@ -1335,6 +1356,142 @@ def snap_punch(
                 res = lit(flash * max(0.0, max_mean_luma - 0.5 - m0) / max(m1 - m0, 1e-6)) if m0 < max_mean_luma else out
         out = res
     return out
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# 2E. v7.9.2 HOOK AUTO: product / saliency box of a B-roll frame and a product-anchored Ken Burns push + pan for a static
+#     full-screen hook B-roll (studio_recipe `bg_static_hold` remedy, driven by look_s_render.py).
+# ---------------------------------------------------------------------------------------------------------------------
+HOOK_PUSH_RATE = 0.14            # [UOC] push per second before the cap (studio_recipe.plan_micro_moves: ~14 %/s)
+HOOK_PAN_RATE = 0.06             # [UOC] pan per second as a fraction of the crop width (rule floor 4 %/s)
+HOOK_PUSH_CAP = 0.25             # camera_punch_caps.fullscreen_broll (+25 %)
+PRODUCT_MIN_AREA_FRAC = 0.004    # [UOC] a saliency / luma component smaller than this share of the frame is noise
+PRODUCT_LUMA_DEV = 22.0          # [UOC] luma deviation from the side-column median that marks the product (motion_gate recipe)
+
+
+def _mask_bbox(mask: np.ndarray, min_area_frac: float) -> tuple[int, int, int, int] | None:
+    """Union box (x0, y0, x1, y1; x1 / y1 exclusive) of the components >= 20 % of the largest one and >= `min_area_frac`."""
+    n, _, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), connectivity=8)
+    if n <= 1:
+        return None
+    areas = stats[1:, cv2.CC_STAT_AREA]
+    keep = [i + 1 for i, a in enumerate(areas) if a >= max(min_area_frac * mask.size, 0.2 * areas.max())]
+    if not keep:
+        return None
+    x0 = min(stats[i, cv2.CC_STAT_LEFT] for i in keep)
+    y0 = min(stats[i, cv2.CC_STAT_TOP] for i in keep)
+    x1 = max(stats[i, cv2.CC_STAT_LEFT] + stats[i, cv2.CC_STAT_WIDTH] for i in keep)
+    y1 = max(stats[i, cv2.CC_STAT_TOP] + stats[i, cv2.CC_STAT_HEIGHT] for i in keep)
+    return int(x0), int(y0), int(x1), int(y1)
+
+
+def _luma_edge_mask(frame_bgr: np.ndarray) -> np.ndarray:
+    """Fallback product mask: luma deviation from the per-row median of the side columns, plus closed Canny edges."""
+    h, w = frame_bgr.shape[:2]
+    gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+    g = gray.astype(np.float32)
+    k = max(4, w // 12)
+    side = np.concatenate([g[:, :k], g[:, -k:]], 1)
+    dev = np.abs(g - np.median(side, 1)[:, None]) > PRODUCT_LUMA_DEV
+    ks = max(3, (w // 120) | 1)
+    edges = cv2.morphologyEx(cv2.Canny(cv2.GaussianBlur(gray, (0, 0), max(1.0, w / 540)), 60, 180), cv2.MORPH_CLOSE,
+                             np.ones((ks * 3, ks * 3), np.uint8)) > 0
+    m = (dev | edges).astype(np.uint8)
+    m = cv2.morphologyEx(m, cv2.MORPH_OPEN, np.ones((ks, ks), np.uint8))
+    return m > 0
+
+
+def product_bbox_from_frame(frame_bgr: np.ndarray, use_model: bool = True,
+                            min_area_frac: float = PRODUCT_MIN_AREA_FRAC) -> dict[str, Any]:
+    """Product / subject box of one B-roll frame (any size; the box is in that frame's pixels, x1 / y1 exclusive).
+
+    The u2netp saliency matte of `predict_u2netp_alpha_u8` (alpha >= 128) first; a birefnet-portrait fallback model is skipped (a
+    portrait matte, ~30 s per frame). When there is no model or no salient component, the luminance / edge recipe of
+    `motion_gate.hero_product_overlap_px` is used. Returns `{bbox, centre, method: u2netp | luma_edge | none, area_frac}`."""
+    h, w = frame_bgr.shape[:2]
+    if use_model:
+        try:
+            if "birefnet" not in resolve_matte_model_path().name:
+                m = predict_u2netp_alpha_u8(cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)) >= 128
+                bb = _mask_bbox(m, min_area_frac)
+                if bb is not None and (bb[2] - bb[0]) * (bb[3] - bb[1]) < 0.95 * w * h:
+                    return {"bbox": bb, "centre": ((bb[0] + bb[2]) / 2.0, (bb[1] + bb[3]) / 2.0), "method": "u2netp",
+                            "area_frac": round(float(m.mean()), 4)}
+        except (FileNotFoundError, RuntimeError, ValueError, OSError) as exc:
+            print(f"[fast_studio_compositor] product_bbox_from_frame: saliency model unavailable ({exc}); luma / edge fallback",
+                  file=sys.stderr)
+    m = _luma_edge_mask(frame_bgr)
+    bb = _mask_bbox(m, min_area_frac)
+    if bb is None:
+        return {"bbox": None, "centre": None, "method": "none", "area_frac": 0.0}
+    return {"bbox": bb, "centre": ((bb[0] + bb[2]) / 2.0, (bb[1] + bb[3]) / 2.0), "method": "luma_edge",
+            "area_frac": round(float(m.mean()), 4)}
+
+
+def _fit_anchor(c: float, b0: float, b1: float, z: float, size: int) -> float:
+    """Zoom fixed point near `c` so the box [b0, b1] scaled by `z` stays inside [0, size]; balanced crop when it cannot."""
+    if z <= 1.0 + 1e-9:
+        return float(c)
+    lo, hi = (z * b1 - size) / (z - 1.0), z * b0 / (z - 1.0)
+    return float(min(max(c, lo), hi)) if lo <= hi else (lo + hi) / 2.0
+
+
+def hook_push_params(
+    dur_s: float,
+    product_bbox: Sequence[float] | None,
+    src_size: tuple[int, int] = (1080, 1920),
+    *,
+    W: int = 1080,
+    H: int = 1920,
+    cap: float = HOOK_PUSH_CAP,
+    rate: float = HOOK_PUSH_RATE,
+    pan_rate: float = HOOK_PAN_RATE,
+    anchor: tuple[float, float] | None = None,
+) -> dict[str, Any]:
+    """Ken Burns push + horizontal pan for a static full-screen B-roll shot of `dur_s` (plain data; feed `hook_push_affine`).
+
+    `product_bbox` is in the W x H cover crop; `src_size` is the cover-scaled, uncropped source (>= W x H) whose centred W x H crop is
+    the default framing, so the pan can reveal real pixels. Push: 1 -> 1 + zmax, zmax = min(cap, rate * dur_s), anchored on the
+    product centre (clamped so the zoomed product stays in frame). Pan: `pan_rate` of W per second towards the frame centre, clamped
+    so the product and the view stay inside the frame / source over the whole move (both are linear in the eased progress, so the
+    end points bound it). `anchor` fixes the zoom point instead (the product stage: (W / 2, cap_top_y), the product grows downward)."""
+    Ws, Hs = int(src_size[0]), int(src_size[1])
+    ml, mt = (Ws - W) // 2, (Hs - H) // 2
+    mr = Ws - W - ml
+    x0, y0, x1, y1 = (float(v) for v in (product_bbox or (0, 0, W, H)))
+    zmax = round(min(float(cap), float(rate) * float(dur_s)), 4)
+    z = 1.0 + zmax
+    ax = _fit_anchor((x0 + x1) / 2.0, x0, x1, z, W) if anchor is None else float(anchor[0])
+    ay = _fit_anchor((y0 + y1) / 2.0, y0, y1, z, H) if anchor is None else float(anchor[1])
+    src_hi, src_lo = zmax * ax + z * ml, -(zmax * (W - ax) + z * mr)
+    prod_hi, prod_lo = W - x1 - zmax * (x1 - ax), -x0 + zmax * (ax - x0)
+    want = float(pan_rate) * W * float(dur_s) * (1.0 if ax <= W / 2.0 else -1.0)
+    if prod_lo <= prod_hi:
+        lo, hi = max(src_lo, prod_lo), min(src_hi, prod_hi)
+        pan = min(max(want, lo), hi) if lo <= hi else 0.0
+        alt = min(max(-want, lo), hi) if lo <= hi else 0.0
+        pan = alt if abs(alt) > abs(pan) else pan
+    else:                                                    # product wider than the frame at the end zoom: balance the overflow
+        pan = min(max((prod_lo + prod_hi) / 2.0, src_lo), src_hi)
+    return {"dur_s": round(float(dur_s), 4), "zmax": zmax, "anchor": [round(ax, 2), round(ay, 2)], "pan_px": round(pan, 2),
+            "crop_off": [ml, mt], "src_size": [Ws, Hs]}
+
+
+def hook_push_affine(e: float, params: dict[str, Any]) -> np.ndarray:
+    """2x3 affine from the uncropped source (`params['src_size']`) to the W x H output at eased progress `e` in [0, 1]."""
+    z = 1.0 + params["zmax"] * float(e)
+    ax, ay = params["anchor"]
+    ox, oy = params["crop_off"]
+    return np.array([[z, 0.0, (1.0 - z) * ax + params["pan_px"] * float(e) - z * ox],
+                     [0.0, z, (1.0 - z) * ay - z * oy]], np.float64)
+
+
+def hook_push_box(box: Sequence[float], e: float, params: dict[str, Any]) -> tuple[float, float, float, float]:
+    """A box of the default W x H crop as it appears in the output at eased progress `e` (for text placement)."""
+    z = 1.0 + params["zmax"] * float(e)
+    ax, ay = params["anchor"]
+    dx = params["pan_px"] * float(e)
+    return (z * (box[0] - ax) + ax + dx, z * (box[1] - ay) + ay, z * (box[2] - ax) + ax + dx, z * (box[3] - ay) + ay)
 
 
 def render_studio_card_ab(

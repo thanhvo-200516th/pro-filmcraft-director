@@ -23,7 +23,7 @@ TICKS = 254_016_000_000
 
 def run_cmd(cmd, check=True):
     print(f"▶ Thực thi: {' '.join(str(c) for c in cmd)}")
-    return subprocess.run([str(c) for c in cmd], check=check)
+    return subprocess.run([str(c) for c in cmd], check=check, timeout=1800)
 
 
 def fcproj_sfx_manifest(project: Path) -> tuple[list, float]:
