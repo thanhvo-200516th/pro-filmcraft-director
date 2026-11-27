@@ -1,3 +1,9 @@
+# pro-filmcraft-director v7.9.0 — Python packages (install into ~/.venvs/video-skills)
+# Non-pip requirements (checked by scripts/env_status.py):
+#   node >= 22            web_cinema_plate_engine.mjs (0 npm dependencies)
+#   chrome / chromium     headless render of HTML5/CSS3/SVG plates
+#   ffmpeg + ffprobe 6.1+ ingest, render, loudness; the zoom self-test also needs ffmpeg
+#   matte model           u2netp or birefnet-portrait in ~/.rembg/models, or PFD_MATTE_MODEL=/path/model.onnx
 numpy>=1.26.0
 opencv-python>=4.9.0
 Pillow>=10.2.0

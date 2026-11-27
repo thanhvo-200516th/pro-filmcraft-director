@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-ffskill_bridge.py — Direct Bridge between pro-filmcraft-director ('The Creative Brain')
+ffskill_bridge.py (v7.9.0) — OPTIONAL bridge between pro-filmcraft-director ('The Creative Brain')
 and kajisho5/ffmpeg-skill v4.5.3 ('The 42-Tool Deterministic FFmpeg Execution & Verification Engine').
+
+The sibling repo `../ffmpeg-skill` is optional: when it is absent every entry point raises
+`FfskillUnavailable` with a one-line remedy (and the CLI prints it) instead of a traceback.
+Use `ffskill_available()` to branch, or `scripts/env_status.py` for the host report.
 """
 from __future__ import annotations
 
@@ -17,8 +21,25 @@ FFSKILL_SCRIPTS = FFSKILL_ROOT / "scripts"
 FFSKILL_MCP = FFSKILL_ROOT / "mcp" / "server.py"
 
 
+class FfskillUnavailable(RuntimeError):
+    """The optional sibling repo `ffmpeg-skill` is not installed next to pro-filmcraft-director."""
+
+
+def ffskill_available() -> bool:
+    return FFSKILL_SCRIPTS.is_dir()
+
+
+def _require_ffskill() -> None:
+    if not ffskill_available():
+        raise FfskillUnavailable(
+            f"optional dependency ffmpeg-skill not found at {FFSKILL_ROOT} "
+            "(git clone kajisho5/ffmpeg-skill there to enable ffskill_bridge; the rest of PFD works without it)"
+        )
+
+
 def run_ffskill_tool(tool_name: str, args: list[str], parse_json: bool = True) -> dict[str, Any] | str:
     """Invokes any of the 42 tools in kajisho5/ffmpeg-skill with --json output."""
+    _require_ffskill()
     script_path = FFSKILL_SCRIPTS / f"{tool_name}.py"
     if not script_path.exists():
         raise FileNotFoundError(f"ffmpeg-skill tool not found: {script_path}")
@@ -35,6 +56,7 @@ def run_ffskill_tool(tool_name: str, args: list[str], parse_json: bool = True) -
 
 def ffskill_doctor() -> dict[str, Any]:
     """Returns full hardware/codec/filter/font capability introspection from _contract.py doctor."""
+    _require_ffskill()
     proc = subprocess.run(
         [sys.executable, str(FFSKILL_SCRIPTS / "_contract.py"), "doctor", "--json"],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True,
@@ -103,7 +125,13 @@ def ffskill_speech_aware_silence(
 
 
 if __name__ == "__main__":
-    doc = ffskill_doctor()
+    import argparse
+    argparse.ArgumentParser(description="Optional bridge to the sibling ffmpeg-skill repo: prints its doctor summary (exit 2 when it is not installed). Import this module to call the ffskill_* helpers.").parse_args()
+    try:
+        doc = ffskill_doctor()
+    except FfskillUnavailable as exc:
+        print(f"ffskill_bridge: {exc}", file=sys.stderr)
+        sys.exit(2)
     print(json.dumps({
         "ffmpeg_skill_version": doc.get("version"),
         "ffmpeg_version": doc.get("ffmpeg"),

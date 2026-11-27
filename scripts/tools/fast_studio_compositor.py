@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
 """
-Universal Studio Director v7.2 — Fast Studio Framing & C/AVX2 FFmpeg Compositor
-===============================================================================
+Universal Studio Director v7.9.0 — Fast Studio Framing & C/AVX2 FFmpeg Compositor
+=================================================================================
+v7.9.0 (v4 review K2 / K4 / A1): `render_popout_studio_card` cleans dark source side bands (letterbox / dark wall edge) and small dark wall
+specks before the card is cut, refines the crown matte (guided filter on the photo + edge contrast, `crown_refine`), reports
+`source_bands_px`, `card_src_rect`, `crown_alpha`; `snap_punch` caps the flashed frame at mean luma 220 (photosensitivity). Gates: motion_gate.
+v7.8.0 (package S1): crisp pop-out defaults (edge 19-21 px -> 4-5 px [DO]; USM on the photo only, Lanczos4), `render_product_stage` +
+`stage_geometry` (cap-top-anchored zoom, product-safe text band), `glint_sweep`, `snap_punch`. Old callers keep working.
+v7.7.0: Look S pop-out card (`render_popout_studio_card`, A/B flag `LOOK_S_POPOUT`, default OFF = unchanged rounded card) with
+`render_lavender_paper` / `render_gradient_italic_headline`; alpha-guarded wall cleaner (`clean_aroll_preserve_hair_crown(...,
+person_alpha_u8=...)`, no-alpha path unchanged) passed through by the A1 / A2 / B renderers.
+v7.4.0: `import os` crash fix, matte-model resolver (`PFD_MATTE_MODEL` -> u2netp -> birefnet-portrait, loud stderr
+WARNING on the ~30 s/frame birefnet fallback), minimal CLI (`--list-options`, `--draft` / `--master`, `--input`, `--out`):
+the CLI is a plain re-encode; the studio look is the Python API (see the studio recipe).
 Eliminates ALL 4 root causes of visual framing defects & slow CPU rendering:
 
 1. `render_full_head_studio_card(...)`:
@@ -37,7 +48,10 @@ import dataclasses
 import hashlib
 import json
 import math
+import os
 import subprocess
+import sys
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -78,10 +92,47 @@ def _clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
     return max(lo, min(hi, float(v)))
 
 
+def _matte_model_candidates() -> list[tuple[str, Path]]:
+    """Ordered (label, path) candidates: env override, legacy env, u2netp, then the installed birefnet-portrait."""
+    cands: list[tuple[str, Path]] = []
+    for env_name in ("PFD_MATTE_MODEL", "U2NETP_ONNX_PATH"):
+        raw = os.environ.get(env_name)
+        if raw:
+            cands.append((f"${env_name}", Path(raw).expanduser()))
+    home = Path.home()
+    cands.append(("u2netp", home / ".rembg/models/u2netp/u2netp.onnx"))
+    cands.append(("birefnet-portrait", home / ".rembg/models/birefnet-portrait/birefnet-portrait.onnx"))
+    return cands
+
+
+def resolve_matte_model_path() -> Path:
+    """First existing matte model; raises a clear `FileNotFoundError` naming every path and `PFD_MATTE_MODEL`."""
+    cands = _matte_model_candidates()
+    for label, p in cands:
+        if p.is_file():
+            if label == "birefnet-portrait":
+                u2 = next(q for lbl, q in cands if lbl == "u2netp")
+                print(
+                    f"WARNING: u2netp matte model not found ({u2}); falling back to birefnet-portrait ({p}). "
+                    "birefnet-portrait costs ~30 s per frame on CPU (u2netp: ~0.1 s). "
+                    "Fetch u2netp (curl -L --create-dirs -o ~/.rembg/models/u2netp/u2netp.onnx "
+                    "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2netp.onnx) "
+                    "or set PFD_MATTE_MODEL=/path/model.onnx.",
+                    file=sys.stderr,
+                )
+            return p
+    tried = ", ".join(str(p) for _, p in cands)
+    raise FileNotFoundError(
+        "No portrait matte ONNX model found. Tried: "
+        f"{tried}. Install one of them (e.g. `rembg` downloads u2netp/birefnet-portrait into ~/.rembg/models/) "
+        "or point the env var PFD_MATTE_MODEL at a .onnx file."
+    )
+
+
 def _get_u2netp_session() -> tuple[ort.InferenceSession, str]:
     global _ORT_U2NETP_SINGLETON
     if _ORT_U2NETP_SINGLETON is None:
-        onnx_p = Path(os.environ.get("U2NETP_ONNX_PATH", str(Path.home() / ".rembg/models/u2netp/u2netp.onnx")))
+        onnx_p = resolve_matte_model_path()
         opts = ort.SessionOptions()
         opts.enable_cpu_mem_arena = False
         opts.enable_mem_pattern = False
@@ -95,8 +146,10 @@ def _get_u2netp_session() -> tuple[ort.InferenceSession, str]:
 def predict_u2netp_alpha_u8(rgb_u8: np.ndarray) -> np.ndarray:
     sess, inp_name = _get_u2netp_session()
     ih, iw = rgb_u8.shape[:2]
-    im_320 = cv2.resize(rgb_u8, (320, 320), interpolation=cv2.INTER_LINEAR).astype(np.float32)
-    mx = max(float(im_320.max()), 1.0)
+    in_shape = sess.get_inputs()[0].shape  # u2netp: 320x320, birefnet-portrait: 1024x1024
+    side = int(in_shape[2]) if len(in_shape) == 4 and isinstance(in_shape[2], int) and in_shape[2] > 0 else 320
+    im_320 = cv2.resize(rgb_u8, (side, side), interpolation=cv2.INTER_LINEAR).astype(np.float32)
+    mx = max(float(im_320.max()), 1.0) if side == 320 else 255.0
     im_norm = (im_320 / mx - np.array([0.485, 0.456, 0.406], dtype=np.float32)) / np.array(
         [0.229, 0.224, 0.225], dtype=np.float32
     )
@@ -106,6 +159,16 @@ def predict_u2netp_alpha_u8(rgb_u8: np.ndarray) -> np.ndarray:
     pred_01 = (pred - p_min) / max(p_max - p_min, 1e-6)
     alpha_full = cv2.resize(pred_01, (iw, ih), interpolation=cv2.INTER_LINEAR)
     return np.clip(alpha_full * 255.0 + 0.5, 0.0, 255.0).astype(np.uint8)
+
+
+def _clean_wall_for_render(aroll_bgr: np.ndarray, person_alpha_u8: np.ndarray, cache_key: str) -> np.ndarray:
+    """Runs the alpha-guarded wall cleaner on a RAW A-roll frame of any size (the cleaner works in 1080x1920 space)."""
+    h, w = aroll_bgr.shape[:2]
+    if (h, w) == (1920, 1080):
+        return clean_aroll_preserve_hair_crown(aroll_bgr, cache_key=cache_key, person_alpha_u8=person_alpha_u8)
+    up = cv2.resize(aroll_bgr, (1080, 1920), interpolation=cv2.INTER_CUBIC)
+    ua = cv2.resize(person_alpha_u8, (1080, 1920), interpolation=cv2.INTER_LINEAR)
+    return cv2.resize(clean_aroll_preserve_hair_crown(up, cache_key=cache_key, person_alpha_u8=ua), (w, h), interpolation=cv2.INTER_AREA)
 
 
 # ==============================================================================
@@ -218,8 +281,13 @@ def render_full_head_studio_card(
     backlight_halo_bgr: tuple[float, float, float] | None = None,
     backlight_strength: float = 0.0,
     chest_scrim: bool = False,
+    person_alpha_u8: np.ndarray | None = None,
+    wall_cache_key: str = "v73_studio_ref",
 ) -> tuple[np.ndarray, tuple[float, float, float, float]]:
     """
+    v7.7.0: pass the RAW A-roll plus `person_alpha_u8` to run the alpha-guarded wall cleaner first (`init_hair_safe_wall_reference`
+    must have run for `wall_cache_key`); `None` = `aroll_clean_bgr` is used as given (unchanged).
+
     Renders a clean luxury rounded studio card enclosing 100% of the speaker's head, hair,
     headroom, ears, and shoulders (~90–120px natural studio headroom inside `card_rect`),
     with full-perimeter outer volumetric aura (`backlight_halo_bgr`) and crisp dual specular rim.
@@ -227,6 +295,8 @@ def render_full_head_studio_card(
     H, W = backdrop_bgr.shape[:2]
     x0, y0, x1, y1 = card_rect
     rig = _get_full_head_card_rig(W, H, x0, y0, x1, y1, rx, mode, border_rgb)
+    if person_alpha_u8 is not None:
+        aroll_clean_bgr = _clean_wall_for_render(aroll_clean_bgr, person_alpha_u8, wall_cache_key)
 
     piv = (W * 0.5, 1365.0 * (H / 1920.0))
     M = cv2.getRotationMatrix2D(piv, 0.0, float(cam_scale)).astype(np.float32)
@@ -375,8 +445,12 @@ def render_squircle_pip_window(
     opacity: float = 1.0,
     cy_src_1080p: float = 1160.0,
     crop_h_1080p: float = 875.0,
+    person_alpha_u8: np.ndarray | None = None,
+    wall_cache_key: str = "v73_studio_ref",
 ) -> tuple[np.ndarray, tuple[float, float, float, float]]:
     """
+    v7.7.0: `person_alpha_u8` (RAW A-roll in, alpha-guarded wall cleaner first); `None` = unchanged.
+
     Composites a sleek Squircle Picture-in-Picture Studio Window onto `canvas_bgr` in ~0.5ms!
     Frames `x_src = 200..870, y_src = 722..1598` (generous +80px headroom above rounded hair crown
     + full face + shoulders + mic) with zero cutout amputation, zero mid-air torso, and zero muddy halo!
@@ -389,6 +463,8 @@ def render_squircle_pip_window(
     H, W = canvas_bgr.shape[:2]
     pw, ph = x1 - x0, y1 - y0
     rig = _get_squircle_pip_rig(pw, ph, rx, rim_rgb)
+    if person_alpha_u8 is not None:
+        aroll_clean_bgr = _clean_wall_for_render(aroll_clean_bgr, person_alpha_u8, wall_cache_key)
 
     ah, aw = aroll_clean_bgr.shape[:2]
     sx_src, sy_src = aw / 1080.0, ah / 1920.0
@@ -453,29 +529,66 @@ _K_DOME_OPEN = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 13))
 _K_DOME_PAD = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
 _WALL_GRAIN_V73 = np.random.default_rng(1808).normal(0.0, 0.75, (1920, 1080, 3)).astype(np.float32)
 _CLEAN_WALL_CACHE_V73: dict[str, list[tuple[Any, ...]]] = {}
+_REL_SUFFIX = "::rel"
 
 
-def init_hair_safe_wall_reference(ref_low_head_bgr: np.ndarray, cache_key: str = "v73_studio_ref") -> None:
-    """
-    Builds the pure Telea wall reference patches once from a low-head reference frame
-    (e.g. t=24.02s where hair crown is at y>=870, leaving a 17px pure-wall gap below the coat-rack!).
-    """
-    if cache_key in _CLEAN_WALL_CACHE_V73:
-        return
+def _wall_reference_entries(ref_low_head_bgr: np.ndarray, relative_outlier: bool) -> list[tuple[Any, ...]]:
+    """Per-ROI Telea wall patches. `relative_outlier=False` is the v7.3 fixed 108/172 test (no-alpha path, unchanged);
+    `True` flags `s_sum < 0.80 * median(ROI)` instead, so a dark wall (sum ~80) is not swallowed whole."""
     entries: list[tuple[Any, ...]] = []
     for idx, (rx0, ry0, rx1, ry1, fx0, fy0, fx1, fy1) in enumerate(_WALL_INPAINT_ROIS_V73):
         sub = np.ascontiguousarray(ref_low_head_bgr[ry0:ry1, rx0:rx1])
         msk = np.zeros(sub.shape[:2], dtype=np.uint8)
         msk[fy0 - ry0 : fy1 - ry0, fx0 - rx0 : fx1 - rx0] = 255
         s_sum = sub.astype(np.int16).sum(axis=2)
-        outlier = (((s_sum < 108) | (s_sum > 172)) & (msk == 0)).astype(np.uint8) * 255
+        if relative_outlier:
+            low = s_sum < 0.80 * float(np.median(s_sum))
+        else:
+            low = (s_sum < 108) | (s_sum > 172)
+        outlier = (low & (msk == 0)).astype(np.uint8) * 255
         msk_inp = cv2.bitwise_or(msk, outlier)
         inp = cv2.inpaint(sub, msk_inp, 7, cv2.INPAINT_TELEA).astype(np.float32) + _WALL_GRAIN_V73[ry0:ry1, rx0:rx1]
         ring_valid = msk_inp == 0
         ref_mean = sub[ring_valid].mean(axis=0).astype(np.float32) if np.any(ring_valid) else np.array([41.0, 54.0, 58.0], np.float32)
         alpha_base = cv2.GaussianBlur(msk.astype(np.float32) * (1.0 / 255.0), (0, 0), 3.8)
         entries.append((rx0, ry0, rx1, ry1, inp, ring_valid, ref_mean, alpha_base))
-    _CLEAN_WALL_CACHE_V73[cache_key] = entries
+    return entries
+
+
+def init_hair_safe_wall_reference(ref_low_head_bgr: np.ndarray, cache_key: str = "v73_studio_ref") -> None:
+    """
+    Builds the pure Telea wall reference patches once from a low-head reference frame
+    (e.g. t=24.02s where hair crown is at y>=870, leaving a 17px pure-wall gap below the coat-rack!).
+    v7.7.0: also builds the alpha-path variant under `cache_key + _REL_SUFFIX` (relative outlier test `s_sum < 0.80 * median(ROI)`).
+    """
+    if cache_key in _CLEAN_WALL_CACHE_V73:
+        return
+    _CLEAN_WALL_CACHE_V73[cache_key + _REL_SUFFIX] = _wall_reference_entries(ref_low_head_bgr, True)
+    _CLEAN_WALL_CACHE_V73[cache_key] = _wall_reference_entries(ref_low_head_bgr, False)
+
+
+def _clean_with_person_alpha(src_bgr: np.ndarray, person_alpha_u8: np.ndarray, entries: list[tuple[Any, ...]]) -> np.ndarray:
+    """Alpha-guarded wall cleaner (port of project v2lib.clean_aroll_alpha): the person alpha replaces the dome / sideburn
+    heuristics. Fixtures are replaced by the wall patch only where the (eroded, blurred) person alpha is ~0; the exposure
+    delta comes from the wall ring outside `dilate(alpha >= 20, 15x15)` with no s_sum bounds. Inputs are not mutated."""
+    H, W = src_bgr.shape[:2]
+    alpha = person_alpha_u8 if person_alpha_u8.shape[:2] == (H, W) else cv2.resize(person_alpha_u8, (W, H), interpolation=cv2.INTER_LINEAR)
+    out = src_bgr.copy()
+    k5, k15 = np.ones((5, 5), np.uint8), np.ones((15, 15), np.uint8)
+    for rx0, ry0, rx1, ry1, inp, ring_valid, ref_mean, alpha_base in entries:
+        py0, py1, px0, px1 = max(0, ry0 - 16), min(H, ry1 + 16), max(0, rx0 - 16), min(W, rx1 + 16)
+        a_pad = alpha[py0:py1, px0:px1]
+        person_pad = cv2.GaussianBlur(cv2.erode((a_pad >= 150).astype(np.uint8), k5).astype(np.float32), (0, 0), 1.4)
+        guard_pad = cv2.dilate((a_pad >= 20).astype(np.uint8), k15)
+        sl = (slice(ry0 - py0, ry1 - py0), slice(rx0 - px0, rx1 - px0))
+        person, guard = person_pad[sl], guard_pad[sl]
+        sub = out[ry0:ry1, rx0:rx1]
+        cur_valid = ring_valid & (guard == 0)
+        delta = (sub[cur_valid].mean(axis=0).astype(np.float32) - ref_mean) if np.count_nonzero(cur_valid) > 40 else np.zeros(3, np.float32)
+        patch_f = inp + delta[None, None, :]
+        a3 = (alpha_base * (1.0 - person))[:, :, None]
+        out[ry0:ry1, rx0:rx1] = np.clip(sub.astype(np.float32) * (1.0 - a3) + patch_f * a3 + 0.5, 0.0, 255.0).astype(np.uint8)
+    return out
 
 
 def clean_aroll_preserve_hair_crown(
@@ -483,8 +596,12 @@ def clean_aroll_preserve_hair_crown(
     *,
     cache_key: str = "v73_studio_ref",
     ema_state: dict[str, np.ndarray] | None = None,
+    person_alpha_u8: np.ndarray | None = None,
 ) -> np.ndarray:
     """
+    v7.7.0 `person_alpha_u8` (uint8 H x W, e.g. the RVM matte): switches to the alpha-guarded cleaner (no dome / `idx == 2`
+    heuristics; the alpha is the hair guard, so it also works on dark walls). `None` keeps the path below exactly as before.
+
     Scale-Space Morphological Opening (`K_open = MORPH_ELLIPSE(15, 13)` at 1/2-res = 30x26px):
       - Erases 100% of thin stationary coat-rack prongs (5–8px) & rail (10–15px), right outlet, and left switch.
       - Preserves 100.0% of the speaker's convex rounded hair dome up to `y = 742` (`0px` horizontal flattening!)
@@ -492,6 +609,8 @@ def clean_aroll_preserve_hair_crown(
     """
     if cache_key not in _CLEAN_WALL_CACHE_V73:
         init_hair_safe_wall_reference(src_bgr, cache_key=cache_key)
+    if person_alpha_u8 is not None:
+        return _clean_with_person_alpha(src_bgr, person_alpha_u8, _CLEAN_WALL_CACHE_V73[cache_key + _REL_SUFFIX])
     entries = _CLEAN_WALL_CACHE_V73[cache_key]
 
     H, W = src_bgr.shape[:2]
@@ -555,8 +674,12 @@ def render_bottom_flush_cutout(
     ground_vignette_strength: float = 0.54,
     ground_bgr: tuple[float, float, float] = (8.0, 7.0, 10.0),
     opacity: float = 1.0,
+    clean_wall: bool = False,
+    wall_cache_key: str = "v73_studio_ref",
 ) -> tuple[np.ndarray, tuple[float, float, float, float]]:
     """
+    v7.7.0: `clean_wall=True` treats `aroll_clean_bgr` as RAW and runs the alpha-guarded wall cleaner with `person_alpha_u8`.
+
     Option B Perfected — Full-Shoulders (`x = 0..1080` uncropped!), Hair-Crown-Safe (`y_src_top = 735`),
     Strictly Bottom-Flush (`y_bottom == H = 1920`, `0px` floating gap!) Speaker Cutout.
     """
@@ -570,6 +693,8 @@ def render_bottom_flush_cutout(
 
     ar_c = aroll_clean_bgr if aroll_clean_bgr.shape[:2] == (H, W) else cv2.resize(aroll_clean_bgr, (W, H), interpolation=cv2.INTER_AREA)
     pa_c = person_alpha_u8 if person_alpha_u8.shape[:2] == (H, W) else cv2.resize(person_alpha_u8, (W, H), interpolation=cv2.INTER_LINEAR)
+    if clean_wall:
+        ar_c = _clean_wall_for_render(ar_c, pa_c, wall_cache_key)
 
     sc = max(1.0, float(cam_scale))
     M = np.array(
@@ -640,6 +765,507 @@ def render_bottom_flush_cutout(
 
     out[y_tl:H, 0:W] = np.clip(comp + 0.5, 0.0, 255.0).astype(np.uint8)
     return out, (340.0 * sx, 820.0 * sy, 730.0 * sx, 1410.0 * sy)
+
+
+# ==============================================================================
+# 2C. LOOK S "POP-OUT" STUDIO CARD (v7.7.0, A/B flag `LOOK_S_POPOUT`): the head crown rises above a rounded light card
+# ==============================================================================
+LOOK_S_POPOUT: bool = os.environ.get("PFD_LOOK_S_POPOUT", "").strip().lower() in ("1", "true", "yes", "on")
+_POPOUT_RIG_CACHE: dict[tuple[Any, ...], dict[str, Any]] = {}
+_PLAYFAIR_IT_NAMES = ("PlayfairDisplay-Italic-Variable.ttf", "PlayfairDisplay-Italic[wght].ttf")
+
+
+def _smooth01(e0: float, e1: float, x: np.ndarray) -> np.ndarray:
+    t = np.clip((x - e0) / max(e1 - e0, 1e-6), 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def _find_playfair_italic() -> Path:
+    """Installed Playfair Display Italic only (env `PFD_FONT_DIR`, then the user font folders). Never a download."""
+    home = Path.home() / ".local" / "share" / "fonts"
+    roots = ([Path(os.environ["PFD_FONT_DIR"]).expanduser()] if os.environ.get("PFD_FONT_DIR") else []) + [
+        home, home / "PR_Fonts", home / "tnedit", home / "TNEDIT_DViet" / "Lien_ket_thu_vien_co_san"]
+    for root in roots:
+        for name in _PLAYFAIR_IT_NAMES:
+            if (root / name).is_file():
+                return root / name
+    raise FileNotFoundError(f"Playfair Display Italic not installed (looked for {_PLAYFAIR_IT_NAMES} in {[str(r) for r in roots]})")
+
+
+def render_lavender_paper(
+    W: int = 1080, H: int = 1920, *, tint_rgb: tuple[int, int, int] = (250, 228, 253), seed_glow_y: float = 0.40,
+) -> np.ndarray:
+    """Light lavender / white paper (BGR uint8): tinted core around `seed_glow_y` (fraction of H), white at the bottom."""
+    yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+    ny, nx = yy / H, (xx - W * 0.5) / (W * 0.5)
+    core = np.exp(-(((ny - seed_glow_y) / 0.32) ** 2 + (nx / 1.25) ** 2))
+    top = _smooth01(0.0, 0.25, ny)  # very top slightly greyer (status-bar scrim look)
+    t = np.clip(core * 0.95 + 0.12 * top, 0.0, 1.0)[:, :, None]
+    rgb = np.array([255.0, 255.0, 255.0], np.float32) * (1.0 - t) + np.array(tint_rgb, np.float32) * t
+    return np.ascontiguousarray(rgb[:, :, ::-1]).clip(0, 255).astype(np.uint8)
+
+
+def _fit_italic(font_path: Path, weight: str, text: str, target_w: int):
+    from PIL import ImageFont
+
+    def load(sz: int):
+        f = ImageFont.truetype(str(font_path), sz)
+        try:
+            f.set_variation_by_name(weight)
+        except Exception:  # static font or unknown axis name: keep the default instance
+            pass
+        return f
+
+    size = 100
+    for _ in range(3):  # converge on target_w
+        bb = load(size).getbbox(text)
+        size = max(8, int(size * target_w / max(bb[2] - bb[0], 1)))
+    return load(size)
+
+
+def render_gradient_italic_headline(
+    backdrop_bgr: np.ndarray,
+    text: str,
+    sub: str | None = None,
+    center_xy: tuple[float, float] = (540, 690),
+    target_w: int = 860,
+    top_rgb: tuple[int, int, int] = (124, 104, 238),
+    bottom_rgb: tuple[int, int, int] = (252, 246, 255),
+    fade_start: float = 0.30,
+    *,
+    sub_rgb: tuple[int, int, int] = (150, 118, 168),
+    sub_size: int = 58,
+    sub_dxy: tuple[int, int] = (-300, 150),
+    weight: str = "Medium Italic",
+    font_path: str | Path | None = None,
+) -> np.ndarray:
+    """Big Playfair Display Italic headline with a vertical colour gradient (`top_rgb` -> `bottom_rgb` after `fade_start`,
+    fraction of the glyph height) over the backdrop, plus an optional small `sub` word. Returns a new BGR uint8 frame."""
+    from PIL import ImageFont
+
+    H, W = backdrop_bgr.shape[:2]
+    fp = Path(font_path) if font_path else _find_playfair_italic()
+    f = _fit_italic(fp, weight, text, target_w)
+    l, t, r, b = f.getbbox(text)
+    m = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(m).text((center_xy[0] - (l + r) / 2, center_xy[1] - (t + b) / 2), text, font=f, fill=255)
+    a = np.asarray(m, np.float32) / 255.0
+    ys = np.where(a.max(1) > 0.05)[0]
+    y0, y1 = (ys.min(), ys.max()) if ys.size else (0, 1)
+    u = np.clip((np.arange(H, dtype=np.float32) - y0) / max(y1 - y0, 1), 0.0, 1.0)
+    g = _smooth01(fade_start, 1.0, u)[:, None, None]
+    col = (np.array(top_rgb, np.float32) * (1.0 - g) + np.array(bottom_rgb, np.float32) * g)[:, :, ::-1]
+    out = backdrop_bgr.astype(np.float32) * (1.0 - a[:, :, None]) + col * a[:, :, None]
+    if sub:
+        fs = ImageFont.truetype(str(fp), int(sub_size))
+        try:
+            fs.set_variation_by_name(weight)
+        except Exception:
+            pass
+        ms = Image.new("L", (W, H), 0)
+        ImageDraw.Draw(ms).text((center_xy[0] + sub_dxy[0], center_xy[1] + sub_dxy[1]), sub, font=fs, fill=255)
+        s3 = (np.asarray(ms, np.float32) / 255.0)[:, :, None]
+        out = out * (1.0 - s3) + np.array(sub_rgb[::-1], np.float32) * s3
+    return np.clip(out + 0.5, 0.0, 255.0).astype(np.uint8)
+
+
+def _get_popout_rig(
+    W: int, H: int, card_rect: tuple[int, int, int, int], rx: int, bulge: float, sag: float,
+    edge_feather: float, edge_blur: float, shadow_dy: int, shadow_sigma: float, pad: int,
+) -> dict[str, Any]:
+    """Card mask, bulge/sag remap maps, soft alpha, edge-blur band and shadow field: all independent of the frame, cached."""
+    key = (W, H, tuple(card_rect), rx, bulge, sag, edge_feather, edge_blur, shadow_dy, shadow_sigma, pad)
+    hit = _POPOUT_RIG_CACHE.get(key)
+    if hit is not None:
+        return hit
+    x0, y0, x1, y1 = card_rect
+    cw, ch = x1 - x0, y1 - y0
+    rx0, ry0, rx1, ry1 = max(0, x0 - pad), max(0, y0 - pad), min(W, x1 + pad), min(H, y1 + pad)
+    rw, rh = rx1 - rx0, ry1 - ry0
+    ss = 2
+    m_hi = Image.new("L", (rw * ss, rh * ss), 0)
+    ImageDraw.Draw(m_hi).rounded_rectangle(
+        [(x0 - rx0) * ss, (y0 - ry0) * ss, (x1 - rx0) * ss - 1, (y1 - ry0) * ss - 1], radius=rx * ss, fill=255)
+    mask = np.asarray(m_hi.resize((rw, rh), Image.Resampling.LANCZOS), np.float32) / 255.0
+    yy, xx = np.mgrid[0:rh, 0:rw].astype(np.float32)
+    cx, cy = (x0 + x1) * 0.5 - rx0, (y0 + y1) * 0.5 - ry0
+    hw, hh = cw * 0.5, ch * 0.5
+    u, v = (xx - cx) / hw, (yy - cy) / hh
+    wb = _smooth01(-0.15, 1.0, v)                          # weight grows toward the bottom edge
+    src_u = u / (1.0 + bulge * wb)                         # outward pillow (sample from nearer the centre)
+    src_v = v - sag * wb * np.clip(1.0 - u * u, 0.0, 1.0)  # centre of the bottom edge sags
+    mx, my = (src_u * hw + cx).astype(np.float32), (src_v * hh + cy).astype(np.float32)
+    mask_w = cv2.remap(mask, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+    k = max(1, int(edge_feather))
+    er = cv2.erode(mask_w, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * k + 1, 2 * k + 1)))
+    card_a = cv2.GaussianBlur(er, (0, 0), edge_feather) if edge_feather > 0.1 else mask_w
+    band = None
+    if edge_blur > 0.1:
+        band = np.clip(1.0 - cv2.GaussianBlur(er, (0, 0), edge_feather * 1.8), 0.0, 1.0)
+        band = (band * (card_a > 0.01))[:, :, None]
+    shadow = cv2.GaussianBlur(np.roll(mask_w, shadow_dy, axis=0), (0, 0), shadow_sigma)[:, :, None]
+    rig = {"roi": (rx0, ry0, rx1, ry1), "mx": mx, "my": my, "mask_w": mask_w, "card_a": card_a[:, :, None],
+           "band": band, "shadow": shadow}
+    _POPOUT_RIG_CACHE[key] = rig
+    return rig
+
+
+def _decontaminate_crown(photo: np.ndarray, a: np.ndarray) -> np.ndarray:
+    """Alpha-weighted despill of the cut-out edge: where the matte is partial (< ~0.98) the colour is pulled from the opaque
+    interior (normalised blur of the alpha >= 0.95 core, sigma 7), so the grey wall mixed into the RVM fringe never shows."""
+    core = (a >= 0.95).astype(np.float32)
+    den = cv2.GaussianBlur(core, (0, 0), 7.0)
+    num = cv2.GaussianBlur(photo * core[:, :, None], (0, 0), 7.0)
+    fill = num / np.maximum(den, 1e-3)[:, :, None]
+    k = ((1.0 - _smooth01(0.60, 0.98, a)) * (den > 0.02))[:, :, None]
+    return photo * (1.0 - k) + fill * k
+
+
+def _unsharp(img_f32: np.ndarray, amount: float, sigma: float) -> np.ndarray:
+    """Classic unsharp mask on a float32 BGR array (clipped to 0..255). No detail is invented: it only restores the edge contrast
+    that the Lanczos upscale of a 720p source flattens."""
+    if amount <= 0.0:
+        return img_f32
+    return np.clip(img_f32 + amount * (img_f32 - cv2.GaussianBlur(img_f32, (0, 0), sigma)), 0.0, 255.0)
+
+
+SHARPEN2_SIGMA = 2.0   # [UOC] optional second USM pass (sharpen2_amount > 0): wider radius, gentler, for the face-Laplacian gate
+SOURCE_BAND_DARK = 0.6       # [UOC] a source edge column / row under 60 % of the wall level is a dark band (v4: luma 6-12 vs 45 [DO])
+SOURCE_BAND_MAX_FRAC = 0.15  # [UOC] bands are searched in the outer 15 % of each side only
+SPECK_DARK = 28.0            # [UOC] a wall pixel this far under its local median is a speck candidate (same as motion_gate)
+SPECK_MAX_AREA = 2500        # [UOC] px at output scale; larger dark shapes are real wall content and stay
+
+
+def _orient(a: np.ndarray, side: str) -> np.ndarray:
+    """View of `a` with the `side` edge at column 0 (writable when `a` is)."""
+    v = a if side in ("left", "right") else a.swapaxes(0, 1)
+    return v[:, ::-1] if side in ("right", "bottom") else v
+
+
+def _clean_source_bands(src_bgr: np.ndarray, person_alpha_u8: np.ndarray) -> tuple[np.ndarray, dict[str, int]]:
+    """Paint dark source edge bands (letterbox, dark wall edge) with the adjacent clean wall, person pixels untouched.
+    A band = the outer columns (rows) of a side, inside SOURCE_BAND_MAX_FRAC, whose wall-only median luma is < SOURCE_BAND_DARK of the
+    wall just inside it. Returns (new array or the input when clean, {side: band px}). v4 K2: source x 24-72 of 720 at luma 6-12."""
+    g = cv2.cvtColor(src_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
+    wall = person_alpha_u8 < 128
+    out, bands = None, {}
+    for side in ("left", "right", "top", "bottom"):
+        go, wo = _orient(g, side), _orient(wall, side)
+        n = max(4, int(go.shape[1] * SOURCE_BAND_MAX_FRAC))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            med = np.nanmedian(np.where(wo[::4, :2 * n], go[::4, :2 * n], np.nan), axis=0)
+            ref = float(np.nanmedian(med[n:]))
+        dark = np.nan_to_num(med[:n], nan=1e9) < SOURCE_BAND_DARK * ref if np.isfinite(ref) and ref >= 20.0 else np.zeros(n, bool)
+        idx = np.where(dark)[0]
+        w = int(idx[-1]) + 1 if idx.size and dark[:idx[-1] + 1].mean() >= 0.6 else 0
+        bands[side] = w
+        if w:
+            out = src_bgr.copy() if out is None else out
+            oo = _orient(out, side)
+            fill = np.median(oo[:, w + 2:w + 26].astype(np.float32), axis=1)                     # per-row clean wall colour
+            fill = cv2.GaussianBlur(fill[:, None, :], (0, 0), sigmaX=0.1, sigmaY=9.0)[:, 0, :]
+            m = _orient(wall, side)[:, :w + 2]
+            oo[:, :w + 2][m] = np.broadcast_to(np.clip(fill + 0.5, 0, 255).astype(np.uint8)[:, None, :], oo[:, :w + 2].shape)[m]
+    return (src_bgr if out is None else out), bands
+
+
+def _despeckle_wall(photo_f32: np.ndarray, person_a: np.ndarray) -> np.ndarray:
+    """Fill small dark blobs on the wall (outside the person alpha dilated 25 px) with the local median (half-res, 31 px window).
+    v4 K2: a 17x14 px dark dot (wall-fixture cleaner leftover) at the card's top right. Returns the input when nothing is found."""
+    u8 = np.clip(photo_f32 + 0.5, 0, 255).astype(np.uint8)
+    g = cv2.cvtColor(u8, cv2.COLOR_BGR2GRAY)
+    hw = (g.shape[1], g.shape[0])
+    small = cv2.resize(u8, (max(1, hw[0] // 2), max(1, hw[1] // 2)), interpolation=cv2.INTER_AREA)
+    med_g = cv2.resize(cv2.medianBlur(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY), 31), hw, interpolation=cv2.INTER_LINEAR)
+    cand = (med_g.astype(np.int16) - g.astype(np.int16)) > SPECK_DARK
+    cand &= cv2.dilate((person_a > 0.05).astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (51, 51))) == 0
+    n, lab, st, _ = cv2.connectedComponentsWithStats(cand.astype(np.uint8), connectivity=8)
+    ids = [i for i in range(1, n) if st[i, cv2.CC_STAT_AREA] <= SPECK_MAX_AREA]
+    if not ids:
+        return photo_f32
+    m = cv2.dilate(np.isin(lab, ids).astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
+    fill = cv2.resize(cv2.medianBlur(small, 31), hw, interpolation=cv2.INTER_LINEAR).astype(np.float32)
+    out = photo_f32.copy()
+    out[m] = fill[m]
+    return out
+
+
+def _guided_filter(I: np.ndarray, p: np.ndarray, r: int, eps: float) -> np.ndarray:
+    """He et al. grey guided filter (box filters only, no opencv-contrib)."""
+    k = (2 * r + 1, 2 * r + 1)
+    box = lambda x: cv2.boxFilter(x, -1, k, borderType=cv2.BORDER_REFLECT)  # noqa: E731
+    mI, mp = box(I), box(p)
+    a = (box(I * p) - mI * mp) / (box(I * I) - mI * mI + eps)
+    b = mp - a * mI
+    return box(a) * I + box(b)
+
+
+def _refine_crown(a: np.ndarray, photo: np.ndarray, r: int, eps: float, contrast: tuple[float, float]) -> np.ndarray:
+    """Crown matte refine: guided filter with the sharpened photo as guide (the low-res / 30 fps RVM stair steps follow the real hair
+    edge), then an edge-contrast smoothstep (`contrast`) so no grey halo band is left. v4 K4: crown edge soft over 10-14 px."""
+    I = cv2.cvtColor(np.clip(photo, 0, 255).astype(np.uint8), cv2.COLOR_BGR2GRAY).astype(np.float32) / 255.0
+    q = np.clip(_guided_filter(I, a.astype(np.float32), int(r), float(eps)), 0.0, 1.0)
+    return _smooth01(float(contrast[0]), float(contrast[1]), q)
+
+
+def render_popout_studio_card(
+    backdrop_bgr: np.ndarray,
+    aroll_bgr: np.ndarray,
+    person_alpha_u8: np.ndarray,
+    *,
+    card_rect: tuple[int, int, int, int] = (70, 1065, 1010, 1705),
+    rx: int = 64,
+    head_anchor: tuple[float, float] = (340.0, 549.0),   # crown top in SOURCE px
+    head_out_xy: tuple[float, float] = (540.0, 900.0),   # crown top in OUTPUT px (pop_height = card_y0 - head_out_y = 165, 8.6 % of H)
+    photo_scale: float = 1.36,
+    pop_feather: float = 46.0,       # px below the card top where the cut-out fades back into the card (seam hide)
+    pop_alpha_feather: float = 0.6,  # px gaussian on the person alpha (hair edge softness; 1.3 before v7.8.0)
+    pop_alpha_choke: int = 1,        # px erode on the person alpha (RVM fringe; the colour is also decontaminated; 2 before v7.8.0)
+    edge_feather: float = 1.6,       # px gaussian on the card alpha: [DO] 10-90 % edge rise 4-5 px (was 19-21 px at 7.0)
+    edge_blur: float = 0.0,          # px blur of the photo inside the edge band; <= 0.1 skips the band entirely
+    bulge: float = 0.03,             # outward pillow of the bottom half (fraction of half-width): [DO] side bow +28 px -> +11 px
+    sag: float = 0.015,              # bottom edge drop at the centre (fraction of half-height)
+    rim_px: int = 0,
+    rim_alpha: float = 0.0,
+    shadow_rgb: tuple[int, int, int] = (110, 80, 150),
+    shadow_alpha: float = 0.16,
+    shadow_dy: int = 22,
+    shadow_sigma: float = 26.0,
+    pad: int = 150,
+    sharpen: float = 0.7,            # USM amount on the shared PHOTO array only (never the paper or the matte)
+    sharp_sigma: float = 1.3,
+    sharpen2_amount: float = 0.0,    # optional second USM pass (sigma SHARPEN2_SIGMA); 0.35 is the tested value
+    alpha_curve: tuple[float, float] | None = None,   # optional smoothstep (lo, hi) on the RVM alpha, e.g. (0.25, 0.75), to shrink a crown halo
+    clean_source_bands: bool = True,  # v7.9.0: paint dark source side bands (letterbox / dark wall edge) with the clean wall
+    despeckle_wall: bool = True,      # v7.9.0: fill small dark wall specks inside the card
+    crown_refine: bool = True,        # v7.9.0: guided-filter + edge-contrast crown matte (False = the v7.8.0 matte)
+    crown_guided_r: int = 8,
+    crown_guided_eps: float = 1e-3,
+    crown_contrast: tuple[float, float] = (0.25, 0.75),
+) -> tuple[np.ndarray, dict[str, Any]]:
+    """
+    Look S pop-out card (A/B flag `LOOK_S_POPOUT`, see `render_studio_card_ab`): a rounded light card (crisp edge, bottom-weighted
+    pillow bulge + sag, lavender shadow) holds the A-roll; the speaker's head crown rises ABOVE the card top by
+    `card_y0 - head_out_y` px. Card photo and cut-out share ONE affine AND ONE sharpened photo array, so the head seam is invisible.
+    `person_alpha_u8` is the RVM matte in SOURCE geometry (uint8 H x W). Inputs are not mutated. Returns (BGR uint8, meta) with
+    meta = {card_rect, pop_height_px, pop_bbox_y, photo_scale}.
+
+    v7.8.0 (crisp pop-out): defaults retuned on the real S09 frames [DO] (card edge 19-21 px -> 4-5 px, face Laplacian 4.2-5.7 ->
+    9.9-13.5 vs 6.0 for the plain Lanczos source); photo warp and bulge remap use INTER_LANCZOS4; one unsharp pass (`sharpen`,
+    `sharp_sigma`) on the photo BEFORE both the card remap and the crown cut-out; the blur band is skipped when `edge_blur <= 0.1`.
+    No neural super-resolution is used or claimed: this is Lanczos + a controlled unsharp. All old keyword arguments still work.
+
+    v7.9.0 (v4 K2 / K4): dark source edge bands are painted with the adjacent wall before the warp (meta `source_bands_px`), small dark
+    wall specks inside the card are filled, `card_src_rect` / `card_outside_source` report where the card samples the source (outside =
+    reflected border), and the crown matte is refined (`crown_refine`). Gates: motion_gate.popout_inner_edge_dark_strip_px <= 4 px,
+    card_dark_speck_count == 0, crown_edge_metrics(meta['crown_alpha']) jaggedness <= 1.2 px and rise <= 4 px.
+    """
+    H, W = backdrop_bgr.shape[:2]
+    x0, y0, x1, y1 = card_rect
+    sx, sy = head_anchor
+    ox, oy = head_out_xy
+    M = np.array([[photo_scale, 0.0, ox - photo_scale * sx], [0.0, photo_scale, oy - photo_scale * sy]], np.float32)
+    src, bands = (_clean_source_bands(aroll_bgr, person_alpha_u8) if clean_source_bands
+                  else (aroll_bgr, {"left": 0, "right": 0, "top": 0, "bottom": 0}))
+    photo = cv2.warpAffine(src, M, (W, H), flags=cv2.INTER_LANCZOS4, borderMode=cv2.BORDER_REFLECT_101).astype(np.float32)
+    photo = _unsharp(photo, sharpen, sharp_sigma)
+    if sharpen2_amount > 0.0:
+        photo = _unsharp(photo, sharpen2_amount, SHARPEN2_SIGMA)
+    al = cv2.warpAffine(person_alpha_u8, M, (W, H), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0).astype(np.float32) / 255.0
+    if alpha_curve is not None:
+        al = _smooth01(float(alpha_curve[0]), float(alpha_curve[1]), al)
+
+    rig = _get_popout_rig(W, H, card_rect, rx, bulge, sag, edge_feather, edge_blur, shadow_dy, shadow_sigma, pad)
+    rx0, ry0, rx1, ry1 = rig["roi"]
+    if despeckle_wall:
+        photo[ry0:ry1, rx0:rx1] = _despeckle_wall(photo[ry0:ry1, rx0:rx1], al[ry0:ry1, rx0:rx1])
+    photo_roi = cv2.remap(photo[ry0:ry1, rx0:rx1], rig["mx"], rig["my"], cv2.INTER_LANCZOS4, borderMode=cv2.BORDER_REFLECT_101)
+    if edge_blur > 0.1 and rig["band"] is not None:
+        photo_roi = photo_roi * (1.0 - rig["band"]) + cv2.GaussianBlur(photo_roi, (0, 0), edge_blur) * rig["band"]
+
+    out = backdrop_bgr.astype(np.float32)
+    roi = out[ry0:ry1, rx0:rx1]
+    sh = rig["shadow"] * shadow_alpha
+    roi = roi * (1.0 - sh) + np.array(shadow_rgb[::-1], np.float32) * sh
+    roi = roi * (1.0 - rig["card_a"]) + photo_roi * rig["card_a"]
+    if rim_px > 0 and rim_alpha > 0:
+        inner = cv2.erode(rig["mask_w"], cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * rim_px + 1, 2 * rim_px + 1)))
+        rim = np.clip(rig["mask_w"] - inner, 0.0, 1.0)[:, :, None] * rim_alpha
+        roi = roi * (1.0 - rim) + 255.0 * rim
+    out[ry0:ry1, rx0:rx1] = roi
+
+    # HEAD-OUT: person cut-out above the card top edge, fading into the card below it (only the rows that can show it)
+    y_hi = int(min(H, math.ceil(y0 + pop_feather) + 4))
+    rows = np.where(al[:y_hi].max(axis=1) > 0.0)[0]
+    if rows.size:
+        r0 = max(0, int(rows.min()) - 24)
+        a_c, ph_c = al[r0:y_hi], photo[r0:y_hi]
+        if crown_refine:
+            a_c = _refine_crown(a_c, ph_c, crown_guided_r, crown_guided_eps, crown_contrast)
+        a = a_c
+        if pop_alpha_choke > 0:
+            a = cv2.erode(a, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * pop_alpha_choke + 1, 2 * pop_alpha_choke + 1)))
+        if pop_alpha_feather > 0.05:
+            a = cv2.GaussianBlur(a, (0, 0), pop_alpha_feather)
+        ramp = 1.0 - _smooth01(y0 - 2.0, y0 + pop_feather, np.arange(r0, y_hi, dtype=np.float32))
+        pop_a = (a * ramp[:, None])[:, :, None]
+        out[r0:y_hi] = out[r0:y_hi] * (1.0 - pop_a) + _decontaminate_crown(ph_c, a_c) * pop_a
+        crown = np.clip(pop_a[:max(0, y0 - r0), :, 0] * 255.0 + 0.5, 0, 255).astype(np.uint8)
+    else:
+        crown = np.zeros((0, W), np.uint8)
+
+    sh_, sw_ = aroll_bgr.shape[:2]
+    src_rect = tuple(round(float(v), 1) for v in ((x0 - M[0, 2]) / photo_scale, (y0 - M[1, 2]) / photo_scale,
+                                                    (x1 - M[0, 2]) / photo_scale, (y1 - M[1, 2]) / photo_scale))
+    meta = {"card_rect": tuple(card_rect), "pop_height_px": float(y0 - oy), "photo_scale": float(photo_scale),
+            "pop_bbox_y": (float(oy), float(y0 + pop_feather)), "source_bands_px": bands, "card_src_rect": src_rect,
+            "card_outside_source": bool(src_rect[0] < 0 or src_rect[1] < 0 or src_rect[2] > sw_ or src_rect[3] > sh_),
+            "crown_alpha": crown}
+    return np.clip(out + 0.5, 0.0, 255.0).astype(np.uint8), meta
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# 2D. v7.8.0 PRODUCT STAGE: bottom-anchored B-roll reframe with a cap-top-anchored zoom, glint sweep and snap punch.
+#     The stage keeps the TOP of the frame free for text / the 'phía dưới' card trio; the product only ever grows DOWNWARD.
+# ---------------------------------------------------------------------------------------------------------------------
+STAGE_S_DEFAULT = 0.72
+CAP_TOP_SRC_FRAC = 0.0545        # [DO] cap top as a fraction of the SOURCE frame height (v3 macro): 613 px of 1920 at s=0.72
+STAGE_FILL_SIGMA = 30.0          # [DO] blur of the replicate-filled extension above the product
+STAGE_FEATHER_PX = 160           # feather length of the blur -> product transition
+STAGE_TEXT_TOP_FRAC = 0.05       # [UOC] text band starts 5 % below the frame top
+STAGE_TEXT_GAP_PX = 20           # [UOC] clear gap between the text band and the cap top
+STAGE_SIDE_MARGIN_FRAC = 0.14    # [UOC] product silhouette lies inside x = 14 %..86 % of the width (bottle + shoulder)
+
+
+def stage_geometry(s: float = STAGE_S_DEFAULT, W: int = 1080, H: int = 1920) -> dict[str, Any]:
+    """Layout numbers of `render_product_stage(..., s)` at zoom 1.0 so a planner can place text without rendering.
+    `cap_top_y` [DO 613 at s=0.72, 0.32 H]; `text_band` = (y0, y1) is product-safe (cap top minus `STAGE_TEXT_GAP_PX`);
+    `product_bbox` = (x0, y0, x1, y1) conservative silhouette box [UOC]. Zooms are anchored at `cap_top_y`, so the band never changes."""
+    cap = H * (1.0 - s * (1.0 - CAP_TOP_SRC_FRAC))
+    cap_i = int(round(cap))
+    m = int(round(W * STAGE_SIDE_MARGIN_FRAC))
+    return {"s": float(s), "cap_top_y": cap_i,
+            "text_band": (int(round(H * STAGE_TEXT_TOP_FRAC)), cap_i - STAGE_TEXT_GAP_PX),
+            "product_bbox": (m, cap_i, W - m, H)}
+
+
+def render_product_stage(
+    frame_bgr: np.ndarray,
+    s: float = STAGE_S_DEFAULT,
+    cx: float = 0.5,
+    zoom: float = 1.0,
+    cap_anchor_y: float | None = None,
+    *,
+    out_size: tuple[int, int] = (1080, 1920),
+) -> np.ndarray:
+    """Bottom-anchored reframe of a 16:9 or 9:16 B-roll frame -> 1080x1920 BGR uint8.
+
+    The product layer is `s` of the full output height (16:9: source height -> s*H, width cropped around `cx`; a portrait source is
+    never scaled below full width). The space above it is `cv2.BORDER_REPLICATE` + Gaussian blur (sigma `STAGE_FILL_SIGMA`)
+    feathered over ~`STAGE_FEATHER_PX` px. `zoom` (>= 1) is anchored at the cap top: the row `cap_anchor_y` (default
+    `stage_geometry(s)['cap_top_y']`, [DO] ~0.32 H at s=0.72) maps to the same output row for every zoom, so the product grows
+    downward and never enters the text band. Pure OpenCV; the input is not mutated."""
+    Wo, Ho = out_size
+    h, w = frame_bgr.shape[:2]
+    S0 = max(Ho * s / h, Wo / w)
+    geo = stage_geometry(s, Wo, Ho)
+    cap_y = float(geo["cap_top_y"] if cap_anchor_y is None else cap_anchor_y)
+    ty0 = Ho - h * S0                                    # top edge of the source layer at zoom 1 (bottom anchored)
+    y_c = (cap_y - ty0) / S0                             # source row that sits on the anchor row
+    S = S0 * max(float(zoom), 1e-3)
+    ty = cap_y - y_c * S
+    tx = Wo / 2.0 - cx * w * S
+    M = np.array([[S, 0.0, tx], [0.0, S, ty]], np.float32)
+    img = cv2.warpAffine(frame_bgr, M, (Wo, Ho), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+    top = int(max(0.0, ty))
+    if top > 0:
+        end = ty + min(STAGE_FEATHER_PX - 90.0, 0.9 * max(cap_y - ty, 1.0))     # fully clean again before the cap top
+        a = np.clip((end - np.arange(Ho, dtype=np.float32)) / float(STAGE_FEATHER_PX), 0.0, 1.0)[:, None, None]
+        img = (img.astype(np.float32) * (1.0 - a) + cv2.GaussianBlur(img, (0, 0), STAGE_FILL_SIGMA).astype(np.float32) * a)
+        img = np.clip(img + 0.5, 0, 255).astype(np.uint8)
+    return img
+
+
+_GLINT_GRID_CACHE: dict[tuple[int, int, float], np.ndarray] = {}
+
+
+def glint_sweep(
+    frame_bgr: np.ndarray,
+    t01: float,
+    amount: float = 0.25,
+    angle_deg: float = 22.0,
+    width_px: float = 150.0,
+    mask_luma: tuple[float, float] = (0.10, 0.45),
+) -> np.ndarray:
+    """Soft warm light band sweeping left -> right at `angle_deg`, additive SCREEN blend weighted by the source luminance
+    (smoothstep `mask_luma`) so only the glass lights up and the dark stage stays calm. `t01` in (0, 1) is the sweep progress
+    (smoothstep eased); outside it the frame is returned untouched. [UOC] amount 0.22-0.30; 0.32 was already flickery
+    (mean frame diff 4.25, p90 9.9) and 0.55 is flicker-prone. Returns a new array."""
+    if t01 <= 0.0 or t01 >= 1.0 or amount <= 0.0:
+        return frame_bgr
+    Hh, Ww = frame_bgr.shape[:2]
+    key = (Hh, Ww, float(angle_deg))
+    p = _GLINT_GRID_CACHE.get(key)
+    if p is None:
+        yy, xx = np.mgrid[0:Hh, 0:Ww].astype(np.float32)
+        a = math.radians(angle_deg)
+        p = xx * math.cos(a) + yy * math.sin(a)
+        _GLINT_GRID_CACHE[key] = p
+    pmin, pmax = -2.0 * width_px, Ww * math.cos(math.radians(angle_deg)) + Hh * math.sin(math.radians(angle_deg)) + 2.0 * width_px
+    e = t01 * t01 * (3.0 - 2.0 * t01)
+    band = np.exp(-(((p - (pmin + (pmax - pmin) * e)) / width_px) ** 2))
+    f = frame_bgr.astype(np.float32) / 255.0
+    wgt = _smooth01(mask_luma[0], mask_luma[1], f.mean(axis=2))
+    add = (amount * band * wgt)[:, :, None] * np.array([0.80, 0.93, 1.0], np.float32)[None, None, :]    # warm (BGR)
+    return np.clip((1.0 - (1.0 - f) * (1.0 - add)) * 255.0 + 0.5, 0, 255).astype(np.uint8)
+
+
+def snap_punch(
+    frame_bgr: np.ndarray,
+    zoom: float,
+    anchor_xy: tuple[float, float] = (540.0, 613.0),
+    flash: float = 0.0,
+    flash_bgr: tuple[int, int, int] = (200, 235, 255),
+    max_mean_luma: float | None = 220.0,
+) -> np.ndarray:
+    """Anchored snap punch: scale by `zoom` about `anchor_xy` (so the anchor row, e.g. the cap top, stays put) and add a gold-white
+    flash of strength `flash` (peak 0.28 [UOC]). Drive `zoom` 1.00 -> 1.10 over ~67 ms (2 frames) and `flash` over 3 frames.
+    v7.9.0: the flash is scaled down so the frame mean luma never exceeds `max_mean_luma` (photosensitivity cap 220; None = off)."""
+    h, w = frame_bgr.shape[:2]
+    ax, ay = anchor_xy
+    M = np.array([[zoom, 0.0, ax - zoom * ax], [0.0, zoom, ay - zoom * ay]], np.float32)
+    out = cv2.warpAffine(frame_bgr, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE) if zoom != 1.0 else frame_bgr
+    if flash > 0.0:
+        f = out.astype(np.float32) / 255.0
+        lit = lambda k: np.clip((1.0 - (1.0 - f) * (1.0 - k * np.array(flash_bgr, np.float32) / 255.0)) * 255.0 + 0.5, 0, 255).astype(np.uint8)  # noqa: E731
+        res = lit(flash)
+        if max_mean_luma is not None:
+            luma = lambda im: float(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY).mean())  # noqa: E731
+            m0, m1 = luma(out), luma(res)
+            if m1 > max_mean_luma:   # screen blend is linear in k: scale the flash onto the cap
+                res = lit(flash * max(0.0, max_mean_luma - 0.5 - m0) / max(m1 - m0, 1e-6)) if m0 < max_mean_luma else out
+        out = res
+    return out
+
+
+def render_studio_card_ab(
+    backdrop_bgr: np.ndarray,
+    aroll_bgr: np.ndarray,
+    person_alpha_u8: np.ndarray | None = None,
+    *,
+    popout: bool | None = None,
+    **kwargs: Any,
+) -> tuple[np.ndarray, Any]:
+    """A/B switch 'Look S pop-out'. `popout=None` follows `LOOK_S_POPOUT` (default OFF, env `PFD_LOOK_S_POPOUT=1`).
+    OFF -> `render_full_head_studio_card(backdrop, aroll, **kwargs)` untouched (bit-identical rounded card, returns its bbox);
+    ON -> `render_popout_studio_card(backdrop, aroll, person_alpha_u8, **kwargs)` (returns its meta dict)."""
+    on = LOOK_S_POPOUT if popout is None else bool(popout)
+    if not on:
+        return render_full_head_studio_card(backdrop_bgr, aroll_bgr, **kwargs)
+    if person_alpha_u8 is None:
+        raise ValueError("pop-out card needs person_alpha_u8 (RVM matte in source geometry)")
+    return render_popout_studio_card(backdrop_bgr, aroll_bgr, person_alpha_u8, **kwargs)
 
 
 def verify_audio_voice_sync_guard(
@@ -1026,3 +1652,59 @@ def compose_master_mp4_via_ffmpeg(
     subprocess.run(cmd, check=True)
     tmp_out.replace(out_mp4)
     concat_txt.unlink(missing_ok=True)
+
+
+# ==============================================================================
+# 5. MINIMAL CLI (`--list-options`, `--draft` / `--master`, `--input`, `--out`)
+# ==============================================================================
+def _build_arg_parser() -> "argparse.ArgumentParser":
+    import argparse
+
+    ap = argparse.ArgumentParser(
+        prog="fast_studio_compositor.py",
+        description=(
+            "Universal Studio Director v7.9.0 — Fast Studio Framing & FFmpeg Compositor. This CLI is a plain re-encode "
+            "at the chosen gear; the studio look is the Python API, see the studio recipe (SKILL.md / references)."
+        ),
+    )
+    ap.add_argument("--list-options", action="store_true", help="Print render gears and matte-model resolution, then exit")
+    gear = ap.add_mutually_exclusive_group()
+    gear.add_argument("--draft", action="store_true", help="Draft gear: 540x960 @ 30 fps, CRF 20, ultrafast")
+    gear.add_argument("--master", action="store_true", help="Master gear: 1080x1920 @ 60 fps, CRF 15, veryfast")
+    ap.add_argument("--input", help="Input video; the studio frame is validated against it (probe only)")
+    ap.add_argument("--out", help="Output .mp4 path (plain re-encode at the chosen gear: no cards, PiP, plates or matte; the studio look is the Python API, see studio recipe)")
+    return ap
+
+
+def main(argv: list[str] | None = None) -> int:
+    import sys
+
+    args = _build_arg_parser().parse_args(argv)
+    gears = {"draft": RenderGear.draft(), "master": RenderGear.master()}
+    if args.list_options:
+        for name, g in gears.items():
+            print(f"{name}: {g.width}x{g.height} @ {g.fps} fps, crf={g.crf}, preset={g.preset}")
+        try:
+            print(f"matte model: {resolve_matte_model_path()}")
+        except FileNotFoundError as exc:
+            print(f"matte model: MISSING ({exc})")
+        return 0
+    if not (args.input and args.out):
+        print("fast_studio_compositor: --input and --out are required (or use --list-options)", file=sys.stderr)
+        return 2
+    gear = gears["master" if args.master else "draft"]
+    src, dst = Path(args.input), Path(args.out)
+    if not src.is_file():
+        print(f"fast_studio_compositor: input not found: {src}", file=sys.stderr)
+        return 2
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    vf = f"scale={gear.width}:{gear.height}:force_original_aspect_ratio=increase,crop={gear.width}:{gear.height},fps={gear.fps}"
+    cmd = [
+        "ffmpeg", "-y", "-v", "error", "-i", str(src), "-vf", vf, "-c:v", "libx264", "-preset", gear.preset,
+        "-crf", str(gear.crf), "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(dst),
+    ]
+    return subprocess.run(cmd, check=False).returncode
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

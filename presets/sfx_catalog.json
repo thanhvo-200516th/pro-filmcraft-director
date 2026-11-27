@@ -1,0 +1,504 @@
+{
+ "schema_version": "1.0.0",
+ "_doc": "SFX catalog: group -> candidate files. EVERY path is RELATIVE to the library root passed as --sfx-root (or --portable-root); no absolute path may appear here. tier big/mid/soft -> peak level in 'levels' ([speaking, quiet] dBFS). align: peak = loudest moment lands on the cue, onset = sound starts on the cue. 'transition' groups use the transition level. 'bed' groups are long sustained layers that may share a cue with a hit. 'with' = a second group layered on the same cue. 'max_dur' trims long tails. 'max_pre' limits how long a swell may sound before its peak. 'foley' marks the 7 Organic Foley archetypes. Selection is round-robin: never reuse a file inside one video while another file of the group is unused; the same file is reused only after 6 s. Which group serves which cue (hero word, transition, punch) and the offsets live in presets/sfx_micro_sync_rules.json -> cue_to_group_offsets.",
+ "levels": {
+  "big": [
+   -12,
+   -7
+  ],
+  "mid": [
+   -16,
+   -11
+  ],
+  "soft": [
+   -21,
+   -16
+  ],
+  "transition": [
+   -6,
+   -4
+  ],
+  "opening": [
+   -9,
+   -9
+  ],
+  "_doc": "peak target in dBFS: [while the voice is speaking, while quiet]"
+ },
+ "kinds": {
+  "type": {
+   "tier": "soft",
+   "align": "onset",
+   "trim": true,
+   "why": "chuỗi tick cho một đợt chữ gõ (không tick từng ký tự)",
+   "files": [
+    "02_SFX/sfx hmc/05_go_chu/go_chu_ky_thuat_so_02.mp3",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Day_Du/08_Typing_Click/typing_electronic_short_01.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Day_Du/08_Typing_Click/typing_electronic_device_01.wav",
+    "02_SFX/ShotCraft_SFX/text/typewriter-digital.mp3",
+    "sfx trends/06_Camera_Paper_Typing_Foley/72_Mechanical_Keyboard_Burst.wav",
+    "02_SFX/ShotCraft_SFX/text/keyboard.mp3",
+    "02_SFX/sfx hmc/05_go_chu/go_chu_ky_thuat_so_01.wav"
+   ]
+  },
+  "untype": {
+   "tier": "soft",
+   "align": "onset",
+   "why": "xoá ngược chữ: vút đi xuống ngắn",
+   "max_dur": 0.45,
+   "files": [
+    "02_SFX/Thu_Vien_SFX_PR/SFX_Whoosh_Explainer_video_pops_whoosh_light_pop_3005.wav",
+    "sfx trends/02_Whooshes_Swishes_WhipPans/19_Whip_Pan_Camera_Swish.wav",
+    "02_SFX/ProdByViet_Free_SFX/pop + woosh.MP3",
+    "02_SFX/ShotCraft_SFX/transition/wind-swoosh-short.mp3"
+   ]
+  },
+  "pen": {
+   "tier": "soft",
+   "align": "onset",
+   "trim": true,
+   "why": "chữ viết tay lộ trái → phải",
+   "files": [
+    "02_SFX/ShotCraft_SFX/text/write-fast.mp3",
+    "02_SFX/ShotCraft_SFX/text/pen-write-paper.mp3",
+    "sfx trends/06_Camera_Paper_Typing_Foley/77_Highlighter_Marker_Swipe.wav",
+    "02_SFX/ShotCraft_SFX/text/marker-pen-line.mp3",
+    "02_SFX/ShotCraft_SFX/text/write-blackboard.mp3",
+    "02_SFX/ShotCraft_SFX/text/chalk-line.mp3",
+    "02_SFX/ShotCraft_SFX/text/pencil-write-short.mp3"
+   ]
+  },
+  "key_hit": {
+   "tier": "mid",
+   "align": "peak",
+   "why": "từ khoá to rơi xuống",
+   "max_dur": 0.7,
+   "files": [
+    "02_SFX/sfx hmc/03_bum_va_cham/va_cham_bat_logo_01.wav",
+    "02_SFX/sfx hmc/03_bum_va_cham/va_cham_bat_logo_02.wav",
+    "02_SFX/sfx hmc/04_ting_chuong/bup_ting_hien_the_01.wav",
+    "02_SFX/sfx hmc/04_ting_chuong/bup_ting_hien_the_02.wav",
+    "02_SFX/sfx hmc/04_ting_chuong/bup_tram_hien_khung_01.wav",
+    "02_SFX/ShotCraft_SFX/text/typewriter-hit-single.mp3",
+    "02_SFX/ShotCraft_SFX/text/typewriter-hit-soft.mp3",
+    "sfx trends/04_UI_Pops_Clicks_Notifications/50_Social_App_Ping_Knock.wav",
+    "02_SFX/Lorus/Ding_Pops_SFX/Pop 1.mp3",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_Impact_Wood_hard_hit_2182.wav",
+    "sfx trends/01_Impacts_Booms_SubDrops/05_Punch_Body_Impact_Hit.wav",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_Impact_Shot_light_energy_flowing_2589.wav",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_Impact_Dramatic_metal_explosion_impact_1687.wav",
+    "02_SFX/ProdByViet_Free_SFX/synth hit.MP3",
+    "02_SFX/ShotCraft_SFX/impact/metal-spring-hit.mp3"
+   ],
+   "max_pre": 0.1
+  },
+  "sparkle": {
+   "tier": "soft",
+   "align": "onset",
+   "why": "chữ đứng yên phát sáng, nút CTA",
+   "bed": true,
+   "files": [
+    "02_SFX/sfx hmc/04_ting_chuong/chuong_lap_lanh_01.wav",
+    "02_SFX/sfx hmc/04_ting_chuong/chuong_lap_lanh_02.mp3",
+    "02_SFX/sfx hmc/04_ting_chuong/lap_lanh_anh_sang_01.wav",
+    "02_SFX/sfx hmc/04_ting_chuong/lap_lanh_anh_sang_02.wav",
+    "02_SFX/sfx hmc/04_ting_chuong/ting_chuong_kim_loai_01.wav",
+    "02_SFX/ShotCraft_SFX/light/sparkle-poof-hit.mp3",
+    "sfx trends/05_Dings_Chimes_Money/59_Crystal_Ding_Echo_Chime.wav",
+    "02_SFX/ShotCraft_SFX/ui/chime-crystal.mp3",
+    "02_SFX/ShotCraft_SFX/light/sparkle-touch.mp3",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_Whoosh_Magic_sparkle_whoosh_2350.wav"
+   ]
+  },
+  "word_click": {
+   "tier": "mid",
+   "align": "onset",
+   "why": "mỗi từ hiện = một click (kiểu 1cho); mỗi click một file khác (người dùng chốt 2026-11-04 lần 10) — đã bỏ các bản trùng tiếng (so phổ < 0,08); bỏ Pop 4 / Pop 5 (đỉnh bị cắt bằng — méo); lần 15: phụ đề 'từng từ nảy + click' cần nhiều click → dùng chung mọi file click (dải, lưới), bộ chọn ưu tiên file chưa dùng",
+   "max_dur": 0.18,
+   "files": [
+    "02_SFX/ShotCraft_SFX/mech/lock-quick.mp3",
+    "02_SFX/Lorus/Ding_Pops_SFX/Pop 2.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/02_pop/pop_light_explainer_04.wav",
+    "sfx trends/04_UI_Pops_Clicks_Notifications/55_App_Icon_Rubber_Thock.wav",
+    "02_SFX/Lorus/Ding_Pops_SFX/Bubble Pop.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/02_pop/pop_dry_soft_02.wav",
+    "02_SFX/ShotCraft_SFX/ui/pop.mp3",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_Pop_Soap_bubble_sound_2925.wav",
+    "02_SFX/ShotCraft_SFX/paper/paper-staple.mp3",
+    "02_SFX/ShotCraft_SFX/transition/transition-snap.mp3",
+    "02_SFX/ShotCraft_SFX/ui/switch-click-quick.mp3",
+    "sfx trends/04_UI_Pops_Clicks_Notifications/51_UI_Toggle_Switch_Snap.wav",
+    "02_SFX/KobeMedia/SFX_Chuyen_Canh/Camera_03.wav",
+    "02_SFX/ShotCraft_SFX/camera/camera-lens-shutter.mp3",
+    "02_SFX/ProdByViet_Free_SFX/finger snap.MP3",
+    "02_SFX/ShotCraft_SFX/mech/metal-drop-scifi-small.mp3",
+    "02_SFX/ShotCraft_SFX/camera/click-camera.mp3",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_UI_Click_Fast_double_click_on_mouse_275.wav",
+    "sfx trends/04_UI_Pops_Clicks_Notifications/46_Mouse_Single_Click_Clean.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/04_click/click_mouse_hard_01.wav",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_UI_Select_Interface_device_click_2577.wav",
+    "02_SFX/ProdByViet_Free_SFX/digital camera.MP3",
+    "02_SFX/ShotCraft_SFX/text/pen-click-twice.mp3",
+    "02_SFX/ShotCraft_SFX/ui/switch-tap.mp3",
+    "02_SFX/ShotCraft_SFX/ui/ui-click-tone.mp3",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_UI_Click_Modern_technology_select_3124.wav"
+   ]
+  },
+  "bar_click": {
+   "tier": "mid",
+   "align": "onset",
+   "why": "mỗi dải dọc bật ra; mỗi click một file khác (người dùng chốt 2026-11-04 lần 10) — đã bỏ các bản trùng tiếng (so phổ < 0,08)",
+   "max_dur": 0.18,
+   "files": [
+    "02_SFX/ShotCraft_SFX/paper/paper-staple.mp3",
+    "02_SFX/ShotCraft_SFX/transition/transition-snap.mp3",
+    "02_SFX/ShotCraft_SFX/ui/switch-click-quick.mp3",
+    "sfx trends/04_UI_Pops_Clicks_Notifications/51_UI_Toggle_Switch_Snap.wav",
+    "02_SFX/KobeMedia/SFX_Chuyen_Canh/Camera_03.wav",
+    "02_SFX/ShotCraft_SFX/camera/camera-lens-shutter.mp3",
+    "02_SFX/ProdByViet_Free_SFX/finger snap.MP3",
+    "02_SFX/ShotCraft_SFX/mech/metal-drop-scifi-small.mp3"
+   ]
+  },
+  "grid_click": {
+   "tier": "mid",
+   "align": "onset",
+   "why": "mỗi ô lưới bật ra (click cơ khí); mỗi click một file khác (người dùng chốt 2026-11-04 lần 10) — đã bỏ các bản trùng tiếng (so phổ < 0,08)",
+   "max_dur": 0.09,
+   "files": [
+    "02_SFX/ShotCraft_SFX/camera/click-camera.mp3",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_UI_Click_Fast_double_click_on_mouse_275.wav",
+    "sfx trends/04_UI_Pops_Clicks_Notifications/46_Mouse_Single_Click_Clean.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/04_click/click_mouse_hard_01.wav",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_UI_Select_Interface_device_click_2577.wav",
+    "02_SFX/ProdByViet_Free_SFX/digital camera.MP3",
+    "02_SFX/ShotCraft_SFX/text/pen-click-twice.mp3",
+    "02_SFX/ShotCraft_SFX/ui/switch-tap.mp3",
+    "02_SFX/ShotCraft_SFX/ui/ui-click-tone.mp3",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_UI_Click_Modern_technology_select_3124.wav"
+   ]
+  },
+  "charge": {
+   "tier": "mid",
+   "align": "onset",
+   "trim": true,
+   "why": "tiếng nạp điện vút lên trước hiệu ứng lớn",
+   "bed": true,
+   "files": [
+    "02_SFX/ShotCraft_SFX/data/power-up-static.mp3",
+    "sfx trends/03_Risers_Swells_Tension/41_Electric_Charge_Power_Up.wav",
+    "sfx trends/03_Risers_Swells_Tension/34_Tonal_Synth_Sweep_Riser.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/05_riser/riser_magic_whip_02.wav",
+    "sfx trends/03_Risers_Swells_Tension/33_Reverse_Vocal_Reverb_Swell.wav"
+   ]
+  },
+  "flash_hit": {
+   "tier": "big",
+   "align": "peak",
+   "why": "flash trắng ở chỗ nối — cú to nhất",
+   "max_dur": 0.8,
+   "with": "shutter",
+   "transition": true,
+   "files": [
+    "02_SFX/sfx hmc/03_bum_va_cham/bum_tram_chuyen_canh_01.mp3",
+    "02_SFX/sfx hmc/03_bum_va_cham/bum_tram_chuyen_canh_02.wav",
+    "02_SFX/sfx hmc/01_vut_gio_chuyen_canh/vut_gio_kem_chop_sang_01.wav",
+    "02_SFX/sfx hmc/01_vut_gio_chuyen_canh/vut_gio_kem_chop_sang_02.wav",
+    "sfx trends/01_Impacts_Booms_SubDrops/03_Soft_Low_End_Thud.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/06_impact/impact_bass_short_01.wav",
+    "02_SFX/ShotCraft_SFX/impact/bass-hit-short.mp3",
+    "02_SFX/ShotCraft_SFX/impact/hit-blow.mp3",
+    "sfx trends/01_Impacts_Booms_SubDrops/04_Vine_Boom_Heavy_Bass.wav",
+    "sfx trends/01_Impacts_Booms_SubDrops/07_Heartbeat_Single_Thump.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/06_impact/impact_futuristic_bass_02.wav",
+    "02_SFX/ShotCraft_SFX/impact/bass-hit-futuristic.mp3"
+   ]
+  },
+  "data_beep": {
+   "tier": "soft",
+   "align": "onset",
+   "why": "chấm / nhãn dữ liệu nhảy",
+   "max_dur": 0.25,
+   "files": [
+    "02_SFX/sfx hmc/08_dac_biet/bip_cong_nghe_giam_dan_01.wav",
+    "02_SFX/sfx hmc/08_dac_biet/bip_cong_nghe_giam_dan_02.wav",
+    "sfx trends/04_UI_Pops_Clicks_Notifications/58_Radar_Pulse_Ping_Wake.wav",
+    "02_SFX/ShotCraft_SFX/ui/ui-notify-tech.mp3",
+    "02_SFX/ShotCraft_SFX/ui/ui-click-tone.mp3"
+   ]
+  },
+  "whoosh": {
+   "tier": "big",
+   "align": "peak",
+   "why": "zoom blur, whip, slide ở điểm cắt",
+   "max_dur": 0.9,
+   "transition": true,
+   "files": [
+    "02_SFX/sfx hmc/01_vut_gio_chuyen_canh/vut_gio_chuyen_canh_nhanh_01.wav",
+    "02_SFX/sfx hmc/01_vut_gio_chuyen_canh/vut_gio_chuyen_canh_nhanh_02.mp3",
+    "02_SFX/sfx hmc/01_vut_gio_chuyen_canh/vut_gio_chuyen_canh_nhanh_03.wav",
+    "02_SFX/sfx hmc/01_vut_gio_chuyen_canh/vut_lia_may_nhanh_01.wav",
+    "02_SFX/sfx hmc/01_vut_gio_chuyen_canh/vut_lia_may_nhanh_02.wav",
+    "02_SFX/sfx hmc/01_vut_gio_chuyen_canh/vut_ngan_khung_truot_vao_01.wav",
+    "02_SFX/sfx hmc/01_vut_gio_chuyen_canh/vut_ngan_khung_truot_vao_02.wav",
+    "02_SFX/Lorus/Woosh_SFX/Whoosh 1/Whoosh 1 Low, Fast.wav",
+    "02_SFX/Lorus/Woosh_SFX/Whoosh 1/Whoosh 4 Low, Fast.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/07_swipe/swipe_tech_slide_03.wav",
+    "02_SFX/Lorus/Woosh_SFX/Whoosh 1/Whoosh 2 Low, Fast.wav",
+    "02_SFX/Lorus/Woosh_SFX/Whoosh 1/Whoosh 5 High, Fast.wav",
+    "sfx trends/04_UI_Pops_Clicks_Notifications/56_Dropdown_Menu_Expand_Swish.wav",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_Whoosh_Cinematic_tunnel_reverb_woosh_1486.wav",
+    "02_SFX/ShotCraft_SFX/transition/whoosh-big.mp3",
+    "02_SFX/ShotCraft_SFX/transition/wind-woosh-throw.mp3",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Day_Du/01_Whoosh_Transition/whoosh_air_sweep_short_01.wav",
+    "02_SFX/KobeMedia/SFX_Whoosh/_ Whoosh 21.wav",
+    "sfx trends/02_Whooshes_Swishes_WhipPans/17_Snap_Whoosh_Micro_Swish.wav",
+    "02_SFX/KobeMedia/SFX_Whoosh/Swoosh_22.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Day_Du/01_Whoosh_Transition/whoosh_long_air_sweep_01.wav",
+    "02_SFX/Lorus/Woosh_SFX/Whoosh 1/Whoosh 3 Zoom in.wav",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_Whoosh_Arrow_whoosh_1491.wav",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_Swoosh_Flying_fast_swoosh_1469.wav",
+    "sfx trends/02_Whooshes_Swishes_WhipPans/28_Metallic_Blade_Sweep_Whoosh.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/01_whoosh/whoosh_cinematic_wind_03.wav"
+   ]
+  },
+  "boom_pre": {
+   "tier": "big",
+   "align": "peak",
+   "offset": -0.08,
+   "why": "tiếng trầm ngay đầu whip (trước 0,25 s bị nghe lệch, 2026-11-04)",
+   "transition": true,
+   "files": [
+    "sfx trends/01_Impacts_Booms_SubDrops/01_Sub_Bass_Drop_Clean.wav",
+    "02_SFX/ShotCraft_SFX/impact/bass-hit-short.mp3",
+    "sfx trends/03_Risers_Swells_Tension/40_Reverse_Sub_Impact_Suck.wav"
+   ]
+  },
+  "leak": {
+   "tier": "mid",
+   "align": "peak",
+   "why": "light leak / film burn: đỉnh tiếng swell trùng khung sáng nhất",
+   "bed": true,
+   "transition": true,
+   "files": [
+    "02_SFX/ShotCraft_SFX/light/light-transition-magic.mp3",
+    "sfx trends/02_Whooshes_Swishes_WhipPans/18_Deep_Bass_Whoosh_Cinematic.wav",
+    "02_SFX/ShotCraft_SFX/transition/swoosh-slow.mp3"
+   ]
+  },
+  "glitch": {
+   "tier": "mid",
+   "align": "onset",
+   "why": "glitch 1 lần làm điểm nhấn; chỉ giữ file to nhất ngay đầu (≤ 0,06 s) — bản stutter đỉnh trễ 0,19 s làm lệch qa_sync 2026-11-04",
+   "max_dur": 0.4,
+   "offset": -0.08,
+   "transition": true,
+   "files": [
+    "02_SFX/sfx hmc/06_nhieu_ky_thuat_so/nhieu_ky_thuat_so_chuyen_canh_01.mp3",
+    "02_SFX/sfx hmc/06_nhieu_ky_thuat_so/nhieu_ky_thuat_so_chuyen_canh_02.wav",
+    "02_SFX/sfx hmc/06_nhieu_ky_thuat_so/tach_nhieu_gat_01.mp3",
+    "02_SFX/sfx hmc/06_nhieu_ky_thuat_so/tach_nhieu_gat_02.mp3",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/10_glitch/glitch_digital_break_01.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/10_glitch/glitch_scifi_02.wav"
+   ]
+  },
+  "pop": {
+   "tier": "mid",
+   "align": "onset",
+   "why": "pill / thẻ / nhãn bật vào",
+   "max_dur": 0.3,
+   "files": [
+    "02_SFX/sfx hmc/04_ting_chuong/bup_ting_hien_the_03.mp3",
+    "02_SFX/sfx hmc/04_ting_chuong/bup_tram_hien_khung_02.wav",
+    "sfx trends/04_UI_Pops_Clicks_Notifications/43_Clean_Bubble_Pop_A4.wav",
+    "02_SFX/ShotCraft_SFX/ui/pop.mp3",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/02_pop/pop_dry_soft_02.wav",
+    "02_SFX/ShotCraft_SFX/ui/ui-popup-dry.mp3"
+   ]
+  },
+  "riser": {
+   "tier": "mid",
+   "align": "onset",
+   "trim": true,
+   "why": "dồn trước chuỗi cắt tăng tốc",
+   "bed": true,
+   "files": [
+    "02_SFX/sfx hmc/02_tu_luc_cao_trao/tieng_dien_tu_vut_len_01.mp3",
+    "02_SFX/sfx hmc/02_tu_luc_cao_trao/tieng_dien_tu_vut_len_02.wav",
+    "02_SFX/sfx hmc/02_tu_luc_cao_trao/tieng_on_tu_luc_ngan_01.wav",
+    "02_SFX/sfx hmc/02_tu_luc_cao_trao/tieng_on_tu_luc_ngan_02.mp3",
+    "sfx trends/03_Risers_Swells_Tension/31_Short_White_Noise_Riser_06s.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/05_riser/riser_trailer_short_01.wav"
+   ]
+  },
+  "shutter": {
+   "tier": "soft",
+   "align": "onset",
+   "max_dur": 0.5,
+   "why": "lớp màn trập chồng lên flash (mẫu 1cho: thump + shutter)",
+   "transition": true,
+   "files": [
+    "02_SFX/sfx hmc/07_may_anh_chop_sang/man_trap_may_anh_01.mp3",
+    "02_SFX/sfx hmc/07_may_anh_chop_sang/man_trap_may_anh_02.wav",
+    "sfx trends/06_Camera_Paper_Typing_Foley/69_Modern_Mirrorless_Shutter.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/08_shutter/shutter_camera_click_01.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/08_shutter/shutter_dslr_02.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/08_shutter/shutter_vintage_03.wav",
+    "02_SFX/ShotCraft_SFX/camera/camera-shutter-vintage.mp3",
+    "sfx trends/06_Camera_Paper_Typing_Foley/70_Vintage_Film_Camera_Flash.wav",
+    "02_SFX/ShotCraft_SFX/camera/camera-lens-shutter.mp3",
+    "02_SFX/ShotCraft_SFX/camera/click-camera.mp3"
+   ]
+  },
+  "film": {
+   "tier": "mid",
+   "align": "onset",
+   "offset": -0.25,
+   "max_dur": 0.75,
+   "why": "cuộn phim cũ / máy chiếu (overlay film roll)",
+   "transition": true,
+   "files": [
+    "02_SFX/ShotCraft_SFX/film/projector-spin-antique.mp3",
+    "sfx trends/06_Camera_Paper_Typing_Foley/80_8mm_Film_Projector_Spin.wav"
+   ]
+  },
+  "suck_in": {
+   "tier": "big",
+   "align": "peak",
+   "max_pre": 0.4,
+   "transition": true,
+   "why": "tiếng hút / vút dồn vào đúng điểm cắt (đỉnh ở khung sáng nhất) — để nghe rõ chuyển cảnh",
+   "files": [
+    "sfx trends/03_Risers_Swells_Tension/32_Reverse_Cymbal_Suck_In.wav",
+    "02_SFX/TikTok_TalkingHead_Mixkit_Gon_48k/05_riser/riser_reverse_hit_03.wav",
+    "sfx trends/03_Risers_Swells_Tension/40_Reverse_Sub_Impact_Suck.wav",
+    "sfx trends/02_Whooshes_Swishes_WhipPans/24_Swoop_Up_Ascending_Zoom.wav"
+   ]
+  },
+  "foley_paper_slide": {
+   "tier": "soft",
+   "align": "onset",
+   "max_dur": 0.5,
+   "foley": "archival_paper_slide",
+   "why": "organic foley archetype archival_paper_slide (replaces a heavy whoosh when the per-minute cap is spent)",
+   "files": [
+    "02_SFX/ShotCraft_SFX/paper/paper-slide.mp3",
+    "02_SFX/ShotCraft_SFX/paper/paper-move-quick.mp3",
+    "02_SFX/ShotCraft_SFX/paper/paper-page-turn.mp3",
+    "sfx trends/06_Camera_Paper_Typing_Foley/74_Crisp_Book_Page_Turn.wav"
+   ]
+  },
+  "foley_key_tick": {
+   "tier": "soft",
+   "align": "onset",
+   "max_dur": 0.5,
+   "foley": "mech_key_tactile_tick",
+   "why": "organic foley archetype mech_key_tactile_tick (replaces a heavy whoosh when the per-minute cap is spent)",
+   "files": [
+    "sfx trends/04_UI_Pops_Clicks_Notifications/45_Crisp_UI_Tick_E6.wav",
+    "sfx trends/06_Camera_Paper_Typing_Foley/78_Ballpoint_Pen_Double_Click.wav",
+    "02_SFX/ShotCraft_SFX/counter/clock-tick-single.mp3"
+   ]
+  },
+  "foley_shutter_click": {
+   "tier": "soft",
+   "align": "onset",
+   "max_dur": 0.5,
+   "foley": "leica_shutter_click",
+   "why": "organic foley archetype leica_shutter_click (replaces a heavy whoosh when the per-minute cap is spent)",
+   "files": [
+    "02_SFX/ShotCraft_SFX/camera/camera-shutter-hard.mp3",
+    "sfx trends/06_Camera_Paper_Typing_Foley/69_Modern_Mirrorless_Shutter.wav",
+    "02_SFX/ShotCraft_SFX/camera/click-camera.mp3"
+   ]
+  },
+  "foley_felt_muted": {
+   "tier": "soft",
+   "align": "onset",
+   "max_dur": 0.5,
+   "foley": "muted_felt_thud",
+   "why": "organic foley archetype muted_felt_thud (replaces a heavy whoosh when the per-minute cap is spent)",
+   "files": [
+    "sfx trends/01_Impacts_Booms_SubDrops/07_Heartbeat_Single_Thump.wav",
+    "02_SFX/ShotCraft_SFX/crowd/heartbeat-single.mp3"
+   ]
+  },
+  "foley_glass_ping": {
+   "tier": "soft",
+   "align": "onset",
+   "max_dur": 0.5,
+   "foley": "crystal_glass_ping",
+   "why": "organic foley archetype crystal_glass_ping (replaces a heavy whoosh when the per-minute cap is spent)",
+   "files": [
+    "sfx trends/05_Dings_Chimes_Money/59_Crystal_Ding_Echo_Chime.wav",
+    "02_SFX/ShotCraft_SFX/ui/chime-crystal.mp3"
+   ]
+  },
+  "foley_cloth_brush": {
+   "tier": "soft",
+   "align": "onset",
+   "max_dur": 0.5,
+   "foley": "linen_cloth_brush",
+   "why": "organic foley archetype linen_cloth_brush (replaces a heavy whoosh when the per-minute cap is spent)",
+   "files": [
+    "02_SFX/ShotCraft_SFX/paper/paper-wind-blow.mp3",
+    "02_SFX/ShotCraft_SFX/paper/paper-slice-quick.mp3"
+   ]
+  },
+  "foley_air_puff": {
+   "tier": "soft",
+   "align": "onset",
+   "max_dur": 0.5,
+   "foley": "soft_air_puff",
+   "why": "organic foley archetype soft_air_puff (replaces a heavy whoosh when the per-minute cap is spent)",
+   "files": [
+    "sfx trends/03_Risers_Swells_Tension/42_Sharp_Breath_Inhale_Puff.wav",
+    "02_SFX/Thu_Vien_SFX_PR/SFX_Transition_Air_zoom_vacuum_2608.wav"
+   ]
+  }
+ },
+ "opening": {
+  "_doc": "one pair per seed; --opening-seed N picks pairs[N % len]. Both files start at frame 0.",
+  "pairs": [
+   [
+    "sfx trends/03_Risers_Swells_Tension/41_Electric_Charge_Power_Up.wav",
+    "02_SFX/ShotCraft_SFX/ui/switch-click-quick.mp3"
+   ],
+   [
+    "sfx trends/02_Whooshes_Swishes_WhipPans/17_Snap_Whoosh_Micro_Swish.wav",
+    "sfx trends/04_UI_Pops_Clicks_Notifications/45_Crisp_UI_Tick_E6.wav"
+   ],
+   [
+    "sfx trends/07_Glitches_Cyber_Interrupts/81_Short_Digital_Glitch_Stutter.wav",
+    "02_SFX/ShotCraft_SFX/scifi/hitech-bleep.mp3"
+   ],
+   [
+    "02_SFX/ShotCraft_SFX/camera/camera-lens-shutter.mp3",
+    "02_SFX/ShotCraft_SFX/light/sparkle-touch.mp3"
+   ],
+   [
+    "sfx trends/06_Camera_Paper_Typing_Foley/72_Mechanical_Keyboard_Burst.wav",
+    "sfx trends/01_Impacts_Booms_SubDrops/03_Soft_Low_End_Thud.wav"
+   ],
+   [
+    "02_SFX/ShotCraft_SFX/data/sweep-digital.mp3",
+    "02_SFX/ShotCraft_SFX/ui/ui-select-click.mp3"
+   ],
+   [
+    "02_SFX/sfx hmc/01_vut_gio_chuyen_canh/vut_ngan_khung_truot_vao_01.wav",
+    "02_SFX/sfx hmc/04_ting_chuong/bup_ting_hien_the_01.wav"
+   ],
+   [
+    "02_SFX/sfx hmc/01_vut_gio_chuyen_canh/vut_lia_may_nhanh_01.wav",
+    "02_SFX/sfx hmc/03_bum_va_cham/va_cham_bat_logo_01.wav"
+   ],
+   [
+    "02_SFX/sfx hmc/06_nhieu_ky_thuat_so/tach_nhieu_gat_01.mp3",
+    "02_SFX/sfx hmc/04_ting_chuong/ting_chuong_kim_loai_01.wav"
+   ],
+   [
+    "02_SFX/sfx hmc/07_may_anh_chop_sang/man_trap_may_anh_01.mp3",
+    "02_SFX/sfx hmc/03_bum_va_cham/bum_tram_chuyen_canh_01.mp3"
+   ]
+  ]
+ }
+}

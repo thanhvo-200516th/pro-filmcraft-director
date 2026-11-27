@@ -40,3 +40,9 @@ Trước khi trộn nhạc nền (`BGM 2-Act Beat-Drop`) và trước khi ghép 
 2. **Mật độ lời thoại hoạt động (`speech_density >= 0.45`):** Đảm bảo tiếng nói xuyên suốt toàn bộ video, không bị câm tiếng ở nửa sau.
 3. **Khoảng lặng nội bộ tối đa (`max_interior_silence_sec <= 3.5s`):** Phát hiện tức thì các đoạn dead-air chưa cắt.
 4. **Biên độ đỉnh (`peak_dbfs > -28 dBFS`):** Chặn luồng âm thanh rỗng hoặc suy hao bất thường.
+
+---
+
+## 4. Từ công thức đến cảnh (v7.6.0)
+
+Bảng A1 / A2 / B ở mục 2 là các hàm render. **Cảnh nào dùng chế độ nào** (bản đồ `S01A..S12C` của V21, mốc VFX của V19, màu 4 hồi, cấu trúc âm thanh) nằm ở [`24_studio_look_recipe.md`](./24_studio_look_recipe.md); chuỗi gọi hàm theo cảnh nằm ở `SKILL.md` Step 3b. CLI `fast_studio_compositor.py --draft/--master` chỉ **re-encode** video đầu vào, không dựng plate studio: Look S được dựng bằng chuỗi gọi hàm Python (`init_hair_safe_wall_reference` -> `clean_aroll_preserve_hair_crown` -> các `render_*` -> `pipe_encode_single_plate_fast` -> `compose_master_mp4_via_ffmpeg`). Quyết định swash hybrid / màu ngọc thuộc Look S (xem [`23`](./23_dviet_profile_decisions_and_backlog.md), quyết định (a)).

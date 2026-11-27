@@ -51,7 +51,7 @@ import numpy as np
 from PIL import Image
 
 
-ENGINE_VERSION = "7.0.0"
+ENGINE_VERSION = "7.9.0"
 DEFAULT_W = 1080
 DEFAULT_H = 1920
 DEFAULT_FPS = 60.0
@@ -3843,6 +3843,328 @@ def apply_radial_lens_edge_softness(
     return out_u8
 
 
+# ==============================================================================
+# 9. v7.4 @__dviet ZOOM PRESETS, SAFE-BOX CLAMP, C4 RULE & SCALE-DRIVEN RADIAL BLUR
+# ==============================================================================
+# Every number below is an ESTIMATE (LK-flow + RANSAC on the 17 @__dviet videos, see
+# references/dviet_19/INDEX.md) rounded to tiers: 1 % of scale and 0.05 s of time.
+# Nothing here touches `build_dviet_aroll_rhythm_presets` or the default tracks.
+ZOOM_TIER_SCALE = 0.01
+ZOOM_TIER_SECONDS = 0.05
+ZOOM_MIN_SOURCE_SHORT_SIDE = 1080  # zoom is only allowed on sources >= 1080p (short side)
+C4_MIN_RUN_S = 4.0
+C4_MAX_GAP_S = 0.35
+
+
+def round_to_tier(value: float, tier: float) -> float:
+    """Round `value` to the nearest multiple of `tier` (estimates are published on tiers, not raw)."""
+    return round(round(float(value) / tier) * tier, 6)
+
+
+ZOOM_PRESETS: dict[str, dict[str, Any]] = {
+    "punch_220_q25": {
+        "kind": "punch", "scale_to": 2.20, "duration_s": 0.25, "curve": "dviet_zoom_in",
+        "flag": "estimate", "source_videos": ["7666801391284964628"],
+        "note": "2.2x in <= 15 frames @60 (7.0 -> 7.25 s); real use needs the safe-box clamp.",
+    },
+    "push_130_long": {
+        "kind": "push", "scale_to": 1.30, "duration_s": 16.0, "curve": "quintic_in_out",
+        "flag": "estimate", "source_videos": ["7666801391284964628"],
+        "note": "~1.3x over 16 s, ease-in-out (35 -> 50.9 s).",
+    },
+    "step_zoom_13_8_9": {
+        "kind": "steps", "steps_pct": [13, 8, 9], "step_dur_s": 0.60, "hold_s": 0.40, "curve": "dviet_zoom_in",
+        "flag": "estimate", "source_videos": ["7706183278461570356"],
+        "note": "three stepped pushes, +13 % / +8 % / +9 % compounded (33.0 -> 35.0 s).",
+    },
+    "jc_reset_push_4_10": {
+        "kind": "push", "scale_to": 1.07, "scale_range": [1.04, 1.10], "duration_s": 1.70, "curve": "drift",
+        "reset_on_cut": True, "flag": "estimate",
+        "source_videos": ["7683763922234641684", "7688934517783989524", "7693026626333871381", "7706183278461570356", "7707653827016674580"],
+        "note": "linear push of +4..+10 % after a jump cut; the next cut resets it. Clip-local: start at the cut.",
+    },
+    "dolly_out_12_16": {
+        "kind": "dolly_out", "scale_from": 1.14, "scale_to": 1.00, "delta_pct_range": [12, 16], "duration_s": 2.30,
+        "curve": "quintic_in_out", "flag": "estimate", "source_videos": ["7706183278461570356"],
+        "note": "slow dolly-out of 12-16 % over ~2.3 s; starts pre-zoomed so no border appears.",
+    },
+}
+
+
+def zoom_allowed_for_source(source_size: tuple[int, int] | None) -> bool:
+    """True when the source short side is >= 1080 px (or unknown). Below that, zoom softness is not acceptable."""
+    if source_size is None:
+        return True
+    return int(min(source_size)) >= ZOOM_MIN_SOURCE_SHORT_SIDE
+
+
+def clamp_scale_to_safe_box(
+    scale: float,
+    head_top_y: float | None = None,
+    pivot_y: float = DEFAULT_H * 0.42,
+    margin_px: float = 0.0,
+    source_size: tuple[int, int] | None = None,
+) -> float:
+    """
+    Safe-box clamp. A point at `head_top_y` zooms about `pivot_y` to `pivot_y + (head_top_y - pivot_y) * s`;
+    it must stay >= `margin_px`, so `s <= (pivot_y - margin_px) / (pivot_y - head_top_y)`.
+    Scales <= 1 are never changed. A source with short side < 1080 px cannot be zoomed (returns 1.0).
+    """
+    s = float(scale)
+    if s <= 1.0:
+        return s
+    if not zoom_allowed_for_source(source_size):
+        return 1.0
+    if head_top_y is not None and float(head_top_y) < float(pivot_y):
+        limit = (float(pivot_y) - float(margin_px)) / (float(pivot_y) - float(head_top_y))
+        s = min(s, max(1.0, limit))
+    return s
+
+
+def _preset_nodes(spec: dict[str, Any], base: float, duration_s: float | None, push_scale: float | None) -> list[tuple[float, float, str]]:
+    """Return clip-local `(dt_from_start, scale, curve)` nodes AFTER the initial base node (t=0)."""
+    kind = spec["kind"]
+    dur = float(duration_s if duration_s is not None else spec.get("duration_s", 0.0))
+    if kind in ("punch", "push"):
+        target = base * float(push_scale if push_scale is not None else spec["scale_to"])
+        return [(dur, target, spec["curve"])]
+    if kind == "steps":
+        nodes: list[tuple[float, float, str]] = []
+        t, cur = 0.0, base
+        for pct in spec["steps_pct"]:
+            cur = cur * (1.0 + float(pct) / 100.0)
+            t += float(spec["step_dur_s"])
+            nodes.append((t, cur, spec["curve"]))
+            t += float(spec["hold_s"])
+            nodes.append((t, cur, "hold"))
+        return nodes
+    if kind == "dolly_out":
+        return [(dur, base * float(spec["scale_to"]), spec["curve"])]
+    raise ValueError(f"unknown zoom preset kind: {kind!r}")
+
+
+def build_zoom_track(
+    preset: str,
+    t0: float = 0.0,
+    fps: float = DEFAULT_FPS,
+    pivot_xy: tuple[float, float] | None = None,
+    pivot_y: float | None = None,
+    head_top_y: float | None = None,
+    margin_px: float = 0.0,
+    source_size: tuple[int, int] | None = None,
+    base_scale: float = 1.0,
+    duration_s: float | None = None,
+    push_scale: float | None = None,
+) -> SmoothCameraTrack:
+    """
+    Build a `SmoothCameraTrack` for one v7.4 zoom preset starting at clip-local `t0`.
+    Scales are clamped by `clamp_scale_to_safe_box` (head top must stay inside the frame; source >= 1080p).
+    `duration_s` overrides the preset length (used by the C4 rule for `push_130_long`); `push_scale` overrides
+    the final scale of push presets (for example 1.04 .. 1.10 for `jc_reset_push_4_10`).
+    """
+    if preset not in ZOOM_PRESETS:
+        raise KeyError(f"unknown zoom preset {preset!r}; available: {', '.join(ZOOM_PRESETS)}")
+    spec = ZOOM_PRESETS[preset]
+    px = pivot_xy if pivot_xy is not None else (DEFAULT_W * 0.5, float(pivot_y) if pivot_y is not None else DEFAULT_H * 0.42)
+    py = float(px[1])
+    t0 = max(0.0, float(t0))
+
+    def clamp(s: float) -> float:
+        return clamp_scale_to_safe_box(s, head_top_y=head_top_y, pivot_y=py, margin_px=margin_px, source_size=source_size)
+
+    start = clamp(float(base_scale) * float(spec.get("scale_from", 1.0)))
+    kfs: list[CameraKeyframe] = [CameraKeyframe(0.0, start, 0.0, 0.0, 0.0, "hold")]
+    if t0 > 0.0:
+        kfs.append(CameraKeyframe(t0, start, 0.0, 0.0, 0.0, "hold"))
+    for dt_n, scale_n, curve_n in _preset_nodes(spec, float(base_scale), duration_s, push_scale):
+        kfs.append(CameraKeyframe(t0 + dt_n, clamp(scale_n), 0.0, 0.0, 0.0, curve_n))
+    return SmoothCameraTrack(kfs, fps=fps, pivot_xy=(float(px[0]), py))
+
+
+def merge_spoken_runs(words: Sequence[Any], max_gap_s: float = C4_MAX_GAP_S) -> list[tuple[float, float]]:
+    """Merge word timings (`{"start","end"}` dicts or `(start, end)` pairs) into continuous spoken runs."""
+    spans: list[tuple[float, float]] = []
+    for w in words:
+        if isinstance(w, dict):
+            s, e = float(w["start"]), float(w["end"])
+        else:
+            s, e = float(w[0]), float(w[1])
+        if e > s:
+            spans.append((s, e))
+    spans.sort()
+    runs: list[list[float]] = []
+    for s, e in spans:
+        if runs and s - runs[-1][1] <= max_gap_s:
+            runs[-1][1] = max(runs[-1][1], e)
+        else:
+            runs.append([s, e])
+    return [(a, b) for a, b in runs]
+
+
+def c4_zoom_keys(
+    words: Sequence[Any],
+    min_run_s: float = C4_MIN_RUN_S,
+    max_gap_s: float = C4_MAX_GAP_S,
+) -> list[dict[str, Any]]:
+    """
+    Rule C4: a spoken run >= `min_run_s` (4 s) must carry zoom keys.
+      4 s <= run < 8 s   -> `jc_reset_push_4_10` from the run start
+      8 s <= run < 14 s  -> `step_zoom_13_8_9` centred in the run
+      run >= 14 s        -> `push_130_long` from the run start, length min(run, 16 s)
+    Returns plain dicts `{"preset", "t0", "dur", "run": [start, end]}` for the caller to turn into tracks.
+    """
+    keys: list[dict[str, Any]] = []
+    for start, end in merge_spoken_runs(words, max_gap_s):
+        run = end - start
+        if run < min_run_s:
+            continue
+        if run < 8.0:
+            preset, t0, dur = "jc_reset_push_4_10", start, min(run, ZOOM_PRESETS["jc_reset_push_4_10"]["duration_s"])
+        elif run < 14.0:
+            sp = ZOOM_PRESETS["step_zoom_13_8_9"]
+            total = len(sp["steps_pct"]) * (sp["step_dur_s"] + sp["hold_s"])
+            preset, t0, dur = "step_zoom_13_8_9", start + max(0.0, (run - total) / 2.0), total
+        else:
+            preset, t0, dur = "push_130_long", start, min(run, ZOOM_PRESETS["push_130_long"]["duration_s"])
+        keys.append({"preset": preset, "t0": round_to_tier(t0, ZOOM_TIER_SECONDS), "dur": round_to_tier(dur, ZOOM_TIER_SECONDS),
+                     "run": [round(start, 3), round(end, 3)]})
+    return keys
+
+
+def radial_blur_params_for_scale(scale: float) -> dict[str, float]:
+    """
+    Radial edge blur that GROWS with the scale deviation from 1.0 (`d = |ln scale|`), stronger on zoom-out
+    (7667598741888634132: 0.85x with heavy edge streaks). `scale == 1.0` returns the always-on defaults of
+    `apply_radial_lens_edge_softness` (`inner_r = 0.64`, `ksize = 13`, `-0.18 EV`).
+    """
+    s = max(0.2, float(scale))
+    d = abs(math.log(s))
+    gain = 120.0 if s < 1.0 else 40.0
+    ksize = 13 + int(round(gain * d))
+    return {
+        "inner_r": float(np.clip(0.64 - 0.9 * d, 0.30, 0.64)),
+        "max_blur_ksize": int(ksize | 1),
+        "vignette_ev": float(np.clip(-0.18 - 0.6 * d, -0.60, -0.18)),
+    }
+
+
+def apply_scale_radial_blur(frame_bgr: np.ndarray, scale: float, deadzone: float = 0.02) -> np.ndarray:
+    """Apply the scale-driven radial blur; within `deadzone` of 1.0 the frame is returned untouched."""
+    if abs(math.log(max(0.2, float(scale)))) < deadzone:
+        return frame_bgr
+    p = radial_blur_params_for_scale(scale)
+    return apply_radial_lens_edge_softness(
+        frame_bgr, inner_r=p["inner_r"], max_blur_ksize=p["max_blur_ksize"], vignette_ev=p["vignette_ev"]
+    )
+
+
+def _synthetic_zoom_source(w: int, h: int, seed: int = 7) -> np.ndarray:
+    """Textured BGR plate (multi-scale noise + shapes) with plenty of corners for optical-flow tracking."""
+    rng = np.random.default_rng(seed)
+    base = np.zeros((h, w, 3), dtype=np.float32)
+    for sigma, amp in ((2.0, 90.0), (6.0, 70.0), (18.0, 50.0)):
+        noise = rng.standard_normal((h, w, 3)).astype(np.float32)
+        base += amp * cv2.GaussianBlur(noise, (0, 0), sigma)
+    img = np.clip(128.0 + base, 0, 255).astype(np.uint8)
+    for _ in range(90):
+        c = tuple(int(v) for v in rng.integers(0, 255, 3))
+        p = (int(rng.integers(0, w)), int(rng.integers(0, h)))
+        if rng.random() < 0.5:
+            cv2.circle(img, p, int(rng.integers(6, 28)), c, -1)
+        else:
+            q = (p[0] + int(rng.integers(10, 60)), p[1] + int(rng.integers(10, 60)))
+            cv2.rectangle(img, p, q, c, -1)
+    return img
+
+
+def _measure_cumulative_log_scale(frames_gray: Sequence[np.ndarray]) -> np.ndarray:
+    """Frame-to-frame LK + `cv2.estimateAffinePartial2D` (RANSAC), accumulated as log-scale. No face detection."""
+    out = [0.0]
+    for prev, cur in zip(frames_gray[:-1], frames_gray[1:]):
+        pts = cv2.goodFeaturesToTrack(prev, maxCorners=500, qualityLevel=0.01, minDistance=7)
+        step = 0.0
+        if pts is not None and len(pts) >= 12:
+            nxt, st, _ = cv2.calcOpticalFlowPyrLK(prev, cur, pts, None, winSize=(31, 31), maxLevel=4)
+            ok = st.reshape(-1) == 1
+            if int(ok.sum()) >= 12:
+                M, _inl = cv2.estimateAffinePartial2D(pts[ok], nxt[ok], method=cv2.RANSAC, ransacReprojThreshold=2.0)
+                if M is not None:
+                    step = 0.5 * math.log(max(1e-9, float(M[0, 0] * M[1, 1] - M[0, 1] * M[1, 0])))
+        out.append(out[-1] + step)
+    return np.asarray(out, dtype=np.float64)
+
+
+def _render_zoom_clip_via_ffmpeg(track: SmoothCameraTrack, src: np.ndarray, seconds: float, fps: float, shutter_angle_deg: float) -> list[np.ndarray]:
+    """Render `seconds` of the track, round-trip through ffmpeg (libx264 crf 12), return gray frames."""
+    import shutil
+    import subprocess
+    import tempfile
+
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg is None:
+        raise RuntimeError("ffmpeg not found; the zoom self-test needs ffmpeg")
+    h, w = src.shape[:2]
+    n = int(round(seconds * fps))
+    with tempfile.TemporaryDirectory(prefix="zoom_selftest_") as td:
+        mp4 = Path(td) / "clip.mp4"
+        enc = subprocess.Popen(
+            [ffmpeg, "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "bgr24", "-s", f"{w}x{h}", "-r", str(fps),
+             "-i", "-", "-an", "-c:v", "libx264", "-crf", "12", "-preset", "veryfast", "-pix_fmt", "yuv420p", str(mp4)],
+            stdin=subprocess.PIPE,
+        )
+        assert enc.stdin is not None
+        for i in range(n):
+            t = i / fps
+            frame = render_camera_plate_60fps(src, track, t, shutter_angle_deg=shutter_angle_deg, out_size=(w, h))
+            enc.stdin.write(frame.tobytes())
+        enc.stdin.close()
+        if enc.wait() != 0:
+            raise RuntimeError("ffmpeg encode failed in zoom self-test")
+        dec = subprocess.run(
+            [ffmpeg, "-v", "error", "-i", str(mp4), "-f", "rawvideo", "-pix_fmt", "gray", "-"],
+            capture_output=True, check=True,
+        )
+    flat = np.frombuffer(dec.stdout, dtype=np.uint8)
+    return [flat[i * w * h:(i + 1) * w * h].reshape(h, w) for i in range(flat.size // (w * h))]
+
+
+def run_zoom_self_test(w: int = 540, h: int = 960, fps: float = 60.0, seconds: float = 5.0, tol_log: float = 0.03) -> dict[str, Any]:
+    """
+    Render a 5 s synthetic clip per preset with numpy + ffmpeg and compare the MEASURED scale curve
+    (`cv2.estimateAffinePartial2D`) with the track's analytic curve. `tol_log` is on ln(scale) (0.03 ~ 3 %).
+    cv2 5.0 has no CascadeClassifier, so nothing here uses face detection.
+    """
+    src = _synthetic_zoom_source(w, h)
+    cases = (
+        ("step_zoom_13_8_9", {"t0": 0.8}, 0.0),
+        ("punch_220_q25", {"t0": 1.0}, 180.0),
+        ("dolly_out_12_16", {"t0": 0.5, "base_scale": 1.0}, 0.0),
+    )
+    clips: list[dict[str, Any]] = []
+    for preset, kw, shutter in cases:
+        track = build_zoom_track(preset, fps=fps, pivot_xy=(w * 0.5, h * 0.42), **kw)
+        frames = _render_zoom_clip_via_ffmpeg(track, src, seconds, fps, shutter)
+        measured = _measure_cumulative_log_scale(frames)
+        ts = np.arange(len(frames), dtype=np.float64) / fps
+        z = track.evaluate_array(ts, include_breathing=False)[:, 0]
+        expected = np.log(z / z[0])
+        err = float(np.max(np.abs(measured - expected)))
+        clips.append({
+            "preset": preset, "frames": len(frames),
+            "final_scale_expected": round(float(z[-1] / z[0]), 4),
+            "final_scale_measured": round(float(math.exp(measured[-1])), 4),
+            "max_log_err": round(err, 4),
+        })
+        if err >= tol_log:
+            raise AssertionError(f"zoom self-test {preset}: max |ln scale error| {err:.4f} >= {tol_log}")
+    for c in clips:
+        print(
+            f"[OK] v7.4 zoom {c['preset']}: {c['frames']} frames | final scale expected {c['final_scale_expected']:.3f} "
+            f"vs measured {c['final_scale_measured']:.3f} | max ln-err {c['max_log_err']:.4f} (< {tol_log})"
+        )
+    return {"ok": True, "clips": clips, "tol_log": tol_log}
+
+
 def _run_self_tests() -> int:
     # 1. Original SmoothCameraTrack C^2 spline verification
     presets = build_dviet_aroll_rhythm_presets()
@@ -3992,6 +4314,9 @@ def _run_self_tests() -> int:
         f"[OK] v7.0 Native-Frame Micro-Bridges: 3f Bloom + 13f CRI-100 Rack-Focus (cri_shift={cri_shift:.4f}) + "
         f"6f Farneback Morph + Radial Lens Edge Softness (center_diff=0)"
     )
+
+    # 10. v7.4 zoom presets: measured scale curve on 5 s synthetic clips (cv2.estimateAffinePartial2D)
+    run_zoom_self_test()
     return 0
 
 

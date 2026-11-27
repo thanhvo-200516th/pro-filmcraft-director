@@ -7,7 +7,9 @@ Premiere Pro <-> FilmCraft (.fcproj v17 & Python/PIL/NumPy/OpenCV Render Engine)
 
 import math
 import re
+import sys
 import unicodedata
+from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -182,29 +184,89 @@ def draw_multicolor_line(
     char_rgbs: list[tuple[int, int, int]],
     font: ImageFont.FreeTypeFont,
     alpha: int = 255,
+    word_spacing_px: float = 0.0,
 ) -> None:
-    """Draw `clean_text` at `xy` preserving exact full-prefix kerning while coloring contiguous hue runs."""
+    """Draw `clean_text` at `xy` preserving exact full-prefix kerning while coloring contiguous hue runs.
+    `word_spacing_px` (v7.9.0 entrance word-gap guard, `va_entrance_word_spacing_px`) widens every space like CSS word-spacing."""
     if not clean_text or alpha <= 0:
         return
     x0, y0 = float(xy[0]), float(xy[1])
     unique_rgbs = set(char_rgbs)
-    if len(unique_rgbs) <= 1:
+    if len(unique_rgbs) <= 1 and word_spacing_px <= 0:
         c0 = char_rgbs[0] if char_rgbs else (255, 255, 255)
         draw.text((x0, y0), clean_text, font=font, fill=(*c0, int(alpha)))
         return
 
     n = len(clean_text)
+    rgbs = list(char_rgbs) + [char_rgbs[-1] if char_rgbs else (255, 255, 255)] * max(0, n - len(char_rgbs))
     run_start = 0
     while run_start < n:
-        cur_rgb = char_rgbs[run_start]
+        cur_rgb = rgbs[run_start]
         run_end = run_start + 1
-        while run_end < n and char_rgbs[run_end] == cur_rgb:
+        # a run ends at a hue change and, while words are spaced apart, at every word boundary
+        while run_end < n and rgbs[run_end] == cur_rgb and not (word_spacing_px > 0 and (clean_text[run_end] == " ") != (clean_text[run_start] == " ")):
             run_end += 1
         prefix = clean_text[:run_start]
         seg = clean_text[run_start:run_end]
         dx = draw.textlength(prefix, font=font) if prefix else 0.0
-        draw.text((x0 + dx, y0), seg, font=font, fill=(*cur_rgb, int(alpha)))
+        if seg.strip():
+            draw.text((x0 + dx + word_spacing_px * prefix.count(" "), y0), seg, font=font, fill=(*cur_rgb, int(alpha)))
         run_start = run_end
+
+
+_MG = None
+
+
+def _motion_gate():
+    """scripts/tools/motion_gate.py (the ONE word-gap helper shared with the web plates and FilmCraft), imported lazily."""
+    global _MG
+    if _MG is None:
+        tools = str(Path(__file__).resolve().parent / "tools")
+        if tools not in sys.path:
+            sys.path.insert(0, tools)
+        import motion_gate as mg  # noqa: E402
+
+        _MG = mg
+    return _MG
+
+
+def va_entrance_word_spacing_px(text: str, font: ImageFont.FreeTypeFont, blur_px: float, guard: bool = True) -> float:
+    """v7.9.0 word-gap guard for a PIL blur-in (user decision 2026-11-26: keep the blur, widen the words): the extra px per space so
+    the INK gap minus 2 x sigma stays >= 0.25 em (`motion_gate.entrance_word_spacing_em` on the line's natural ink gap). It eases
+    back to the resting value as `blur_px` reaches 0. 0 for one-word lines, bitmap fonts or `guard=False`."""
+    clean = nfc(text).strip()
+    path = getattr(font, "path", None)
+    if not guard or " " not in clean or not path:
+        return 0.0
+    mg = _motion_gate()
+    nat = mg.natural_word_gap_em(clean, path)
+    if nat is None:
+        return 0.0
+    return mg.entrance_word_spacing_em(max(0.0, float(blur_px)), 1.0, float(font.size), nat) * float(font.size)
+
+
+def draw_spaced_text(draw: ImageDraw.ImageDraw, xy: tuple[float, float], text: str, font: ImageFont.FreeTypeFont, fill,
+                     word_spacing_px: float = 0.0) -> None:
+    """`draw.text` with CSS-like word spacing (any image mode / fill): each word at its full-prefix advance plus
+    `word_spacing_px` per preceding space (v7.9.0 word-gap guard, `va_entrance_word_spacing_px`)."""
+    if word_spacing_px <= 0 or " " not in text:
+        draw.text(xy, text, font=font, fill=fill)
+        return
+    pos = 0
+    for word in text.split(" "):
+        if word:
+            prefix = text[:pos]
+            dx = draw.textlength(prefix, font=font) if prefix else 0.0
+            draw.text((float(xy[0]) + dx + word_spacing_px * prefix.count(" "), float(xy[1])), word, font=font, fill=fill)
+        pos += len(word) + 1
+
+
+def _composite_clipped(out: Image.Image, lay: Image.Image, x: int, y: int) -> None:
+    """`out.alpha_composite(lay, (x, y))` for a layer that may hang over any canvas edge (the overhang is cropped)."""
+    x0, y0 = max(0, x), max(0, y)
+    x1, y1 = min(out.width, x + lay.width), min(out.height, y + lay.height)
+    if x1 > x0 and y1 > y0:
+        out.alpha_composite(lay.crop((x0 - x, y0 - y, x1 - x, y1 - y)), (x0, y0))
 
 
 def add_chromatic_layer_glow(
@@ -376,12 +438,14 @@ def render_va_fam01_baseline_mask_slide(
     wave_warp: bool = False,
     word_colors: dict[int, tuple[int, int, int]] | None = None,
     top_word_colors: dict[int, tuple[int, int, int]] | None = None,
+    word_gap_guard: bool = True,
 ) -> Image.Image:
     """
     Premiere Pro: Transform (Position Y: +52px -> 0, Shutter 180) placed ABOVE Crop (Bottom)
     + Gaussian Blur (24 -> 0), optionally with Wave Warp (Sine, Height 16 -> 0).
     Supports `word_colors` AND inline `[color:word]` multi-hue tags!
     `v6.0`: Dynamic `box_w = max(920, int(tw + 140))` so long Vietnamese lines are NEVER right-clipped!
+    v7.9.0: `word_gap_guard` widens the word spacing with the blur (`va_entrance_word_spacing_px`, preset entrance_word_spacing).
     """
     w, h = canvas_size
     out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -396,15 +460,17 @@ def render_va_fam01_baseline_mask_slide(
         clean_top, top_rgbs = resolve_va_char_colors(top_text, top_base_rgb, word_colors=top_word_colors)
         u1 = clamp((t_sec - t_start) / 0.30)
         e1 = ease_out_cubic(u1)
+        blur1 = 14.0 * (1.0 - e1)
+        ws1 = va_entrance_word_spacing_px(clean_top, font_top, blur1 if blur1 > 0.35 else 0.0, word_gap_guard)
         adv_t, tw, th_t = _measure_va_text_span(clean_top, font_top)
+        adv_t, tw = adv_t + ws1 * clean_top.count(" "), tw + ws1 * clean_top.count(" ")
         box_w = max(920, int(math.ceil(tw + 140)))
         box_h = max(140, int(math.ceil(th_t + 88)))
         lay1 = Image.new("RGBA", (box_w, box_h), (0, 0, 0, 0))
         d1 = ImageDraw.Draw(lay1)
         tx = max(32, min(box_w - int(math.ceil(tw)) - 32, int((box_w - adv_t) / 2 - 45)))
         dy1 = int(36 * (1.0 - e1))
-        draw_multicolor_line(d1, (tx, 28 + dy1), clean_top, top_rgbs, font_top, alpha=int(255 * e1))
-        blur1 = 14.0 * (1.0 - e1)
+        draw_multicolor_line(d1, (tx, 28 + dy1), clean_top, top_rgbs, font_top, alpha=int(255 * e1), word_spacing_px=ws1)
         if blur1 > 0.35:
             lay1 = lay1.filter(ImageFilter.GaussianBlur(radius=blur1))
         # Crop bottom baseline mask proportionally below top baseline
@@ -420,14 +486,17 @@ def render_va_fam01_baseline_mask_slide(
         has_multi_hero = len(set(hero_rgbs)) > 1
         u2 = clamp((t_sec - (t_start + stagger_sec)) / 0.36)
         e2 = ease_out_cubic(u2)
+        blur2 = 16.0 * math.pow(1.0 - u2, 1.6)
+        ws2 = va_entrance_word_spacing_px(clean_hero, font_hero, blur2 if blur2 > 0.35 else 0.0, word_gap_guard)
         adv_h, tw_h, th_h = _measure_va_text_span(clean_hero, font_hero)
+        adv_h, tw_h = adv_h + ws2 * clean_hero.count(" "), tw_h + ws2 * clean_hero.count(" ")
         box_w = max(920, int(math.ceil(tw_h + 140)))
         box_h = max(220, int(math.ceil(th_h + 116)))
         lay2 = Image.new("RGBA", (box_w, box_h), (0, 0, 0, 0))
         d2 = ImageDraw.Draw(lay2)
         hx = max(32, min(box_w - int(math.ceil(tw_h)) - 32, int((box_w - adv_h) / 2 + (30 if top_text else 0))))
         dy2 = int(58 * (1.0 - e2))
-        draw_multicolor_line(d2, (hx, 34 + dy2), clean_hero, hero_rgbs, font_hero, alpha=int(255 * min(1.0, u2 * 1.6)))
+        draw_multicolor_line(d2, (hx, 34 + dy2), clean_hero, hero_rgbs, font_hero, alpha=int(255 * min(1.0, u2 * 1.6)), word_spacing_px=ws2)
 
         if wave_warp and u2 < 0.98:
             arr = np.array(lay2)
@@ -438,7 +507,6 @@ def render_va_fam01_baseline_mask_slide(
             arr = cv2.remap(arr, xs, ys_warp, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
             lay2 = Image.fromarray(arr)
 
-        blur2 = 16.0 * math.pow(1.0 - u2, 1.6)
         if blur2 > 0.35:
             lay2 = lay2.filter(ImageFilter.GaussianBlur(radius=blur2))
         glow_fallback = hero_rgbs[0] if hero_rgbs else hero_base_rgb
@@ -468,12 +536,17 @@ def render_va_fam02_diagonal_rotation_whip(
     center_xy: tuple[int, int] = (540, 480),
     color_rgb: tuple[int, int, int] = (255, 94, 26),
     mode: str = "orange_whip",  # "orange_whip" (#2) or "speed_up" (#26)
+    word_gap_guard: bool = True,
 ) -> Image.Image:
     """
     Premiere Pro #2 Orange: Scale 150% -> 96% -> 100%, Rotation -20 deg -> 0 deg,
     Gaussian Blur 32 -> 0 + Screen HDR Glow.
     Premiere Pro #26 Speed Up: Position X -140px -> +6px -> 0px, Skew -12 deg -> 0 deg,
     Directional Blur 90 deg (40 -> 0).
+    v7.9.0: `word_gap_guard` widens the word spacing with the text blur (`va_entrance_word_spacing_px`): orange_whip on
+    blur / min(scale, 1) (the blur runs after the scale), speed_up on the horizontal box blur's spread (k / 2 per side); preset
+    entrance_word_spacing. The layer box holds the whole move (148 % scale + rotation, or the -145 px slide + skew + box blur), so no
+    frame is hard-clipped at the box edge.
     """
     w, h = canvas_size
     out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -482,24 +555,35 @@ def render_va_fam02_diagonal_rotation_whip(
     u = clamp((t_sec - t_start) / 0.38)
     e_back = ease_out_back(u, overshoot=1.22)
     e_cub = ease_out_cubic(u)
+    scale = 1.48 - 0.48 * e_back
+    blur_r = 18.0 * math.pow(1.0 - u, 1.7) if mode == "orange_whip" else 0.0
+    k_x = max(1, int(38 * math.pow(1.0 - u, 1.6))) if mode != "orange_whip" else 1
+    if mode == "orange_whip":
+        spread = blur_r / min(max(0.5, scale), 1.0) if blur_r > 0.35 else 0.0
+    else:
+        spread = k_x / 2.0 if k_x > 1 else 0.0
 
+    txt = nfc(text)
+    ws = va_entrance_word_spacing_px(txt, font, spread, word_gap_guard)
     dummy_d = ImageDraw.Draw(out)
-    tw = dummy_d.textlength(nfc(text), font=font)
-    box_w = min(w - 40, max(360, int(tw + 160)))
+    tw = dummy_d.textlength(txt, font=font) + ws * txt.count(" ")
+    box_w = min(w - 40, max(360, int(tw + 160)))  # the placement box (unchanged)
     box_h = 260
-    lay = Image.new("RGBA", (box_w, box_h), (0, 0, 0, 0))
+    room = 80 + 3 * 26  # the original text-to-edge room + the 26 px glow
+    lay_w = int(math.ceil(tw * 1.48 + 2 * (145 + 0.22 * box_h * 0.5 + 19 + room)))
+    lay_h = int(math.ceil(box_h + tw * 1.48 * math.sin(math.radians(20.0)) + 2 * room))
+    ox, oy = (lay_w - box_w) // 2, (lay_h - box_h) // 2
+    lay = Image.new("RGBA", (lay_w, lay_h), (0, 0, 0, 0))
     dr = ImageDraw.Draw(lay)
-    dr.text(((box_w - tw) / 2, 65), nfc(text), font=font, fill=(*color_rgb, int(255 * min(1.0, u * 2.2))))
+    draw_multicolor_line(dr, (ox + (box_w - tw) / 2, oy + 65), txt, [tuple(color_rgb)] * len(txt), font, int(255 * min(1.0, u * 2.2)), ws)
 
     arr = np.array(lay)
     bh, bw = arr.shape[:2]
     if mode == "orange_whip":
-        scale = 1.48 - 0.48 * e_back
         angle = -20.0 * (1.0 - e_back)
         M = cv2.getRotationMatrix2D((bw * 0.5, bh * 0.5), angle, max(0.5, scale))
         arr = cv2.warpAffine(arr, M, (bw, bh), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
         lay = Image.fromarray(arr)
-        blur_r = 18.0 * math.pow(1.0 - u, 1.7)
         if blur_r > 0.35:
             lay = lay.filter(ImageFilter.GaussianBlur(radius=blur_r))
     else:
@@ -507,16 +591,15 @@ def render_va_fam02_diagonal_rotation_whip(
         shear = -0.22 * (1.0 - e_cub)
         M = np.array([[1.0, shear, dx - shear * bh * 0.5], [0.0, 1.0, 0.0]], dtype=np.float32)
         arr = cv2.warpAffine(arr, M, (bw, bh), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
-        k_x = max(1, int(38 * math.pow(1.0 - u, 1.6)))
         if k_x > 1:
             arr = cv2.blur(arr, (k_x, 1))
         lay = Image.fromarray(arr)
 
     glow_str = 1.35 * (1.0 - 0.45 * e_cub)
     lay = add_colored_glow(lay, glow_rgb=color_rgb, radius=26.0, intensity=glow_str)
-    px = max(40, min(w - box_w - 40, int(center_xy[0] - box_w // 2)))
+    px = max(40, min(w - box_w - 40, int(center_xy[0] - box_w // 2))) if box_w <= w - 80 else (w - box_w) // 2  # a wide line is centred
     py = max(40, min(h - box_h - 40, int(center_xy[1] - box_h // 2)))
-    out.alpha_composite(lay, (px, py))
+    _composite_clipped(out, lay, px - ox, py - oy)
     return out
 
 
@@ -617,8 +700,10 @@ def render_va_fam04_vertical_passthrough_crossover(
     center_xy: tuple[int, int] = (540, 470),
     top_color: tuple[int, int, int] = (255, 255, 255),
     bottom_color: tuple[int, int, int] = (30, 107, 255),
+    word_gap_guard: bool = True,
 ) -> Image.Image:
     """
+    v7.9.0: `word_gap_guard` widens the word spacing with the blur (`va_entrance_word_spacing_px`, preset entrance_word_spacing).
     Premiere Pro #5 Modern Vibrant:
     - Top line ('Modern', white) starts at BOTTOM position (Y_bot) and flies UP to Y_top.
     - Bottom line ('Vibrant', electric blue) starts at TOP position (Y_top) and flies DOWN to Y_bot.
@@ -639,12 +724,15 @@ def render_va_fam04_vertical_passthrough_crossover(
     y_bot_cur = int(y_top_target + (y_bot_target - y_top_target) * e)
     blur_r = 22.0 * math.pow(1.0 - u, 1.55)
     alpha = int(255 * min(1.0, u * 2.0))
+    blur_eff = blur_r if blur_r > 0.35 else 0.0
 
     # Bottom layer (flies from top -> bottom)
     lay_bot = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     db = ImageDraw.Draw(lay_bot)
-    bw = db.textlength(nfc(bottom_text), font=font_bottom)
-    db.text((max(50, cx - bw / 2), y_bot_cur), nfc(bottom_text), font=font_bottom, fill=(*bottom_color, alpha))
+    bot = nfc(bottom_text)
+    ws_b = va_entrance_word_spacing_px(bot, font_bottom, blur_eff, word_gap_guard)
+    bw = db.textlength(bot, font=font_bottom) + ws_b * bot.count(" ")
+    draw_multicolor_line(db, (max(50, cx - bw / 2), y_bot_cur), bot, [tuple(bottom_color)] * len(bot), font_bottom, alpha, ws_b)
     if blur_r > 0.35:
         lay_bot = lay_bot.filter(ImageFilter.GaussianBlur(radius=blur_r))
     lay_bot = add_colored_glow(lay_bot, glow_rgb=bottom_color, radius=24.0, intensity=1.15)
@@ -652,8 +740,10 @@ def render_va_fam04_vertical_passthrough_crossover(
     # Top layer (flies from bottom -> top)
     lay_top = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     dt = ImageDraw.Draw(lay_top)
-    tw = dt.textlength(nfc(top_text), font=font_top)
-    dt.text((max(50, cx - tw / 2), y_top_cur), nfc(top_text), font=font_top, fill=(*top_color, alpha))
+    top = nfc(top_text)
+    ws_t = va_entrance_word_spacing_px(top, font_top, blur_eff, word_gap_guard)
+    tw = dt.textlength(top, font=font_top) + ws_t * top.count(" ")
+    draw_multicolor_line(dt, (max(50, cx - tw / 2), y_top_cur), top, [tuple(top_color)] * len(top), font_top, alpha, ws_t)
     if blur_r > 0.35:
         lay_top = lay_top.filter(ImageFilter.GaussianBlur(radius=blur_r))
 
@@ -666,6 +756,9 @@ def render_va_fam04_vertical_passthrough_crossover(
 # FAM_05: SOFT GRADIENT WIPE + GLOWING LEADING EDGE (& GIANT WATERMARK)
 # Presets: #6 Soft Motion, #19 Simple Type, #20 Bright Silver, #32 MONEY $100
 # ==============================================================================
+FAM05_HALO_REST_SIGMA = 2.5  # [UOC] v7.9.0 repair: the 35 % blurred copy left behind the wipe rests at this sigma (was 18 on every frame)
+
+
 def render_va_fam05_soft_wipe_glow_watermark(
     canvas_size: tuple[int, int],
     top_text: str,
@@ -679,11 +772,15 @@ def render_va_fam05_soft_wipe_glow_watermark(
     bottom_color: tuple[int, int, int] = (255, 215, 0),
     watermark_text: str = "$$$$",
     font_watermark: ImageFont.FreeTypeFont | None = None,
+    word_gap_guard: bool = True,
 ) -> Image.Image:
     """
     Premiere Pro #6 / #19 / #20 / #32 MONEY $100:
     - Optional giant 14% opacity watermark ('$$$$') behind main 2-tier text.
     - Soft Linear Wipe (-90 deg, Feather 45) with a glowing blurred leading edge.
+    v7.9.0 repair: the blurred copy (leading edge + the 35 % halo it leaves) eases from sigma 18 to FAM05_HALO_REST_SIGMA as the wipe
+    lands (it used to stay at sigma 18 and merge the words on every frame), and `word_gap_guard` widens both lines' word spacing
+    with that sigma (`va_entrance_word_spacing_px`) so the ink gap minus 2 sigma stays >= 0.25 em while the words ease back to rest.
     """
     w, h = canvas_size
     out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -694,9 +791,14 @@ def render_va_fam05_soft_wipe_glow_watermark(
     cx, cy = center_xy
 
     fw = font_watermark or font_bottom
+    halo_sigma = FAM05_HALO_REST_SIGMA + (18.0 - FAM05_HALO_REST_SIGMA) * (1.0 - e)
+    ws_top = va_entrance_word_spacing_px(top_text, font_top, halo_sigma, word_gap_guard) if top_text else 0.0
+    ws_bot = va_entrance_word_spacing_px(bottom_text, font_bottom, halo_sigma, word_gap_guard) if bottom_text else 0.0
     _, tw_top, _ = _measure_va_text_span(top_text, font_top) if top_text else (0.0, 0.0, 0.0)
     _, tw_bot, th_bot = _measure_va_text_span(bottom_text, font_bottom) if bottom_text else (0.0, 0.0, 0.0)
     _, tw_wm, _ = _measure_va_text_span(watermark_text, fw) if watermark_text else (0.0, 0.0, 0.0)
+    tw_top += ws_top * nfc(top_text or "").count(" ")
+    tw_bot += ws_bot * nfc(bottom_text or "").count(" ")
     tw = max(tw_top, tw_bot, tw_wm * 0.85)
     box_w = max(920, int(math.ceil(tw + 140)))
     box_h = max(280, int(math.ceil(th_bot + 160)))
@@ -710,13 +812,13 @@ def render_va_fam05_soft_wipe_glow_watermark(
 
     # 2. Foreground 2-tier text
     if top_text:
-        tw_t = dr.textlength(nfc(top_text), font=font_top)
-        dr.text(((box_w - tw_t) / 2, 32), nfc(top_text), font=font_top, fill=(*top_color, 255))
+        tw_t = dr.textlength(nfc(top_text), font=font_top) + ws_top * nfc(top_text).count(" ")
+        draw_spaced_text(dr, ((box_w - tw_t) / 2, 32), nfc(top_text), font_top, (*top_color, 255), ws_top)
     if bottom_text:
-        bw = dr.textlength(nfc(bottom_text), font=font_bottom)
-        dr.text(((box_w - bw) / 2, 92), nfc(bottom_text), font=font_bottom, fill=(*bottom_color, 255))
+        bw = dr.textlength(nfc(bottom_text), font=font_bottom) + ws_bot * nfc(bottom_text).count(" ")
+        draw_spaced_text(dr, ((box_w - bw) / 2, 92), nfc(bottom_text), font_bottom, (*bottom_color, 255), ws_bot)
 
-    blurred = sharp.filter(ImageFilter.GaussianBlur(radius=18.0))
+    blurred = sharp.filter(ImageFilter.GaussianBlur(radius=halo_sigma))
     blurred = add_colored_glow(blurred, glow_rgb=bottom_color, radius=24.0, intensity=1.1)
 
     arr_s = np.array(sharp, dtype=np.float32)
@@ -988,8 +1090,10 @@ def render_va_fam09_error_neon_strikethrough(
     bar_rgb: tuple[int, int, int] = (255, 45, 65),
     text_rgb: tuple[int, int, int] = (255, 255, 255),
     word_colors: dict[int, tuple[int, int, int]] | None = None,
+    word_gap_guard: bool = True,
 ) -> Image.Image:
     """
+    v7.9.0: `word_gap_guard` widens the phase-1 word spacing with the blur (`va_entrance_word_spacing_px`, preset entrance_word_spacing).
     Premiere Pro #8 Error (2-Phase Choreography):
     - Phase 1 (t_start .. t_start + 0.28s): Text de-blurs cleanly (Gaussian Blur 26 -> 0, Scale 92% -> 100%).
       NO strike bar yet!
@@ -1011,8 +1115,10 @@ def render_va_fam09_error_neon_strikethrough(
     e_txt = ease_out_cubic(u_txt)
     cx, cy = center_xy
 
+    blur_r = 20.0 * math.pow(1.0 - u_txt, 1.6)
+    ws = va_entrance_word_spacing_px(clean_txt, font, blur_r if blur_r > 0.35 else 0.0, word_gap_guard)
     dummy = ImageDraw.Draw(out)
-    tw = dummy.textlength(clean_txt, font=font)
+    tw = dummy.textlength(clean_txt, font=font) + ws * clean_txt.count(" ")
     bb = dummy.textbbox((0, 0), clean_txt, font=font)
     th = bb[3] - bb[1]
     tx0 = int(cx - tw / 2)
@@ -1027,8 +1133,8 @@ def render_va_fam09_error_neon_strikethrough(
         char_rgbs,
         font,
         alpha=int(255 * e_txt),
+        word_spacing_px=ws,
     )
-    blur_r = 20.0 * math.pow(1.0 - u_txt, 1.6)
     if blur_r > 0.35:
         txt_lay = txt_lay.filter(ImageFilter.GaussianBlur(radius=blur_r))
     out = Image.alpha_composite(out, txt_lay)
@@ -1060,12 +1166,16 @@ def render_va_fam09_golden_bokeh_collapse(
     font: ImageFont.FreeTypeFont,
     center_xy: tuple[int, int] = (540, 480),
     palette_mode: str = "gold",
+    word_gap_guard: bool = True,
 ) -> Image.Image:
     """
     Premiere Pro #14 Premium Text (`v5.2` Multi-Hue Metallic Bokeh):
     Gaussian Blur (55 -> 0) placed BEFORE Alpha Levels / Morphological Dilation so the text starts
     as glowing round bokeh orbs that collapse into sharp metallic letters!
     `palette_mode`: `"gold"`, `"mint"`, `"cyan"`, `"violet"`, `"lime"`, `"coral"` (or `"peach"`).
+    v7.9.0 repair: `word_gap_guard` widens the word spacing with the bokeh's effective spread = dilate radius + 2 sigma (the gain
+    pushes the visible edge ~2 sigma past the dilated ink; `va_entrance_word_spacing_px`), so the orbs of adjacent words never merge
+    ('làn da thật' used to fuse on frames 1-5); the words collapse back to their resting spacing with the bokeh.
     """
     w, h = canvas_size
     out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -1077,20 +1187,23 @@ def render_va_fam09_golden_bokeh_collapse(
     e = ease_out_cubic(u)
     cx, cy = center_xy
 
+    bokeh = u < 0.96
+    rad = max(1, int(22 * (1.0 - e))) if bokeh else 0
+    sigma = max(0.8, 18.0 * (1.0 - e)) if bokeh else 0.0
+    ws = va_entrance_word_spacing_px(clean_txt, font, rad + 2.0 * sigma, word_gap_guard)
     adv_bk, tw_bk, th_bk = _measure_va_text_span(clean_txt, font)
-    box_w = max(920, int(math.ceil(tw_bk + 140)))
+    n_sp = nfc(clean_txt).count(" ")
+    box_w = max(920, int(math.ceil(tw_bk + ws * n_sp + 140)))
     box_h = max(220, int(math.ceil(th_bk + 120)))
     mask_pil = Image.new("L", (box_w, box_h), 0)
     dr = ImageDraw.Draw(mask_pil)
-    dr.text(((box_w - adv_bk) / 2, 48), clean_txt, font=font, fill=255)
+    draw_spaced_text(dr, ((box_w - adv_bk - ws * n_sp) / 2, 48), clean_txt, font, 255, ws)
     mask_np = np.array(mask_pil)
 
-    if u < 0.96:
+    if bokeh:
         # Morphological circular bokeh dilation + blur + alpha threshold choke
-        rad = max(1, int(22 * (1.0 - e)))
         kern = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (rad * 2 + 1, rad * 2 + 1))
         dil = cv2.dilate(mask_np, kern, iterations=1)
-        sigma = max(0.8, 18.0 * (1.0 - e))
         blurred = cv2.GaussianBlur(dil, (0, 0), sigmaX=sigma, sigmaY=sigma)
         # Boost & round bokeh lobes
         gain = 1.0 + 1.85 * (1.0 - e)
@@ -1254,6 +1367,12 @@ def render_va_fam10_vertical_horizon_gradient_rise(
 
 
 if __name__ == "__main__":
+    import argparse
+    _ap = argparse.ArgumentParser(description="vietanh_35_typography_engine (library; run with --self-test to render the contact-sheet self-test)")
+    _ap.add_argument("--self-test", action="store_true", help="run the built-in self-test")
+    if not _ap.parse_args().self_test:
+        _ap.print_help()
+        raise SystemExit(0)
     W, H = 1080, 640
     try:
         f_sub = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 34)

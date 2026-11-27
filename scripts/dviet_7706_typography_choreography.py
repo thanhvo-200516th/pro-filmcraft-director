@@ -6,7 +6,54 @@ Ready-to-run standalone Python / PIL / NumPy implementation.
 """
 
 import math
+import sys
+from pathlib import Path
+
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageChops
+
+_MG = None
+
+
+def _motion_gate():
+    """scripts/tools/motion_gate.py (the ONE word-gap helper shared with the web plates, FilmCraft and the vietanh engine)."""
+    global _MG
+    if _MG is None:
+        tools = str(Path(__file__).resolve().parent / "tools")
+        if tools not in sys.path:
+            sys.path.insert(0, tools)
+        import motion_gate as mg  # noqa: E402
+
+        _MG = mg
+    return _MG
+
+
+def line_word_spacing_px(text: str, font, blur_px: float, guard: bool = True) -> float:
+    """v7.9.0 word-gap guard for a line-level blur (user decision 2026-11-26: keep the blur, widen the words): extra px per space so
+    the INK gap minus 2 x sigma stays >= 0.25 em (`motion_gate.entrance_word_spacing_em` on the line's natural ink gap). Blur 0 ->
+    the resting spacing (natural, or the 0.25 em floor when the font's gap is under it). 0 for one-word lines / bitmap fonts / guard off."""
+    clean = str(text or "").strip()
+    path = getattr(font, "path", None)
+    if not guard or " " not in clean or not path:
+        return 0.0
+    mg = _motion_gate()
+    nat = mg.natural_word_gap_em(clean, path)
+    if nat is None:
+        return 0.0
+    return mg.entrance_word_spacing_em(max(0.0, float(blur_px)), 1.0, float(font.size), nat) * float(font.size)
+
+
+def draw_spaced_text(draw, xy, text: str, font, fill, word_spacing_px: float = 0.0) -> None:
+    """`draw.text` with CSS-like word spacing: each word at its full-prefix advance plus `word_spacing_px` per preceding space."""
+    if word_spacing_px <= 0 or " " not in text:
+        draw.text(xy, text, font=font, fill=fill)
+        return
+    pos = 0
+    for word in text.split(" "):
+        if word:
+            prefix = text[:pos]
+            dx = draw.textlength(prefix, font=font) if prefix else 0.0
+            draw.text((float(xy[0]) + dx + word_spacing_px * prefix.count(" "), float(xy[1])), word, font=font, fill=fill)
+        pos += len(word) + 1
 
 
 def cubic_bezier_ease_out(p: float, x1=0.16, y1=1.0, x2=0.3, y2=1.0) -> float:
@@ -75,8 +122,11 @@ def render_style1_ghost_to_focus_stack(
     font_small: ImageFont.FreeTypeFont,
     font_hero: ImageFont.FreeTypeFont,
     anchor_xy=(260, 420),
+    word_gap_guard: bool = True,
 ) -> Image.Image:
     """
+    v7.9.0: `word_gap_guard` widens each line's word spacing with its blur (`line_word_spacing_px`): the ghost line keeps the
+    spacing of its resting 6 px blur, the hero and sub line ease back to rest as their blur reaches 0.
     Frame-by-frame formula (24fps):
     - Prev line ('mình đang...' / 'nghi ngờ bản thân'):
       During active entrance [t_active_start .. t_active_start + 0.33s (8 frames)]:
@@ -102,7 +152,8 @@ def render_style1_ghost_to_focus_stack(
         layer_prev = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         d_prev = ImageDraw.Draw(layer_prev)
         y_prev = ay - int(14 * (1.0 - cubic_bezier_ease_out(p_in)))
-        d_prev.text((ax, y_prev), prev_text, font=font_small, fill=(255, 255, 255, int(255 * op_prev)))
+        ws_prev = line_word_spacing_px(prev_text, font_small, blur_prev if blur_prev > 0.3 else 0.0, word_gap_guard)
+        draw_spaced_text(d_prev, (ax, y_prev), prev_text, font_small, (255, 255, 255, int(255 * op_prev)), ws_prev)
         if blur_prev > 0.3:
             layer_prev = layer_prev.filter(ImageFilter.GaussianBlur(radius=blur_prev))
         out = Image.alpha_composite(out, layer_prev)
@@ -119,10 +170,11 @@ def render_style1_ghost_to_focus_stack(
         layer_act = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         d_act = ImageDraw.Draw(layer_act)
         bb_a = d_act.textbbox((0, 0), active_text, font=font_hero)
-        aw = bb_a[2] - bb_a[0]
+        ws_act = line_word_spacing_px(active_text, font_hero, blur_act if blur_act > 0.3 else 0.0, word_gap_guard)
+        aw = bb_a[2] - bb_a[0] + ws_act * active_text.count(" ")
         ah = bb_a[3] - bb_a[1]
         ax_clamped = max(55, min(w - aw - 55, ax - 20))
-        d_act.text((ax_clamped, ay + 44 + y_off), active_text, font=font_hero, fill=(250, 204, 21, int(255 * e_act)))
+        draw_spaced_text(d_act, (ax_clamped, ay + 44 + y_off), active_text, font_hero, (250, 204, 21, int(255 * e_act)), ws_act)
         if blur_act > 0.3:
             layer_act = layer_act.filter(ImageFilter.GaussianBlur(radius=blur_act))
         layer_act = apply_warm_amber_halation(layer_act, bloom_intensity=bloom)
@@ -137,7 +189,9 @@ def render_style1_ghost_to_focus_stack(
         blur_sub = 9.0 * (1.0 - e_sub)
         layer_sub = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         d_sub = ImageDraw.Draw(layer_sub)
-        d_sub.text((max(55, ax + 16), ay + 56 + ah + int(12 * (1.0 - e_sub))), sub_text, font=font_small, fill=(255, 255, 255, int(245 * e_sub)))
+        ws_sub = line_word_spacing_px(sub_text, font_small, blur_sub if blur_sub > 0.3 else 0.0, word_gap_guard)
+        draw_spaced_text(d_sub, (max(55, ax + 16), ay + 56 + ah + int(12 * (1.0 - e_sub))), sub_text, font_small,
+                         (255, 255, 255, int(245 * e_sub)), ws_sub)
         if blur_sub > 0.3:
             layer_sub = layer_sub.filter(ImageFilter.GaussianBlur(radius=blur_sub))
         out = Image.alpha_composite(out, layer_sub)
@@ -320,7 +374,9 @@ def render_style4_tilted_multi_cluster(
     t_sec: float,
     font_small: ImageFont.FreeTypeFont,
     font_hero: ImageFont.FreeTypeFont,
+    word_gap_guard: bool = True,
 ) -> Image.Image:
+    """v7.9.0: `word_gap_guard` widens each blurred line's word spacing with its blur (`line_word_spacing_px`)."""
     w, h = canvas_size
     out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
 
@@ -333,7 +389,8 @@ def render_style4_tilted_multi_cluster(
             p = min(1.0, (t_sec - t_top) / 0.29)
             e = cubic_bezier_ease_out(p)
             l_top = Image.new("RGBA", (cw, ch), (0, 0, 0, 0))
-            ImageDraw.Draw(l_top).text((110, int(52 + 12 * (1 - e))), top_txt, font=font_small, fill=(255, 255, 255, int(255 * e)))
+            ws = line_word_spacing_px(top_txt, font_small, 6.0 * (1 - e) if p < 1.0 else 0.0, word_gap_guard)
+            draw_spaced_text(ImageDraw.Draw(l_top), (110, int(52 + 12 * (1 - e))), top_txt, font_small, (255, 255, 255, int(255 * e)), ws)
             if p < 1.0:
                 l_top = l_top.filter(ImageFilter.GaussianBlur(radius=6.0 * (1 - e)))
             c_img = Image.alpha_composite(c_img, l_top)
@@ -343,7 +400,8 @@ def render_style4_tilted_multi_cluster(
             p = min(1.0, (t_sec - t_bot) / 0.25)
             e = cubic_bezier_ease_out(p)
             l_bot = Image.new("RGBA", (cw, ch), (0, 0, 0, 0))
-            ImageDraw.Draw(l_bot).text((145, int(138 + 10 * (1 - e))), bot_txt, font=font_small, fill=(255, 255, 255, int(245 * e)))
+            ws = line_word_spacing_px(bot_txt, font_small, 7.0 * (1 - e) if p < 1.0 else 0.0, word_gap_guard)
+            draw_spaced_text(ImageDraw.Draw(l_bot), (145, int(138 + 10 * (1 - e))), bot_txt, font_small, (255, 255, 255, int(245 * e)), ws)
             if p < 1.0:
                 l_bot = l_bot.filter(ImageFilter.GaussianBlur(radius=7.0 * (1 - e)))
             c_img = Image.alpha_composite(c_img, l_bot)
@@ -353,7 +411,8 @@ def render_style4_tilted_multi_cluster(
             p = min(1.0, (t_sec - t_mid) / 0.375)
             e = cubic_bezier_ease_out(p)
             l_mid = Image.new("RGBA", (cw, ch), (0, 0, 0, 0))
-            ImageDraw.Draw(l_mid).text((80, int(74 + 18 * (1 - e))), mid_txt, font=font_hero, fill=(250, 204, 21, int(255 * e)))
+            ws = line_word_spacing_px(mid_txt, font_hero, 12.0 * math.pow(1 - p, 1.7) if p < 1.0 else 0.0, word_gap_guard)
+            draw_spaced_text(ImageDraw.Draw(l_mid), (80, int(74 + 18 * (1 - e))), mid_txt, font_hero, (250, 204, 21, int(255 * e)), ws)
             if p < 1.0:
                 l_mid = l_mid.filter(ImageFilter.GaussianBlur(radius=12.0 * math.pow(1 - p, 1.7)))
             l_mid = apply_warm_amber_halation(l_mid, bloom_intensity=0.95 * e)
@@ -488,8 +547,10 @@ def render_style6_overlap_negative_leading_lockup(
     font_sans: ImageFont.FreeTypeFont,
     font_hero: ImageFont.FreeTypeFont,
     anchor_xy=(760, 290),
+    word_gap_guard: bool = True,
 ) -> Image.Image:
     """
+    v7.9.0: `word_gap_guard` widens the hero and top line's word spacing with their blur (`line_word_spacing_px`).
     1/3 Vertical & Horizontal Overlap Lockup:
     - Top line ('người ta nói') enters first at (ax, ay)
     - When hero line ('đi xa') enters at t_hero_start, its ascenders overlap the lower 33%
@@ -507,10 +568,11 @@ def render_style6_overlap_negative_leading_lockup(
         hero_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         hd = ImageDraw.Draw(hero_layer)
         bb_h = hd.textbbox((0, 0), hero_overlap_text, font=font_hero)
-        hw = bb_h[2] - bb_h[0]
+        ws_h = line_word_spacing_px(hero_overlap_text, font_hero, 11.0 * (1.0 - e_h) if p_h < 1.0 else 0.0, word_gap_guard)
+        hw = bb_h[2] - bb_h[0] + ws_h * hero_overlap_text.count(" ")
         hx = max(65, min(w - hw - 55, ax - 32))
         hy = ay + 36 + int(16 * (1.0 - e_h))  # Clean 1/3 negative leading without covering top text!
-        hd.text((hx, hy), hero_overlap_text, font=font_hero, fill=(250, 204, 21, int(255 * e_h)))
+        draw_spaced_text(hd, (hx, hy), hero_overlap_text, font_hero, (250, 204, 21, int(255 * e_h)), ws_h)
         # Sparkle '+' accent at top-left of hero word
         hd.text((hx - 24, hy - 14), "+", font=font_sans, fill=(254, 240, 138, int(255 * e_h)))
         if p_h < 1.0:
@@ -525,12 +587,13 @@ def render_style6_overlap_negative_leading_lockup(
         top_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         td = ImageDraw.Draw(top_layer)
         bb_t = td.textbbox((0, 0), top_sans_text, font=font_sans)
-        tw_t = bb_t[2] - bb_t[0]
+        ws_t = line_word_spacing_px(top_sans_text, font_sans, 8.0 * (1.0 - e_t) if p_t < 1.0 else 0.0, word_gap_guard)
+        tw_t = bb_t[2] - bb_t[0] + ws_t * top_sans_text.count(" ")
         tx = max(60, min(w - tw_t - 55, ax))
         ty = ay + int(12 * (1.0 - e_t))
         # Subtle dark contrast pillow so overlapping 1/3 edge reads cleanly
-        td.text((tx + 2, ty + 2), top_sans_text, font=font_sans, fill=(15, 10, 5, int(185 * e_t)))
-        td.text((tx, ty), top_sans_text, font=font_sans, fill=(255, 255, 255, int(255 * e_t)))
+        draw_spaced_text(td, (tx + 2, ty + 2), top_sans_text, font_sans, (15, 10, 5, int(185 * e_t)), ws_t)
+        draw_spaced_text(td, (tx, ty), top_sans_text, font_sans, (255, 255, 255, int(255 * e_t)), ws_t)
         if p_t < 1.0:
             top_layer = top_layer.filter(ImageFilter.GaussianBlur(radius=8.0 * (1.0 - e_t)))
         out = Image.alpha_composite(out, top_layer)
@@ -578,6 +641,12 @@ def apply_style7_continuous_micro_float(
 
 
 if __name__ == "__main__":
+    import argparse
+    _ap = argparse.ArgumentParser(description="dviet_7706_typography_choreography (library; run with --self-test to render the contact-sheet self-test)")
+    _ap.add_argument("--self-test", action="store_true", help="run the built-in self-test")
+    if not _ap.parse_args().self_test:
+        _ap.print_help()
+        raise SystemExit(0)
     # Self-test: render a contact sheet verifying all 7 styles run cleanly
     W, H = 640, 360
     try:

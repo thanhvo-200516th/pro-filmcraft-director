@@ -1,0 +1,786 @@
+{
+  "schema_version": "1.0.0",
+  "version": "7.4.0",
+  "profile": "dviet",
+  "_about": "Single token file for profile dviet (7.4.0). Source: references/dviet_19/INDEX.md (17 videos). Every group carries a `flag`: `measured` = read directly (pixel, ebur128, frame), `estimate` = eyeballed or LK-flow, rounded to tiers. Consumed by scripts/tools/dviet_text.py.",
+  "provenance": {
+    "corpus": "17 video @__dviet, 2026-07-20 .. 2026-11-13",
+    "index": "references/dviet_19/INDEX.md",
+    "decisions": "references/23_dviet_profile_decisions_and_backlog.md",
+    "legacy_reference_not_copied": "ovs dviet-style.json was read only to cross-check tier sizes; every value here carries its own flag.",
+    "groups": {
+      "palette.accents": {
+        "videos": [
+          "7666801391284964628",
+          "7667598741888634132",
+          "7668334908615560469",
+          "7688934517783989524"
+        ],
+        "flag": "measured",
+        "method": "pixel median / quantize"
+      },
+      "caption_y_pct": {
+        "videos": [
+          "7664447064352509204",
+          "7664969137445276949",
+          "7667598741888634132",
+          "7668334908615560469",
+          "7669054598971133204",
+          "7672413018575146261",
+          "7683763922234641684",
+          "7688934517783989524"
+        ],
+        "flag": "measured",
+        "method": "text-block centre y on a 1080x1920 frame"
+      },
+      "tiers.size_px": {
+        "videos": [
+          "7664447064352509204",
+          "7666801391284964628",
+          "7667598741888634132",
+          "7677448217667063061"
+        ],
+        "flag": "estimate",
+        "method": "derived from x-height; error +-10-15 %"
+      },
+      "constellation": {
+        "videos": [
+          "7664835388476755220"
+        ],
+        "flag": "estimate",
+        "method": "eyeballed on a 1332x720 frame"
+      },
+      "lockup": {
+        "videos": [
+          "7664447064352509204",
+          "7669758857471741204",
+          "7683763922234641684",
+          "7688934517783989524",
+          "7693026626333871381",
+          "7706183278461570356"
+        ],
+        "flag": "estimate",
+        "method": "hero / lead ratio from the per-video files"
+      },
+      "animations": {
+        "videos": [
+          "7664447064352509204",
+          "7667598741888634132",
+          "7706183278461570356"
+        ],
+        "flag": "estimate",
+        "method": "eyeballed from intermediate frames"
+      },
+      "audio": {
+        "videos": "13 / 17 video trong -10.7 .. -12.6 LUFS",
+        "flag": "measured",
+        "method": "ffmpeg ebur128"
+      }
+    }
+  },
+  "canvas": {
+    "default": "9x16_1080_60",
+    "presets_file": "presets/canvas_presets.json",
+    "w": 1080,
+    "h": 1920,
+    "fps": 60
+  },
+  "palette": {
+    "text": "#FFFFFF",
+    "light": "#FAFAFA",
+    "dark": "#111111",
+    "accents": {
+      "yellow_bright": "#F1C711",
+      "yellow_amber": "#E5B70C",
+      "yellow_sun": "#F8C818",
+      "gold": "#D49E02",
+      "gold_pale": "#DBAF25",
+      "lavender": "#8C6CFF",
+      "green_neon": "#5DD852",
+      "mint_neon": "#38E898"
+    },
+    "default_accent": "yellow_bright",
+    "flag": "measured",
+    "accent_policy": "tokens",
+    "accent_policy_options": ["tokens", "color_world"],
+    "accent_policy_doc": "Look D only (the dviet channel look): `tokens` = one accent per video from this palette. Look S (Studio, references/24_studio_look_recipe.md) sets `color_world`: the chapter colour (color_world_polarity or semantic_4act_jewel) beats the one-accent rule.",
+    "rule": "Look D only. One accent per video: default yellow (#F1C711 / #E5B70C / #F8C818); 7664447, 7664835 and 7664969 are pure white. Other accents follow topic, outfit or scene tone (green 7669758, lavender 7677448 / 7693026, mint 7707653)."
+  },
+  "shadow_policy": {
+    "mode": "halation",
+    "drop_shadow": {
+      "color": "#000000",
+      "opacity_pct": 50,
+      "blur_px": 10,
+      "distance_px": 4,
+      "used_in": "07-10/2026 videos"
+    },
+    "halation": {
+      "radius_px": [
+        14,
+        22
+      ],
+      "intensity_pct": [
+        30,
+        45
+      ],
+      "color": "same_as_text",
+      "used_in": "11/2026 videos (7706183278461570356, 7707653827016674580)"
+    },
+    "flag": "estimate"
+  },
+  "font_roles": {
+    "caption": {
+      "family": "Be Vietnam Pro",
+      "style": "SemiBold",
+      "fallback_family": "Be Vietnam Pro",
+      "case": "lower",
+      "tracking": -20,
+      "swash_hybrid": false
+    },
+    "keyword_sans": {
+      "family": "Barlow Condensed",
+      "style": "Bold",
+      "fallback_family": "Be Vietnam Pro",
+      "case": "lower",
+      "tracking": -45,
+      "scale_x_pct": [
+        78,
+        85
+      ],
+      "swash_hybrid": false
+    },
+    "script_accent": {
+      "family": "SVN-Aaron Script",
+      "style": "Regular",
+      "fallback_family": "Playfair Display",
+      "swash_hybrid": true,
+      "whole_word": true,
+      "note": "Whole word (not only the initial) in a script face with diacritics; swash hybrid is kept only for this role (decision a)."
+    },
+    "number": {
+      "family": "Barlow Condensed",
+      "style": "Bold",
+      "fallback_family": "Be Vietnam Pro",
+      "tracking": -35,
+      "swash_hybrid": false
+    },
+    "header": {
+      "family": "Barlow Condensed",
+      "style": "Bold",
+      "fallback_family": "Be Vietnam Pro",
+      "case": "lower",
+      "tracking": -50,
+      "swash_hybrid": false
+    },
+    "cta": {
+      "family": "SVN-Aaron Script",
+      "style": "Regular",
+      "fallback_family": "Playfair Display",
+      "swash_hybrid": false
+    },
+    "bilingual_sub": {
+      "family": "Be Vietnam Pro",
+      "style": "Italic",
+      "fallback_family": "Be Vietnam Pro",
+      "italic": true,
+      "swash_hybrid": false
+    },
+    "lockup_sub": {
+      "family": "Be Vietnam Pro",
+      "style": "SemiBold",
+      "fallback_family": "Be Vietnam Pro",
+      "case": "lower",
+      "swash_hybrid": false
+    },
+    "lockup_hero": {
+      "family": "Barlow Condensed",
+      "style": "Bold",
+      "fallback_family": "Be Vietnam Pro",
+      "case": "lower",
+      "tracking": -45,
+      "swash_hybrid": false
+    },
+    "constellation": {
+      "family": "SVN-Aaron Script",
+      "style": "Regular",
+      "fallback_family": "Playfair Display",
+      "swash_hybrid": false,
+      "satellite_family": "Be Vietnam Pro",
+      "satellite_style": "SemiBold"
+    },
+    "font_specimen": {
+      "family": "Be Vietnam Pro",
+      "style": "Bold",
+      "fallback_family": "Be Vietnam Pro",
+      "allow_banned_fonts": [
+        "Instrument Serif",
+        "De Fonte"
+      ],
+      "scope": "profile dviet, ASCII font-name only (decision b)",
+      "swash_hybrid": false
+    }
+  },
+  "tiers": {
+    "flag": "estimate",
+    "size_px_basis": "1080x1920",
+    "caption": {
+      "size_px": 56,
+      "size_range": [
+        46,
+        82
+      ],
+      "color": "text",
+      "track": 0,
+      "entrance": "fade",
+      "words_per_chunk": [
+        1,
+        3
+      ]
+    },
+    "keyword_sans": {
+      "size_px": 125,
+      "size_range": [
+        95,
+        260
+      ],
+      "color": "accent",
+      "track": 2,
+      "entrance": "blur_in"
+    },
+    "script_accent": {
+      "size_px": 140,
+      "size_range": [
+        110,
+        480
+      ],
+      "color": "accent",
+      "track": 3,
+      "entrance": "slide_up_blur"
+    },
+    "number": {
+      "size_px": 300,
+      "size_range": [
+        270,
+        370
+      ],
+      "color": "accent",
+      "track": 2,
+      "entrance": "blur_in",
+      "y_pct": 57
+    },
+    "header": {
+      "size_px": 160,
+      "label_px": 44,
+      "sub_px": 64,
+      "color": "text",
+      "track": 2,
+      "entrance": "blur_in",
+      "y_pct": 25
+    },
+    "cta": {
+      "size_px": 160,
+      "size_range": [
+        120,
+        200
+      ],
+      "color": "accent",
+      "track": 3,
+      "entrance": "slide_up_blur",
+      "y_pct": 53
+    },
+    "bilingual_sub": {
+      "size_px": 40,
+      "size_range": [
+        26,
+        48
+      ],
+      "color": "yellow_sun",
+      "track": 0,
+      "entrance": "fade",
+      "italic": true
+    },
+    "lockup_sub": {
+      "size_px": 64,
+      "size_range": [
+        57,
+        79
+      ],
+      "color": "text",
+      "track": 1,
+      "entrance": "blur_in"
+    },
+    "lockup_hero": {
+      "size_px": 140,
+      "size_range": [
+        108,
+        212
+      ],
+      "color": "accent",
+      "track": 2,
+      "entrance": "blur_in"
+    },
+    "constellation": {
+      "size_px": 150,
+      "size_range": [
+        120,
+        200
+      ],
+      "color": "text",
+      "track": 3,
+      "entrance": "slide_up_blur",
+      "satellite_px": 50
+    },
+    "font_specimen": {
+      "size_px": 110,
+      "size_range": [
+        90,
+        140
+      ],
+      "color": "accent",
+      "track": 3,
+      "entrance": "blur_in",
+      "y_pct": 50
+    }
+  },
+  "caption_y_pct": {
+    "flag": "measured",
+    "talking": {
+      "value": 55,
+      "range": [
+        52,
+        58
+      ],
+      "videos": [
+        "7664447064352509204",
+        "7664969137445276949",
+        "7683763922234641684"
+      ]
+    },
+    "panel": {
+      "value": 67,
+      "range": [
+        66,
+        72
+      ],
+      "videos": [
+        "7667598741888634132",
+        "7668334908615560469",
+        "7669054598971133204",
+        "7672413018575146261"
+      ],
+      "note": "directly under the screen strip (strip y 660-1260 px)"
+    },
+    "hero": {
+      "value": 27,
+      "range": [
+        25,
+        30
+      ],
+      "videos": [
+        "7664969137445276949"
+      ],
+      "note": "caption moves up when the panel sits in the lower half"
+    },
+    "bilingual_en": {
+      "value": 82.5,
+      "range": [
+        80,
+        85
+      ],
+      "videos": [
+        "7688934517783989524"
+      ],
+      "color": "yellow_sun",
+      "style": "italic"
+    },
+    "legacy_default_not_dviet": {
+      "whisper_y_px": 1590,
+      "minimal_captions_y_px": 1440
+    }
+  },
+  "lockup": {
+    "flag": "estimate",
+    "two_tier": {
+      "hero_to_lead_ratio": [
+        1.8,
+        3.2
+      ],
+      "hero_words_max": 2,
+      "lead_above_hero_gap_px": 6,
+      "lead_stagger_s": 0.07,
+      "persistent_sub": "the sub line stays for several beats while only the hero line swaps words (7664447064352509204)"
+    }
+  },
+  "constellation": {
+    "flag": "estimate",
+    "hero_y_pct": 45,
+    "hero_x_pct": 46,
+    "hero_to_satellite_ratio": 3.0,
+    "satellite_slots_pct": [
+      [
+        -26,
+        -10
+      ],
+      [
+        24,
+        -14
+      ],
+      [
+        -18,
+        12
+      ],
+      [
+        20,
+        10
+      ],
+      [
+        2,
+        -20
+      ],
+      [
+        -4,
+        20
+      ]
+    ],
+    "stagger_s": 0.45,
+    "accumulate": true,
+    "clear_phrase_gap_s": 0.1,
+    "entrance_hero": "slide_up_blur",
+    "entrance_satellite": "fade",
+    "note": "slots are dx, dy in % of the frame relative to the hero; earlier words stay until the phrase ends (7664835388476755220)."
+  },
+  "animations": {
+    "flag": "estimate",
+    "fade": {
+      "dur_s": 0.1
+    },
+    "blur_in": {
+      "dur_s": 0.17,
+      "range_s": [
+        0.1,
+        0.25
+      ],
+      "gaussian_blur_from": 24,
+      "opacity_from": 0,
+      "entrance_word_spacing": {"helper": "motion_gate.entrance_word_spacing_em(blur_px, min(scale, 1), font_px, natural_gap_em)", "reference_font_px": 84, "natural_gap_em": 0.23, "word_spacing_em": [0.5915, 0.02], "filmcraft_tracking_per_mille": [295.75, 10.0], "doc": "v7.9.0 (user decision 2026-11-26): keep the blur, widen the word spacing with it so check_word_gaps (>= 0.25 em after 2 x sigma) holds on every frame; it eases back to the resting spacing exactly as the blur reaches 0 (same keys and easing as the blur). Web plates: CSS word-spacing; FilmCraft: tracking keys (typography_composer.apply_entrance_word_spacing). Values scale with the font: recompute with the helper for other sizes."}
+    },
+    "slide_up_blur": {
+      "dur_s": 0.4,
+      "slide_px": 50,
+      "gaussian_blur_from": 12,
+      "entrance_word_spacing": {"helper": "motion_gate.entrance_word_spacing_em(blur_px, min(scale, 1), font_px, natural_gap_em)", "reference_font_px": 84, "natural_gap_em": 0.23, "word_spacing_em": [0.3058, 0.02], "filmcraft_tracking_per_mille": [152.9, 10.0], "doc": "v7.9.0 (user decision 2026-11-26): keep the blur, widen the word spacing with it so check_word_gaps (>= 0.25 em after 2 x sigma) holds on every frame; it eases back to the resting spacing exactly as the blur reaches 0 (same keys and easing as the blur). Web plates: CSS word-spacing; FilmCraft: tracking keys (typography_composer.apply_entrance_word_spacing). Values scale with the font: recompute with the helper for other sizes."}
+    },
+    "whip_in": {
+      "dur_s": 0.25,
+      "range_s": [
+        0.2,
+        0.33
+      ]
+    },
+    "slow_opacity_bloom": {
+      "dur_s": 0.38,
+      "range_s": [
+        0.33,
+        0.45
+      ],
+      "gaussian_blur_from": 14,
+      "note": "11/2026 storytelling",
+      "entrance_word_spacing": {"helper": "motion_gate.entrance_word_spacing_em(blur_px, min(scale, 1), font_px, natural_gap_em)", "reference_font_px": 84, "natural_gap_em": 0.23, "word_spacing_em": [0.3534, 0.02], "filmcraft_tracking_per_mille": [176.7, 10.0], "doc": "v7.9.0 (user decision 2026-11-26): keep the blur, widen the word spacing with it so check_word_gaps (>= 0.25 em after 2 x sigma) holds on every frame; it eases back to the resting spacing exactly as the blur reaches 0 (same keys and easing as the blur). Web plates: CSS word-spacing; FilmCraft: tracking keys (typography_composer.apply_entrance_word_spacing). Values scale with the font: recompute with the helper for other sizes."}
+    },
+    "out_default": "hard swap khi sang cum sau"
+  },
+  "canvases": [
+    {
+      "id": "9x16_1080_60",
+      "w": 1080,
+      "h": 1920,
+      "fps": 60,
+      "videos": 13,
+      "flag": "measured"
+    },
+    {
+      "id": "9x16_1080_30",
+      "w": 1080,
+      "h": 1920,
+      "fps": 30,
+      "videos": 1,
+      "flag": "measured"
+    },
+    {
+      "id": "4x3_1440_24",
+      "w": 1440,
+      "h": 1080,
+      "fps": 24,
+      "videos": 1,
+      "flag": "measured"
+    },
+    {
+      "id": "4x3_1440_30",
+      "w": 1440,
+      "h": 1080,
+      "fps": 30,
+      "videos": 1,
+      "flag": "measured"
+    },
+    {
+      "id": "wide_1332_30",
+      "w": 1332,
+      "h": 720,
+      "fps": 30,
+      "videos": 1,
+      "flag": "measured"
+    }
+  ],
+  "audio": {
+    "platform": {
+      "lufs": -14.0,
+      "lufs_tolerance": 1.0,
+      "true_peak_dbtp": -1.5,
+      "note": "default; see presets/sfx_micro_sync_rules.json"
+    },
+    "tiktok_loud": {
+      "flag": "measured",
+      "reference_only": true,
+      "enforced_by": "P1 compile_and_verify.py --audio-profile tiktok_loud",
+      "lufs_range": [
+        -12.6,
+        -10.7
+      ],
+      "videos_in_range": 13,
+      "source_peak_up_to_dbfs": 3.0,
+      "tp_cap_dbtp": -0.5,
+      "note": "Cap of -0.5 dBTP when enabled; do not copy the source's peaks above 0 dBFS (clipping)."
+    }
+  },
+  "fonts": {
+    "_about": "ADDITIVE font resolution chain (references/26_dviet_fonts.md). `font_roles` above stay what scripts/tools/dviet_text.py consumes today; this block says what to try, in order, when a family is missing. Entries are tried primary -> fallbacks. `provenance` is honest: `creator-stated` only for SF Pro Display Regular + Playfair Display Italic + Whisper Regular (ep.1 7677448217667063061, s37-56); `skill-preset, no evidence` for SVN-Aaron Script, DFVN West West Condensed, LigaSFMono (and every guess about weight/width). No font file is copied into this repo; SF Pro Display is Apple-licensed, local use only, never redistributed. Vietnamese roles are glyph-checked by tests/test_fonts_vi.py (ạ ầ ữ ơ ư ẫ ẳ ỡ đ).",
+    "provenance_tags": {
+      "creator-stated": "Named by the channel author on screen in ep.1 as part of the final combo (SF Pro Display Regular + Playfair Display Italic + Whisper Regular).",
+      "skill-preset, no evidence": "Chosen by this skill's presets or inferred from frames; no video evidence.",
+      "free stand-in": "Free font standing in for a font that cannot be redistributed (Inter for SF Pro Display, Barlow Condensed for condensed sans, JetBrains Mono for LigaSFMono, Arimo for Helvetica).",
+      "free fallback": "Free font kept only as a last resort that still carries Vietnamese.",
+      "named in ep.1 specimen, not in the final combo": "Shown as a font name in the ep.1 specimen row but not part of the final combo."
+    },
+    "roles": {
+      "lead_sans": {
+        "vietnamese": true,
+        "applies_to": [
+          "caption",
+          "lockup_sub"
+        ],
+        "primary": {
+          "family": "SF Pro Display",
+          "style": "Regular",
+          "provenance": "creator-stated",
+          "note": "Semibold for emphasis; local install only"
+        },
+        "fallbacks": [
+          {
+            "family": "Inter",
+            "style": "Regular",
+            "provenance": "free stand-in",
+            "note": "free stand-in for SF Pro Display"
+          },
+          {
+            "family": "Be Vietnam Pro",
+            "style": "Regular",
+            "provenance": "free fallback"
+          },
+          {
+            "family": "Arimo",
+            "style": "Regular",
+            "provenance": "free fallback"
+          }
+        ]
+      },
+      "hero_sans": {
+        "vietnamese": true,
+        "applies_to": [],
+        "primary": {
+          "family": "SF Pro Display",
+          "style": "Bold",
+          "provenance": "skill-preset, no evidence",
+          "note": "Heavy for the loudest hero; tight tracking"
+        },
+        "fallbacks": [
+          {
+            "family": "Be Vietnam Pro",
+            "style": "ExtraBold",
+            "provenance": "free fallback"
+          },
+          {
+            "family": "Inter",
+            "style": "ExtraBold",
+            "provenance": "free stand-in"
+          },
+          {
+            "family": "Arimo",
+            "style": "Bold",
+            "provenance": "free fallback"
+          }
+        ]
+      },
+      "hero_condensed": {
+        "vietnamese": true,
+        "applies_to": [
+          "keyword_sans",
+          "number",
+          "header",
+          "lockup_hero"
+        ],
+        "primary": {
+          "family": "SF Pro Display",
+          "style": "Heavy",
+          "provenance": "skill-preset, no evidence",
+          "note": "scaleX 78-85 %; the condensed look of the 11/2026 videos is a guess, not a named font"
+        },
+        "fallbacks": [
+          {
+            "family": "DFVN West West Condensed",
+            "style": "Regular",
+            "provenance": "skill-preset, no evidence",
+            "note": "no free licence; not installed here"
+          },
+          {
+            "family": "Barlow Condensed",
+            "style": "ExtraBold",
+            "provenance": "free stand-in"
+          },
+          {
+            "family": "Barlow Condensed",
+            "style": "Black",
+            "provenance": "free stand-in"
+          },
+          {
+            "family": "Barlow Condensed",
+            "style": "Bold",
+            "provenance": "free stand-in"
+          },
+          {
+            "family": "Be Vietnam Pro",
+            "style": "ExtraBold",
+            "provenance": "free fallback",
+            "note": "scaleX 78-85 %"
+          }
+        ]
+      },
+      "serif_accent": {
+        "vietnamese": true,
+        "applies_to": [],
+        "primary": {
+          "family": "Playfair Display",
+          "style": "Italic",
+          "provenance": "creator-stated"
+        },
+        "fallbacks": [
+          {
+            "family": "Cormorant Garamond",
+            "style": "Italic",
+            "provenance": "free fallback"
+          },
+          {
+            "family": "Fraunces",
+            "style": "Italic",
+            "provenance": "free fallback"
+          },
+          {
+            "family": "Be Vietnam Pro",
+            "style": "Italic",
+            "provenance": "free fallback"
+          }
+        ]
+      },
+      "hero_script": {
+        "vietnamese": true,
+        "applies_to": [
+          "script_accent",
+          "cta",
+          "constellation"
+        ],
+        "primary": {
+          "family": "Whisper",
+          "style": "Regular",
+          "provenance": "creator-stated"
+        },
+        "fallbacks": [
+          {
+            "family": "SVN-Aaron Script",
+            "style": "Regular",
+            "provenance": "skill-preset, no evidence"
+          },
+          {
+            "family": "Dancing Script",
+            "style": "Regular",
+            "provenance": "free fallback",
+            "note": "Great Vibes is banned by references/04"
+          },
+          {
+            "family": "Playfair Display",
+            "style": "Italic",
+            "provenance": "free fallback"
+          }
+        ]
+      },
+      "specimen_label_en": {
+        "vietnamese": false,
+        "applies_to": [
+          "font_specimen"
+        ],
+        "primary": {
+          "family": "Arimo",
+          "style": "Bold",
+          "provenance": "free stand-in",
+          "note": "stand-in for the Helvetica / De Fonte specimen label; ASCII font names only"
+        },
+        "fallbacks": [
+          {
+            "family": "Inter",
+            "style": "Bold",
+            "provenance": "free stand-in"
+          }
+        ]
+      },
+      "specimen_serif_en": {
+        "vietnamese": false,
+        "applies_to": [],
+        "primary": {
+          "family": "Instrument Serif",
+          "style": "Regular",
+          "provenance": "named in ep.1 specimen, not in the final combo",
+          "note": "English labels only: 2/90 Vietnamese glyphs"
+        },
+        "fallbacks": [
+          {
+            "family": "Playfair Display",
+            "style": "Italic",
+            "provenance": "free fallback"
+          }
+        ]
+      },
+      "mono": {
+        "vietnamese": true,
+        "applies_to": [],
+        "primary": {
+          "family": "LigaSFMono",
+          "style": "Regular",
+          "provenance": "skill-preset, no evidence",
+          "note": "no free licence; not installed here"
+        },
+        "fallbacks": [
+          {
+            "family": "JetBrains Mono",
+            "style": "Regular",
+            "provenance": "free stand-in"
+          },
+          {
+            "family": "Be Vietnam Pro",
+            "style": "Regular",
+            "provenance": "free fallback",
+            "note": "proportional last resort for Vietnamese: Fira Code lacks ơ ư ạ ầ ẫ ẳ ỡ ữ and DejaVu Sans Mono lacks ầ ẫ ẳ (measured), so they are ASCII-only and not in this chain"
+          }
+        ]
+      }
+    }
+  }
+}

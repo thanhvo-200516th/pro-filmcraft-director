@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-compile_and_verify.py (v6.0) — Dual-Tier Stateless FilmCraft (.craft.json -> .fcproj) Compiler,
+compile_and_verify.py (v7.9.0) — Dual-Tier Stateless FilmCraft (.craft.json -> .fcproj) Compiler,
 4-Cut Grammar & Bimodal C7 Adjudicator, Color-World Polarity, Spatial Density & 8-Gate Verifier.
+
+v7.4.0: gate dependencies are vendored in `scripts/vendor/ovs_core/` (override: env `PFD_OVS_DIR`); `--profile {default,dviet}`
+and `--audio-profile {platform,studio_14,tiktok_loud}` (the choices are read from `presets/profile_overrides.json`; `studio_14` = Look S, -14 LUFS / -1.2 dBTP, v7.7.0); a missing `filmcraft` binary or X server skips the
+1-frame render smoke (`scripts/tools/filmcraft_cli.py`) with a loud warning instead of crashing; offline media FAILS it. Never exports `.mp4` (use `fc_export.py` on request).
 
 100% aesthetic-agnostic, stateless mechanical compiler for ANY creative `.craft.json` spec
 designed by the Director Agent (standalone project OR portable `bs/` bundle), with configurable
@@ -25,7 +29,11 @@ Execution Tiers:
       Gate 5: Single-Session Post-FX & Visual QA (`fc_fast_qa.py` -> Color Matte feather upgrade,
               Master `hard_limiter`, 16 hero-peak QA frames, `4x4` `1440x2560` contact sheet)
       Gate 6: Closed-Loop EBU R128 Audio Mastering (`audio_levels.py` plan + pre-trim + stems + check;
-              fast audio-only re-trim if `|measured_lufs - target_lufs| > 0.45 LU`)
+              fast audio-only re-trim if `|measured_lufs - target_lufs| > 0.45 LU`).
+              NOTE: the loop only converges on REAL SPEECH (tone / music-only / silent fixtures cannot be gain-matched
+              to the LUFS target and will report Gate 6 FAIL or non-converged by design). `--audio-profile studio_14`
+              (-14 LUFS, <= -1.2 dBTP, ducking ON, Look S) or `tiktok_loud` (-12 LUFS, <= -0.5 dBTP, no ducking, BGM 6.6 dB under voice)
+              overrides the ovs -16 LUFS rule.
       Gate 7: SFX Integrity (`audit_sfx.py`) + Ruling `R217` Normalized Cross-Correlation (`match_at`)
               SFX Sync Audit + Optional Portable Relative Bundle Mode (`--portable-root`)
       Gate 8: Epistemic `claim_gate` (`R200`) + Tri-State Verdict + `compile_report.json` + Vietnamese `EDITOR-REPORT.md`
@@ -72,7 +80,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy.signal import correlate
 
-COMPILER_VERSION = "7.1"
+COMPILER_VERSION = "7.9.0"
 TICKS_PER_SECOND = 254_016_000_000
 SR = 48000
 ENV5_WIN = 240  # 5.0 ms boxcar window at 48 kHz (matches thlib/sfxlib.py::_ENV5_WIN)
@@ -174,18 +182,23 @@ VENV_PY = Path(os.environ.get("FILMCRAFT_VENV_PYTHON", str(Path.home() / ".venvs
 SKILL_ROOT = Path(__file__).resolve().parents[2]
 HAAR_CASCADE_XML = SKILL_ROOT / "data" / "haarcascade_frontalface_default.xml"
 
-OPA_SKILL = next(
-    (
-        p for p in (
-            Path(os.environ.get("OPA_VIDEO_STUDIO_DIR", "")) if os.environ.get("OPA_VIDEO_STUDIO_DIR") else None,
-            Path.home() / ".gemini/config/skills/opa-video-studio",
-            Path.home() / ".claude/skills/opa-video-studio",
-            Path.home() / ".agents/skills/opa-video-studio",
-        )
-        if p is not None and p.is_dir()
-    ),
-    Path.home() / ".gemini/config/skills/opa-video-studio",
-)
+VENDORED_OVS_DIR = SKILL_ROOT / "scripts" / "vendor" / "ovs_core"
+
+
+def _resolve_ovs_dir() -> Path:
+    """Gate dependencies live in the vendored `scripts/vendor/ovs_core/`; `PFD_OVS_DIR` (or legacy
+    `OPA_VIDEO_STUDIO_DIR`) overrides it explicitly. Never falls back silently to ~/.gemini or ~/.claude."""
+    for env_name in ("PFD_OVS_DIR", "OPA_VIDEO_STUDIO_DIR"):
+        raw = os.environ.get(env_name)
+        if raw:
+            p = Path(raw).expanduser()
+            if not p.is_dir():
+                print(f"⚠️  [PFD] {env_name}={p} is not a directory; gates that need it will fail loudly.", file=sys.stderr)
+            return p
+    return VENDORED_OVS_DIR
+
+
+OPA_SKILL = _resolve_ovs_dir()
 OPA_SCRIPTS = OPA_SKILL / "scripts"
 AUDIO_LEVELS_PY = OPA_SCRIPTS / "audio_levels.py"
 SPEC_LINT_PY = OPA_SCRIPTS / "spec_lint.py"
@@ -237,15 +250,60 @@ def _py_bin() -> str:
     return str(VENV_PY) if VENV_PY.is_file() else sys.executable
 
 
-def _filmcraft_bin(cli: bool = False) -> str:
-    name = "filmcraft-cli" if cli else "filmcraft"
-    found = shutil.which(name)
+FILMCRAFT_CLI_PY = Path(__file__).resolve().parent / "filmcraft_cli.py"
+
+
+def _filmcraft_bin_or_none(warn: bool = True) -> str | None:
+    """Locate the FilmCraft GUI binary `filmcraft` (CRAFT_BIN_DIR, PATH, ~/.local/bin); `None` (plus a loud warning) when absent.
+    A `filmcraft-cli` binary never existed (only the GUI does): 1-frame renders go through `filmcraft_cli.py`."""
+    on_path = shutil.which("filmcraft")
+    cands = [Path(os.environ["CRAFT_BIN_DIR"]) / "filmcraft"] if os.environ.get("CRAFT_BIN_DIR") else []
+    cands += ([Path(on_path)] if on_path else []) + [Path.home() / ".local" / "bin" / "filmcraft"]
+    found = next((str(c) for c in cands if c.is_file()), None)
     if found:
         return found
-    cand = Path.home() / ".local" / "bin" / name
-    if cand.is_file():
-        return str(cand)
-    raise FileNotFoundError(f"Binary not found: {name} (checked PATH and ~/.local/bin/{name})")
+    if warn:
+        print(
+            "⚠️  [WARNING] FilmCraft binary `filmcraft` not found (checked CRAFT_BIN_DIR, PATH and ~/.local/bin/filmcraft); "
+            "the step that needs it is SKIPPED, not passed. Install FilmCraft or run `scripts/env_status.py`.",
+            file=sys.stderr,
+        )
+    return None
+
+
+def _filmcraft_bin() -> str:
+    found = _filmcraft_bin_or_none(warn=False)
+    if found:
+        return found
+    raise FileNotFoundError("Binary not found: filmcraft (checked CRAFT_BIN_DIR, PATH and ~/.local/bin/filmcraft)")
+
+
+def _filmcraft_cli_cmd(warn: bool = True) -> list[str] | None:
+    """Command prefix of the control-bridge shim (`scripts/tools/filmcraft_cli.py`), or `None` when the `filmcraft` binary is absent."""
+    if _filmcraft_bin_or_none(warn=warn) is None:
+        return None
+    return [sys.executable, str(FILMCRAFT_CLI_PY)]
+
+
+def _filmcraft_render_smoke(cli_cmd: list[str], project: Path, seconds: float, out_png: Path, timeout_s: int = 300) -> tuple[int, dict[str, Any]]:
+    """Run `filmcraft_cli.py --project P render --seconds S --out F` (no `--allow-offline`); returns (exit code, the shim's JSON line)."""
+    try:
+        r = subprocess.run(
+            [*cli_cmd, "--project", str(project), "render", "--seconds", f"{seconds:.2f}", "--out", str(out_png)],
+            capture_output=True, text=True, check=False, timeout=timeout_s,
+        )
+    except subprocess.TimeoutExpired:
+        return 124, {"ok": False, "error": f"filmcraft_cli.py timed out after {timeout_s}s"}
+    last = (r.stdout.strip().splitlines() or [""])[-1]
+    try:
+        payload = json.loads(last)
+    except json.JSONDecodeError:
+        payload = {"ok": False, "error": (r.stderr or r.stdout).strip()[-500:]}
+    return r.returncode, payload if isinstance(payload, dict) else {"ok": False, "error": last[:500]}
+
+
+def _loud_smoke_skip(reason: str) -> None:
+    print(f"⚠️  [SMOKE SKIPPED] 1-frame render smoke ({reason}); the '0 offline media' check did NOT run.", file=sys.stderr)
 
 
 def _is_num(v: Any) -> bool:
@@ -2190,14 +2248,38 @@ def spec_bgm_has_eq_chain(spec_path: Path) -> bool:
     return False
 
 
-def build_effective_rules(work_dir: Path, target_lufs: float) -> Path:
-    if abs(target_lufs - (-16.0)) <= 1e-6:
+def _deep_merge(base: dict[str, Any], over: dict[str, Any]) -> dict[str, Any]:
+    out = copy.deepcopy(base)
+    for k, v in over.items():
+        if isinstance(v, dict) and isinstance(out.get(k), dict):
+            out[k] = _deep_merge(out[k], v)
+        else:
+            out[k] = copy.deepcopy(v)
+    return out
+
+
+def build_effective_rules(work_dir: Path, target_lufs: float, audio_profile: str | None = None) -> Path:
+    """Rules file handed to `audio_levels.py`. `audio_profile` (`studio_14`, `tiktok_loud`) overrides the ovs -16 LUFS rule
+    so Gate 6 measures against the loudness the profile actually targets."""
+    overrides = resolve_audio_profile(audio_profile).get("rules_override") or {}
+    if not overrides and abs(target_lufs - (-16.0)) <= 1e-6:
         return DEFAULT_RULES_JSON
     rules_doc = json.loads(DEFAULT_RULES_JSON.read_text(encoding="utf-8"))
     rules_doc["params"]["audio"]["master_lufs"]["final"] = round(float(target_lufs), 2)
+    if overrides:
+        rules_doc["params"]["audio"] = _deep_merge(rules_doc["params"]["audio"], overrides)
+        rules_doc["params"]["audio"]["master_lufs"]["final"] = round(float(target_lufs), 2)
     eff_path = work_dir / "audio_rules_effective.json"
     eff_path.write_text(json.dumps(rules_doc, ensure_ascii=False, indent=2), encoding="utf-8")
     return eff_path
+
+
+def voice_delta_window(rules_path: Path, init_vb_trim: float) -> tuple[float, float]:
+    """Closed-loop voice gain window keeping voice peak inside the rules' `voice_peak_dbfs` (0.08 dB inner margin).
+    With the default rules (-5..-3, target -4) this is exactly `(-0.92 - init, +0.92 - init)`."""
+    vp = json.loads(Path(rules_path).read_text(encoding="utf-8"))["params"]["audio"]["voice_peak_dbfs"]
+    base = float(vp["target"]) + float(init_vb_trim)
+    return float(vp["min"]) + 0.08 - base, float(vp["max"]) - 0.08 - base
 
 
 # ==============================================================================
@@ -5109,6 +5191,87 @@ def _is_rvm_cutout_track(track_name: str, clip: dict[str, Any]) -> bool:
     return any(h in hay for h in _RVM_CUTOUT_TRACK_HINTS)
 
 
+def _face_metrics_of(ctx: dict[str, Any] | None) -> dict[str, Any] | None:
+    """`face_metrics` (probe doc / `words_tl.json`) or `subject_framing` (`workspace_context.json`) holding source-px face data."""
+    if not isinstance(ctx, dict):
+        return None
+    for key in ("face_metrics", "subject_framing"):
+        fm = ctx.get(key)
+        if isinstance(fm, dict) and any(fm.get(k) for k in ("hair_top_y_px", "chin_y_px", "face_bbox_px", "face_bbox_norm")):
+            return fm
+    return None
+
+
+def auto_load_face_context(context_path: Path | None, work_dir: Path, words_path: Path | None) -> dict[str, Any] | None:
+    """Without `--context`: `workspace_context.json` in the work dir or next to `--words`, else the `face_metrics` of the words doc."""
+    if context_path is not None:
+        return None
+    cands = [work_dir / "workspace_context.json"] + ([words_path.parent / "workspace_context.json"] if words_path else [])
+    for cand in cands:
+        if cand.is_file():
+            try:
+                doc = json.loads(cand.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if _face_metrics_of(doc):
+                return doc
+    if words_path and words_path.is_file():
+        try:
+            doc = json.loads(words_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        if _face_metrics_of(doc):
+            return {"face_metrics": _face_metrics_of(doc)}
+    return None
+
+
+def _source_dims_of_face_metrics(ctx: dict[str, Any], fm: dict[str, Any], probe_src: str | None) -> tuple[float, float] | None:
+    """Source frame size of the face data: `resolution`, else `face_bbox_px / face_bbox_norm`, else a cv2 probe of the A-roll."""
+    res = ctx.get("resolution")
+    if isinstance(res, dict) and _is_num(res.get("width")) and _is_num(res.get("height")):
+        return float(res["width"]), float(res["height"])
+    px, nm = fm.get("face_bbox_px"), fm.get("face_bbox_norm")
+    if isinstance(px, list) and isinstance(nm, list) and len(px) == 4 and len(nm) == 4 and nm[2] > 0.05 and nm[3] > 0.05:
+        return round(float(px[2]) / float(nm[2])), round(float(px[3]) / float(nm[3]))
+    if probe_src and Path(probe_src).is_file():
+        cap = cv2.VideoCapture(probe_src)
+        try:
+            w, h = cap.get(cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        finally:
+            cap.release()
+        if w > 0 and h > 0:
+            return float(w), float(h)
+    return None
+
+
+def normalize_words_file(words_path: Path, work_dir: Path) -> Path:
+    """Write `[[word, t0, t1], ...]` (from a bare list or the probe doc `{words | words_tl}`) under `work_dir`; return that path."""
+    doc = json.loads(words_path.read_text(encoding="utf-8"))
+    try:
+        from probe_and_align import extract_words_list
+        words = extract_words_list(doc)
+    except ImportError:
+        seq = (doc.get("words") if doc.get("words") is not None else doc.get("words_tl")) if isinstance(doc, dict) else doc
+        words = [[str(w[0]), float(w[1]), float(w[2])] for w in (seq or []) if isinstance(w, (list, tuple)) and len(w) >= 3]
+    work_dir.mkdir(parents=True, exist_ok=True)
+    out = work_dir / f"{words_path.stem}.words_list.json"
+    out.write_text(json.dumps(words, ensure_ascii=False), encoding="utf-8")
+    return out
+
+
+_PLATE_SRC_RE = re.compile(r"(^|[/_\\ ])kt_?\d{1,2}(?!\d)", re.IGNORECASE)
+
+
+def spec_has_rendered_plates(spec: dict[str, Any]) -> bool:
+    """True when any clip is a V6+ rendered Lane-B typography plate (`typo_kinetic_meta`, `kt_NN_*.mov`, or the cluster template)."""
+    for tr in spec.get("tracks", []):
+        for cl in tr.get("clips", []):
+            src = str(cl.get("src") or "")
+            if isinstance(cl.get("typo_kinetic_meta"), dict) or _PLATE_SRC_RE.search(Path(src).name) or "dviet_overlapping_feather_cluster" in src:
+                return True
+    return False
+
+
 def audit_cranial_exclusion(
     spec: dict[str, Any],
     *,
@@ -5191,8 +5354,31 @@ def audit_cranial_exclusion(
         seq_w,
         seq_h,
     )
+    # Source-px face data (`face_metrics` / `subject_framing`) -> projected through the real V1 motion at each probe
+    face_src: dict[str, float] | None = None
+    fm_ctx = _face_metrics_of(ctx)
+    if fm_ctx is not None:
+        dims = _source_dims_of_face_metrics(ctx, fm_ctx, primary_aroll_src) or (seq_w, seq_h)
+        sw_, sh_ = dims
+        fb_px = fm_ctx.get("face_envelope_px") or fm_ctx.get("face_bbox_px")
+        fb_norm = fm_ctx.get("face_bbox_norm")
+        if not (isinstance(fb_px, list) and len(fb_px) == 4) and isinstance(fb_norm, list) and len(fb_norm) == 4:
+            fb_px = [fb_norm[0] * sw_, fb_norm[1] * sh_, fb_norm[2] * sw_, fb_norm[3] * sh_]
+        hair_px = fm_ctx.get("hair_top_y_px")
+        chin_px = fm_ctx.get("chin_y_px")
+        if _is_num(hair_px) or _is_num(chin_px) or fb_px:
+            fh_px = max(40.0, float(fb_px[3]) - float(fb_px[1])) if fb_px else 0.23 * sh_
+            hair_src = float(hair_px) if _is_num(hair_px) else (float(fb_px[1]) - 0.28 * fh_px if fb_px else float(chin_px) - 0.23 * sh_)
+            chin_src = float(chin_px) if _is_num(chin_px) else (float(fb_px[3]) + 0.06 * fh_px if fb_px else hair_src + 0.23 * sh_)
+            face_src = {
+                "hair": hair_src, "chin": chin_src,
+                "x0": float(fb_px[0]) if fb_px else 0.28 * sw_, "x1": float(fb_px[2]) if fb_px else 0.72 * sw_,
+                "w": float(sw_), "h": float(sh_),
+            }
+    no_cranial_data_hits: list[float] = []
     has_explicit_cranial_meta = bool(
         explicit_hair_top is not None or explicit_chin is not None or explicit_face_bbox is not None or v1_clip_anns
+        or face_src is not None
     )
     strict_cranial = bool(meta.get("strict_cranial_lock") or meta.get("cranial_lock_strict"))
 
@@ -5245,6 +5431,14 @@ def audit_cranial_exclusion(
                 fh_q = max(40.0, fy1 - fy0)
                 return (fx0 - 48.0, (fy0 - 0.28 * fh_q) - 48.0, fx1 + 48.0, (fy1 + 0.06 * fh_q) + 32.0)
 
+        # 3a. Source-px `face_metrics` projected through the real V1 `motion` (anchor defaults to the source centre)
+        if face_src is not None and explicit_hair_top is None and explicit_chin is None and v1_cl is not None:
+            tau = ts - float(v1_cl.get("at", 0.0))
+            clip_src = {**v1_cl, "motion": {**(v1_cl.get("motion") or {}), "anchor": (v1_cl.get("motion") or {}).get("anchor") or [face_src["w"] / 2.0, face_src["h"] / 2.0]}}
+            px0, py_hair = _motion_transform_point(clip_src, tau, face_src["x0"], face_src["hair"], seq_w, seq_h)
+            px1, py_chin = _motion_transform_point(clip_src, tau, face_src["x1"], face_src["chin"], seq_w, seq_h)
+            return (min(px0, px1) - 48.0, min(py_hair, py_chin) - 48.0, max(px0, px1) + 48.0, max(py_hair, py_chin) + 32.0)
+
         # 3. Explicit meta / context cranial coordinates (projected through V1 `motion` if `face_bbox` is source-space)
         if explicit_hair_top is not None or explicit_chin is not None:
             ht_e = float(explicit_hair_top) if explicit_hair_top is not None else (float(explicit_chin) - 0.23 * seq_h)  # type: ignore[arg-type]
@@ -5264,7 +5458,7 @@ def audit_cranial_exclusion(
             fh_e = max(40.0, fy1 - fy0)
             return (fx0 - 48.0, (fy0 - 0.28 * fh_e) - 48.0, fx1 + 48.0, (fy1 + 0.06 * fh_e) + 32.0)
 
-        # 4. Canonical A-Roll speaker cranial zone projected through V1 `motion` when V1 is verified A-Roll
+        # 4. No cranial data for a verified A-Roll frame -> explicit `CRANIAL_NO_DATA` warning (no guessed box)
         if v1_cl is not None:
             cname_v1 = str(v1_cl.get("name") or "").lower()
             src_v1 = str(v1_cl.get("src") or "").lower()
@@ -5275,11 +5469,7 @@ def audit_cranial_exclusion(
                 or (primary_aroll_src is not None and str(v1_cl.get("src") or "") == primary_aroll_src)
             )
             if is_aroll:
-                tau = ts - float(v1_cl.get("at", 0.0))
-                # Canonical source cranium around (360..720, hair_top=560..chin=980) before V1 motion
-                sx0, sy_hair = _motion_transform_point(v1_cl, tau, 360.0, 560.0, seq_w, seq_h)
-                sx1, sy_chin = _motion_transform_point(v1_cl, tau, 720.0, 980.0, seq_w, seq_h)
-                return (min(sx0, sx1) - 48.0, min(sy_hair, sy_chin) - 48.0, max(sx0, sx1) + 48.0, max(sy_hair, sy_chin) + 32.0)
+                no_cranial_data_hits.append(ts)  # no face data anywhere: report it, never invent a box
 
         return None
 
@@ -5381,6 +5571,7 @@ def audit_cranial_exclusion(
     foreground_clips_audited = 0
     foreground_lane_b_plates_audited = 0
     behind_subject_exempt = 0
+    unaudited_no_data = 0
 
     for tr_idx, tr in enumerate(tracks):
         ttype = str(tr.get("type", ""))
@@ -5435,8 +5626,11 @@ def audit_cranial_exclusion(
                 if (c_at < 1.5 and (c_at + c_dur) <= 1.60) or ("hook" in cname.lower() and c_at < 1.5 and c_dur <= 1.55):
                     continue
 
+            n_no_data = len(no_cranial_data_hits)
             cran_box = _active_cranial_box_at(t_probe)
             if cran_box is None:
+                if len(no_cranial_data_hits) > n_no_data:
+                    unaudited_no_data += 1
                 continue
 
             if is_text_clip:
@@ -5506,10 +5700,24 @@ def audit_cranial_exclusion(
                     }
                 )
 
+    if unaudited_no_data:
+        warning_codes.append("CRANIAL_NO_DATA")
+        warnings.append(
+            {
+                "code": "CRANIAL_NO_DATA",
+                "severity": "WARN",
+                "message": (
+                    f"no cranial data: {unaudited_no_data} foreground clip(s) over A-roll were not audited "
+                    "(no cranial_zone / face_metrics / --context)"
+                ),
+                "fix": "pass --context workspace_context.json (or keep it in the work dir / next to --words) so face_metrics are projected through the V1 motion",
+            }
+        )
     return {
         "executed": True,
         "gate": "CRANIAL_EXCLUSION_AUDIT",
-        "status": "FAIL" if (violations and strict_cranial) else ("WARN" if violations else "PASS"),
+        "status": "FAIL" if (violations and strict_cranial) else ("WARN" if (violations or unaudited_no_data) else "PASS"),
+        "unaudited_no_cranial_data": unaudited_no_data,
         "strict_cranial_lock": strict_cranial,
         "foreground_text_clips_audited": foreground_clips_audited,
         "foreground_lane_b_plates_audited": foreground_lane_b_plates_audited,
@@ -5518,6 +5726,116 @@ def audit_cranial_exclusion(
         "violations": violations,
         "warning_codes": warning_codes,
         "warnings": warnings,
+    }
+
+
+# ==============================================================================
+# v7.4.0 Profiles: `--profile {default,dviet}` + `--audio-profile {platform,studio_14,tiktok_loud}` (choices come from the preset file)
+# ==============================================================================
+PROFILE_OVERRIDES_PATH = SKILL_ROOT / "presets" / "profile_overrides.json"
+_FLASH_FAMILY_TOKENS = ("flash", "flicker", "strobe", "shutter")
+_WASH_FAMILY_TOKENS = _WARM_FILM_BURN_TOKENS + ("light_leak", "lightleak", "wash")
+_DVIET_DEFAULT_CAPS = {"max_event_s": 0.6, "max_flash_family_share": 0.20, "min_gap_cuts": 4}
+
+
+@lru_cache(maxsize=1)
+def _load_profile_overrides() -> dict[str, Any]:
+    try:
+        return json.loads(PROFILE_OVERRIDES_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"cannot read {PROFILE_OVERRIDES_PATH}: {exc}") from exc
+
+
+def resolve_audio_profile(name: str | None) -> dict[str, Any]:
+    """Return the `audio_profiles[name]` block (default `platform` = historical -16 LUFS / -1.5 dBTP behaviour)."""
+    key = name or "platform"
+    profiles = _load_profile_overrides().get("audio_profiles", {})
+    if key not in profiles:
+        raise ValueError(f"unknown --audio-profile {key!r}; expected one of {sorted(profiles)}")
+    return profiles[key]
+
+
+def _lufs_target_shift(audio_profile: str | None, target_lufs: float) -> float:
+    """LU the pre-trims move from the -16 LUFS baseline: every profile except `tiktok_loud` (its own tuned trims) follows its target."""
+    return 0.0 if audio_profile == "tiktok_loud" else round(float(target_lufs) - (-16.0), 2)
+
+
+def _event_kind(hay: str) -> tuple[str, str] | None:
+    """(family, kind) of a flash/wash token inside `hay`, else None."""
+    low = hay.lower()
+    for tok in _FLASH_FAMILY_TOKENS:
+        if tok in low:
+            m = re.search(rf"[a-z0-9_]*{tok}[a-z0-9_]*", low)
+            return "flash", (m.group(0) if m else tok)
+    for tok in _WASH_FAMILY_TOKENS:
+        if tok in low:
+            return "wash", tok
+    return None
+
+
+def audit_dviet_wash_flash_caps(spec: dict[str, Any], caps: dict[str, Any] | None = None) -> dict[str, Any]:
+    """
+    Profile `dviet`: scopes the warm-film-burn veto and white-flash ban. A wash/flash event may be lifted only when
+      - it lasts <= `max_event_s` (0.6 s),
+      - the flash family stays <= `max_flash_family_share` (20%) of V1 cuts (`lift_allowed`),
+      - (SOFT lint) no kind repeats within `min_gap_cuts` (4) cuts.
+    Does NOT touch the 4-Cut Grammar / `OVER_TRANSITIONED_SPAM` (still HARD in `audit_transition_and_rhythm_continuity`).
+    """
+    cfg = {**_DVIET_DEFAULT_CAPS, **(caps or _load_profile_overrides().get("profiles", {}).get("dviet", {}).get("wash_flash", {}))}
+    tracks = [t for t in spec.get("tracks", []) if str(t.get("type", "")) != "audio"]
+    v1 = next((t for t in tracks if str(t.get("name", "")).strip().upper().startswith("V1")), tracks[0] if tracks else {"clips": []})
+    v1_starts = sorted(float(c.get("at", 0.0)) for c in v1.get("clips", []))
+    n_cuts = max(1, len(v1_starts) - 1)
+
+    def cut_index(t: float) -> int:
+        return sum(1 for a in v1_starts[1:] if a <= t + 1e-6)
+
+    events: list[dict[str, Any]] = []
+    for tr in tracks:
+        is_v1 = tr is v1
+        for cl in tr.get("clips", []):
+            at = float(cl.get("at", 0.0))
+            fields = [str(cl.get("name") or ""), str(cl.get("preset") or ""), Path(str(cl.get("src") or "")).name,
+                      json.dumps(cl.get("transition_in") or {}, ensure_ascii=False), json.dumps(cl.get("transition_out") or {}, ensure_ascii=False)]
+            hit = _event_kind(" ".join(fields if not is_v1 else fields[3:]))
+            if hit is None:
+                continue
+            fam, kind = hit
+            dur = float(cl.get("dur", 0.0)) if not is_v1 else float((cl.get("transition_in") or {}).get("dur", 0.3) or 0.3)
+            events.append({"family": fam, "kind": kind, "at": round(at, 3), "dur": round(dur, 3),
+                           "track": str(tr.get("name", "")), "cut_index": cut_index(at)})
+
+    flash_events = [e for e in events if e["family"] == "flash"]
+    share = round(len(flash_events) / float(n_cuts), 4)
+    over_cap = [e for e in events if e["dur"] > float(cfg["max_event_s"]) + 1e-6]
+    repeats: list[str] = []
+    last_idx: dict[str, int] = {}
+    for e in sorted(events, key=lambda x: x["at"]):
+        prev = last_idx.get(e["kind"])
+        if prev is not None and e["cut_index"] - prev < int(cfg["min_gap_cuts"]):
+            repeats.append(f"{e['kind']} repeats within {int(cfg['min_gap_cuts'])} cuts (at {e['at']:.2f}s, cut #{e['cut_index']}, previous cut #{prev})")
+        last_idx[e["kind"]] = e["cut_index"]
+    return {
+        "executed": True,
+        "profile": "dviet",
+        "n_cuts": n_cuts,
+        "events": events,
+        "flash_family_share": share,
+        "max_flash_family_share": float(cfg["max_flash_family_share"]),
+        "lift_allowed": share <= float(cfg["max_flash_family_share"]) + 1e-9,
+        "over_cap_events": over_cap,
+        "max_event_s": float(cfg["max_event_s"]),
+        "soft_repeat_warnings": repeats,
+        "warnings": [
+            {"code": "DVIET_WASH_FLASH_REPEAT", "severity": "WARN", "message": r,
+             "fix": f"vary the wash/flash kind or move it >= {int(cfg['min_gap_cuts'])} cuts away"}
+            for r in repeats
+        ] + (
+            [{"code": "DVIET_FLASH_FAMILY_OVER_CAP", "severity": "ERROR", "elevate_concern_in_full": True,
+              "message": f"flash family {share:.0%} of cuts > {float(cfg['max_flash_family_share']):.0%}: dviet veto lift revoked",
+              "fix": "cut flash/flicker events until they are <= 20% of V1 cuts"}]
+            if share > float(cfg["max_flash_family_share"]) + 1e-9 else []
+        ),
     }
 
 
@@ -5530,9 +5848,10 @@ def audit_industry_cri100_veto(
     san_stats: dict[str, Any] | None = None,
     industry_skin_override: str | None = None,
     strict_cri100: bool = False,
+    profile: str = "default",
 ) -> dict[str, Any]:
     """
-    `v7.0` Gate **`INDUSTRY_CRI100_VETO_AUDIT`**:
+    `v7.0` Gate **`INDUSTRY_CRI100_VETO_AUDIT`** (`v7.4.0`: `profile="dviet"` lifts the Warm Film Burn veto for capped events only):
       - Active when `meta.industry_skin` (or `--industry-skin`) is `dental_clinic`, `luxury_skincare`,
         or `nail_hair_salon` (also audits `enamel_gum_bbox` / `macro_subject_bbox` whenever provided):
           1. **`CRI100_FORBIDDEN_WARM_FILM_BURN`**: Bans `Warm Film Burn` / orange light-leak transitions.
@@ -5600,6 +5919,12 @@ def audit_industry_cri100_veto(
     warnings: list[dict[str, Any]] = []
     warning_codes: list[str] = []
 
+    dviet_caps = audit_dviet_wash_flash_caps(spec) if profile == "dviet" else None
+
+    def _burn_lifted(c_dur: float) -> bool:
+        """`dviet`: a Warm Film Burn *event* (<= 0.6 s) is allowed while the flash family stays <= 20% of cuts."""
+        return bool(dviet_caps and dviet_caps["lift_allowed"] and c_dur <= float(dviet_caps["max_event_s"]) + 1e-6)
+
     def _record_veto(code: str, msg: str, fix: str, extra: dict[str, Any]) -> None:
         rec = {"code": code, "message": msg, "fix": fix, **extra}
         violations.append(rec)
@@ -5642,7 +5967,7 @@ def audit_industry_cri100_veto(
             )
         for ann in (san_stats or {}).get("v70_clip_annotations") or []:
             ann_ts = str(ann.get("transition_style") or "").lower()
-            if ann_ts and any(tok in ann_ts for tok in _WARM_FILM_BURN_TOKENS):
+            if ann_ts and any(tok in ann_ts for tok in _WARM_FILM_BURN_TOKENS) and not _burn_lifted(float(ann.get("dur", 0.5))):
                 _record_veto(
                     "CRI100_FORBIDDEN_WARM_FILM_BURN",
                     f"CRI100_FORBIDDEN_WARM_FILM_BURN: clip '{ann.get('clip', '?')}' on '{ann.get('track', 'V1')}' (at={float(ann.get('at', 0.0)):.2f}s) declares `transition_style='{ann_ts}'` in `{canon_skin}`",
@@ -5664,7 +5989,7 @@ def audit_industry_cri100_veto(
                 tr_out = json.dumps(cl.get("transition_out") or {}, ensure_ascii=False)
                 hay_vis = unicodedata.normalize("NFC", f"{cname} {Path(csrc).name if csrc else ''} {cpreset} {tr_in} {tr_out}").lower()
 
-                if any(tok in hay_vis for tok in _WARM_FILM_BURN_TOKENS):
+                if any(tok in hay_vis for tok in _WARM_FILM_BURN_TOKENS) and not _burn_lifted(float(cl.get("dur", 0.0))):
                     _record_veto(
                         "CRI100_FORBIDDEN_WARM_FILM_BURN",
                         f"CRI100_FORBIDDEN_WARM_FILM_BURN: clip '{cname or Path(csrc).name}' on '{tname}' (at={c_at:.2f}s) uses Warm Film Burn in `{canon_skin}`",
@@ -5684,7 +6009,7 @@ def audit_industry_cri100_veto(
                     fx_id = str(fx.get("effect") or "").lower()
                     params = fx.get("params") or {}
                     fx_str = json.dumps(fx, ensure_ascii=False).lower()
-                    if any(tok in fx_str for tok in _WARM_FILM_BURN_TOKENS):
+                    if any(tok in fx_str for tok in _WARM_FILM_BURN_TOKENS) and not _burn_lifted(float(cl.get("dur", 0.0))):
                         _record_veto(
                             "CRI100_FORBIDDEN_WARM_FILM_BURN",
                             f"CRI100_FORBIDDEN_WARM_FILM_BURN: effect '{fx_id}' on '{cname}' (at={c_at:.2f}s) triggers Warm Film Burn in `{canon_skin}`",
@@ -6681,7 +7006,7 @@ def relativize_and_verify_bundle(
       - Rewrites `<portable_root>/assets/...` -> `assets/...`
       - Verifies `leftover_abs_paths == []` and `broken_rel_paths == []`
       - Updates `<portable_root>/bundle_manifest.json` with SHA256 & byte counts
-      - Runs 1-frame `filmcraft-cli render` smoke test (without `--allow-offline`) to prove 0 offline media
+      - Runs the 1-frame `filmcraft_cli.py render` smoke (without `--allow-offline`) to prove 0 offline media (`missingMedia` from `file.open`; > 0 raises)
     """
     root_resolved = portable_root.resolve()
     prefixes_to_strip = []
@@ -6775,7 +7100,21 @@ def relativize_and_verify_bundle(
     }
     bm_path.write_text(json.dumps(bm_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    fc_cli = _filmcraft_bin(cli=True)
+    summary_base: dict[str, Any] = {
+        "enabled": True,
+        "portable_root": str(root_resolved),
+        "bundle_manifest": str(bm_path),
+        "unique_assets": len(entries),
+        "total_path_refs": len(referenced_rels),
+        "assets_mb": bm_payload["assets_mb"],
+        "leftover_abs_paths": leftover_abs,
+        "broken_rel_paths": broken_rels,
+        "smoke_frame_seconds": round(smoke_time_s, 2),
+    }
+    fc_cli = _filmcraft_cli_cmd()
+    if fc_cli is None:
+        _loud_smoke_skip("no filmcraft binary")
+        return {**summary_base, "smoke_frame_png": None, "smoke_skipped": "skipped: no X/filmcraft (filmcraft binary not found)", "offline_media": None}
     smoke_png = work_dir / "portable_smoke_frame.png"
     if smoke_png.exists():
         smoke_png.unlink()
@@ -6791,46 +7130,26 @@ def relativize_and_verify_bundle(
             temp_assets_link = link_cand
 
     try:
-        r_smoke = subprocess.run(
-            [
-                fc_cli,
-                "--project",
-                str(smoke_proj),
-                "render",
-                "--seconds",
-                f"{smoke_time_s:.2f}",
-                "--out",
-                str(smoke_png),
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        rc, res = _filmcraft_render_smoke(fc_cli, smoke_proj, smoke_time_s, smoke_png)
     finally:
         if temp_assets_link is not None and temp_assets_link.is_symlink():
             temp_assets_link.unlink()
         if smoke_proj != out_fcproj and smoke_proj.exists():
             smoke_proj.unlink()
 
-    if r_smoke.returncode != 0 or not smoke_png.is_file():
+    if rc == 2 and res.get("skipped"):
+        _loud_smoke_skip(str(res.get("error")))
+        return {**summary_base, "smoke_frame_png": None, "smoke_skipped": str(res.get("error")), "offline_media": None}
+    missing = res.get("missingMedia")
+    if rc == 3 or (isinstance(missing, int) and missing > 0):
         raise RuntimeError(
-            f"Portable 1-frame smoke test failed (exit={r_smoke.returncode}): "
-            f"{(r_smoke.stderr or r_smoke.stdout).strip()[:500]}"
+            f"Portable bundle has {missing} offline media item(s) (0 required): {res.get('error')}. "
+            "A relative path in the .fcproj does not resolve next to the project; fix the bundle, do not use --allow-offline."
         )
+    if rc != 0 or not smoke_png.is_file() or not isinstance(missing, int):
+        raise RuntimeError(f"Portable 1-frame smoke test failed (exit={rc}): {str(res.get('error') or res)[:500]}")
 
-    return {
-        "enabled": True,
-        "portable_root": str(root_resolved),
-        "bundle_manifest": str(bm_path),
-        "unique_assets": len(entries),
-        "total_path_refs": len(referenced_rels),
-        "assets_mb": bm_payload["assets_mb"],
-        "leftover_abs_paths": leftover_abs,
-        "broken_rel_paths": broken_rels,
-        "smoke_frame_png": str(smoke_png),
-        "smoke_frame_seconds": round(smoke_time_s, 2),
-        "offline_media": 0,
-    }
+    return {**summary_base, "smoke_frame_png": str(smoke_png), "offline_media": missing}
 
 
 def write_editor_report_md(report_path: Path, summary: dict[str, Any]) -> Path:
@@ -6913,14 +7232,14 @@ def write_editor_report_md(report_path: Path, summary: dict[str, Any]) -> Path:
         ]
 
     post_aac_tp = aud.get("post_aac_true_peak_dbtp")
-    post_aac_str = f"`{post_aac_tp:.2f} dBTP` (R35 <= `-1.5 dBTP`)" if isinstance(post_aac_tp, (int, float)) and math.isfinite(post_aac_tp) else "`—` (chỉ đo ở `--tier full`)"
+    post_aac_str = f"`{post_aac_tp:.2f} dBTP` (R35 <= `{inputs.get('tp_ceiling_dbtp', -1.5)} dBTP`)" if isinstance(post_aac_tp, (int, float)) and math.isfinite(post_aac_tp) else "`—` (chỉ đo ở `--tier full`)"
     lines += [
         "",
         "## 3. Âm Thanh Chủ Động — EBU R128, BGM Steady-State & Ruling `R35`",
         "",
         f"- **Integrated Loudness (`mix.wav`):** `{aud.get('measured_lufs', '—')} LUFS` (mục tiêu `{inputs.get('target_lufs', -16.0)} LUFS`, sai lệch `{aud.get('lufs_deviation_lu', '—')} LU`)",
         f"- **Loudness Range (`LRA`):** `{aud.get('measured_lra_lu', '—')} LU`",
-        f"- **Lossless PCM True Peak:** `{aud.get('measured_true_peak_dbtp', '—')} dBTP` (giới hạn `<= -1.5 dBTP`)",
+        f"- **Lossless PCM True Peak:** `{aud.get('measured_true_peak_dbtp', '—')} dBTP` (giới hạn `<= {inputs.get('tp_ceiling_dbtp', -1.5)} dBTP`)",
         f"- **Post-AAC 192k True Peak (Ruling `R35`):** {post_aac_str}",
         f"- **Master `hard_limiter` trần cuối:** `{aud.get('limiter_max_db', inputs.get('limiter_db', -2.2))} dB` · Số lượt Closed-Loop: `{aud.get('closed_loop_attempts', 0)}`",
     ]
@@ -7040,7 +7359,7 @@ def write_editor_report_md(report_path: Path, summary: dict[str, Any]) -> Path:
 
 
 def open_in_filmcraft_gui(fcproj_path: Path, display: str) -> int:
-    fc_bin = _filmcraft_bin(cli=False)
+    fc_bin = _filmcraft_bin()
     env = {**os.environ, "DISPLAY": display}
     proc = subprocess.Popen(
         [fc_bin, "--no-recover", str(fcproj_path.resolve())],
@@ -7100,7 +7419,7 @@ def _run_self_tests() -> int:
       2. `INDUSTRY_CRI100_VETO_AUDIT` (`dental_clinic`, `luxury_skincare`, `nail_hair_salon` vetoes + bbox guards)
       3. `sanitize_spec` (`persistent_bridge` C8 guard exemption + `micro_bridges_planned`) +
          `inject_micro_bridge_adjustment_layers_fcproj` (`exposure_bloom_landing_3f` & `rack_focus_bridge_13f`)
-         verified against live `fc_build_fast.py` & `filmcraft-cli render`!
+         verified against live `fc_build_fast.py` & `filmcraft_cli.py render`!
     """
     import tempfile
 
@@ -7332,7 +7651,7 @@ def _run_self_tests() -> int:
     )
     assert res_cri_good["status"] == "PASS" and res_cri_good["veto_count"] == 0, f"Expected CRI100 PASS, got {res_cri_good}"
 
-    # 3. End-to-End `sanitize_spec` + `fc_build_fast.py` + `inject_micro_bridge_adjustment_layers_fcproj` + `filmcraft-cli render`
+    # 3. End-to-End `sanitize_spec` + `fc_build_fast.py` + `inject_micro_bridge_adjustment_layers_fcproj` + `filmcraft_cli.py render`
     with tempfile.TemporaryDirectory(prefix="v70_compiler_selftest_") as td:
         tdir = Path(td)
         clip_mp4 = tdir / "plate.mp4"
@@ -7416,17 +7735,20 @@ def _run_self_tests() -> int:
         assert mb_res["injected"] is True and mb_res["count"] == 2, f"Micro-bridge injection failed: {mb_res}"
         assert mb_res["track_index"] == 1, f"AdjustmentLayer track must sit between V1(0) and TEXT(2), got {mb_res}"
 
-        fc_cli = _filmcraft_bin(cli=True)
+        fc_cli = _filmcraft_cli_cmd()
+        arr_png = None
         out_png = tdir / "bloom_frame.png"
-        r_ren = subprocess.run(
-            [fc_cli, "--project", str(out_fcproj), "render", "--seconds", "0.45", "--out", str(out_png)],
-            capture_output=True,
-            text=True,
-            check=False,
+        rc_ren, res_ren = (
+            _filmcraft_render_smoke(fc_cli, out_fcproj, 0.45, out_png)
+            if fc_cli is not None else (2, {"skipped": True, "error": "skipped: no X/filmcraft (filmcraft binary not found)"})
         )
-        assert r_ren.returncode == 0 and out_png.is_file(), f"filmcraft-cli render failed: {r_ren.stderr or r_ren.stdout}"
-        arr_png = np.asarray(Image.open(out_png).convert("L"), dtype=np.float32)
-        assert float(arr_png.std()) > 5.0, f"Rendered frame looks blank: std={arr_png.std():.2f}"
+        if rc_ren == 2 and res_ren.get("skipped"):
+            print(f"⚠️  [SELF-TEST SKIPPED] 1-frame `filmcraft_cli.py render` smoke ({res_ren.get('error')}); fc_build_fast + micro-bridge injection above DID run.")
+        else:
+            assert rc_ren == 0 and out_png.is_file(), f"filmcraft_cli.py render failed (exit={rc_ren}): {res_ren}"
+            assert res_ren.get("missingMedia") == 0, f"self-test project has offline media: {res_ren}"
+            arr_png = np.asarray(Image.open(out_png).convert("L"), dtype=np.float32)
+            assert float(arr_png.std()) > 5.0, f"Rendered frame looks blank: std={arr_png.std():.2f}"
 
         # 4. v7.1 Lane-B Cranial Exclusion Blind-Spot Closure + Sidecar `.typo_meta.json` Harvesting
         sidecar_plate_mov = tdir / "kt_bad_forehead.mov"
@@ -7616,7 +7938,7 @@ def _run_self_tests() -> int:
                 "v71_gate3c_clean": res_clean_kt["status"],
                 "micro_bridges_injected": mb_res["count"],
                 "adjustment_track_index": mb_res["track_index"],
-                "rendered_frame_std": round(float(arr_png.std()), 2),
+                "rendered_frame_std": round(float(arr_png.std()), 2) if arr_png is not None else None,
             },
             ensure_ascii=False,
         )
@@ -7628,7 +7950,7 @@ def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         prog="compile_and_verify.py",
         description=(
-            "v7.1 Universal Studio Stateless FilmCraft (.craft.json -> .fcproj) Gatekeeper: "
+            f"v{COMPILER_VERSION} Universal Studio Stateless FilmCraft (.craft.json -> .fcproj) Gatekeeper: "
             "Gate 3C Kinetic Typography Anti-Cookie-Cutter Vetoes, Lane-B CRANIAL_EXCLUSION_AUDIT, "
             "INDUSTRY_CRI100_VETO_AUDIT, Native AdjustmentLayer Micro-Bridges & Closed-Loop EBU R128 Verifier."
         ),
@@ -7636,7 +7958,12 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--spec", help="Path to input .craft.json spec")
     ap.add_argument("--out", help="Path to output .fcproj file")
     ap.add_argument("--work", help="Working directory for intermediate specs, stems, and QA reports")
-    ap.add_argument("--words", help="Optional timeline word timestamps JSON ([[word, t0, t1], ...])")
+    ap.add_argument(
+        "--words",
+        help="Optional timeline word timestamps JSON: a bare [[word, t0, t1], ...] list OR the probe doc "
+        "words_tl.json ({\"words\": [[w, t0, t1]], \"words_tl\": [...], \"face_metrics\": {...}}); "
+        "a normalised list copy is written under --work and forwarded to spec_lint / edit_rules",
+    )
     ap.add_argument("--manifest", help="Optional 00_storyboard_manifest.json for editorial audit")
     ap.add_argument(
         "--tier",
@@ -7646,7 +7973,10 @@ def parse_args() -> argparse.Namespace:
     )
     ap.add_argument(
         "--context",
-        help="Optional `workspace_context.json` from `probe_and_align.py` (provides `subject_framing`, `cranial_zone` & `recommended_compile_tier`)",
+        help="Optional `workspace_context.json` from `probe_and_align.py` (provides `subject_framing` / `face_metrics` in source px, "
+        "`cranial_zone` & `recommended_compile_tier`). Without it, `workspace_context.json` in --work or next to --words (or the "
+        "`face_metrics` of the --words probe doc) is auto-loaded for the cranial audit, projected through the real V1 motion; "
+        "with no face data the audit emits a `no cranial data` WARN",
     )
     ap.add_argument(
         "--archetype",
@@ -7693,7 +8023,18 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Scan 16kHz BGM envelope to pick lowest-LRA steady-state `in` offset (default: ON in `full`, OFF in `fast`)",
     )
-    ap.add_argument("--target-lufs", type=float, default=-16.0, help="Target integrated loudness in LUFS (default: -16.0)")
+    ap.add_argument(
+        "--target-lufs", type=float, default=None,
+        help="Target integrated loudness in LUFS (default: -16.0, or the --audio-profile target)",
+    )
+    ap.add_argument(
+        "--profile", choices=("default", "dviet"), default="default",
+        help="Style profile: `default` = historical behaviour; `dviet` scopes the Warm Film Burn / white-flash vetoes to capped wash/flash events (4-Cut Grammar stays HARD)",
+    )
+    ap.add_argument(
+        "--audio-profile", choices=tuple(_load_profile_overrides()["audio_profiles"]), default="platform",
+        help="Loudness profile (presets/profile_overrides.json): `platform` (-16 LUFS, <= -1.5 dBTP, default), `studio_14` (Look S: -14 LUFS, <= -1.2 dBTP, ducking ON) or `tiktok_loud` (-12 LUFS, <= -0.5 dBTP limiter, no ducking, BGM 6.6 dB under voice)",
+    )
     ap.add_argument("--portable-root", help="Optional bundle root dir to relativize `assets/...` & update bundle_manifest.json")
     ap.add_argument("--auto-sfx-dir", help="Optional directory to auto-resolve `src: 'AUTO:<keyword>'` SFX clips")
     ap.add_argument(
@@ -7702,15 +8043,45 @@ def parse_args() -> argparse.Namespace:
         default=True,
         help="Trim main text clips ending 1..12 frames past a V1 cut back to cut_t - 1/fps (default: enabled; exempts `persistent_bridge` clips)",
     )
-    ap.add_argument("--limiter", type=float, default=-2.2, help="Master hard_limiter ceiling in dB (default: -2.2)")
+    ap.add_argument("--limiter", type=float, default=None, help="Master hard_limiter ceiling in dB (default: -2.2, or the --audio-profile ceiling)")
     ap.add_argument("--strict-rules", action="store_true", help="Fail build if edit_rules.py or v7.0 Cranial/CRI-100 audits report errors")
+    ap.add_argument(
+        "--hook-gates", action="store_true",
+        help="v7.8.0 (default OFF): run motion_gate.check_motion on --preview (frame diff over 0..3.4 s; failures become concerns)",
+    )
+    ap.add_argument("--preview", help="Rendered preview MP4 that --hook-gates measures")
+    ap.add_argument("--hook-mask", action="append", default=[], metavar="X0,Y0,X1,Y1",
+                    help="Normalised rect (0..1) ignored by --hook-gates (PiP / text box); repeatable")
     ap.add_argument("--open-app", action="store_true", help="Launch FilmCraft desktop GUI (--no-recover) on completion")
     ap.add_argument("--display", default=":0", help="X11 DISPLAY for --open-app (default: :0)")
     ap.add_argument("--self-test", action="store_true", help="Run v7.0 Stateless Gatekeeper unit & FilmCraft AdjustmentLayer smoke tests")
     args = ap.parse_args()
+    if args.hook_gates and not args.preview:
+        ap.error("--hook-gates needs --preview <rendered preview .mp4>")
     if not args.self_test and (not args.spec or not args.out or not args.work):
         ap.error("the following arguments are required unless --self-test is passed: --spec, --out, --work")
+    audio_prof = resolve_audio_profile(args.audio_profile)
+    if args.target_lufs is None:
+        args.target_lufs = float(audio_prof["target_lufs"])
+    if args.limiter is None:
+        args.limiter = float(audio_prof["limiter_db"])
+    args.tp_ceiling = float(audio_prof["true_peak_dbtp"])
+    args.audio_no_ducking = bool(audio_prof.get("no_ducking"))
     return args
+
+
+def run_hook_gates(preview: str, mask_args: list[str] | None = None, t0: float = 0.0, t1: float = 3.4) -> dict[str, Any]:
+    """v7.8.0 opt-in (`--hook-gates`): `motion_gate.check_motion` on a rendered preview. Pure measurement, never raises on a bad
+    clip (the verdict is in the returned dict); a missing / unreadable preview is reported as ok=False with the reason."""
+    tools = str(Path(__file__).resolve().parent)
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import motion_gate  # noqa: PLC0415 (lazy: the default path never imports it)
+    masks = [tuple(float(x) for x in m.split(",")) for m in (mask_args or [])]
+    try:
+        return motion_gate.check_motion(preview, masks, t0, t1)
+    except (FileNotFoundError, ValueError) as exc:
+        return {"ok": False, "errors": [str(exc)], "mean": 0.0, "max_static_run_s": 0.0, "share_below_1": 0.0}
 
 
 def main() -> int:
@@ -7794,6 +8165,9 @@ def main() -> int:
             "claim_gate_flag": args.claim_gate,
             "optimize_bgm_offset_flag": args.optimize_bgm_offset,
             "target_lufs": args.target_lufs,
+            "tp_ceiling_dbtp": args.tp_ceiling,
+            "profile": args.profile,
+            "audio_profile": args.audio_profile,
             "portable_root": str(portable_root) if portable_root else None,
             "auto_sfx_dir": str(auto_sfx_dir) if auto_sfx_dir else None,
             "c8_guard": args.c8_guard,
@@ -7824,7 +8198,11 @@ def main() -> int:
             raise FileNotFoundError(f"Portable root directory not found: {portable_root}")
 
         context_doc = json.loads(context_path.read_text(encoding="utf-8")) if context_path else None
+        words_src_path = words_path
+        if words_path:
+            words_path = normalize_words_file(words_path, work_dir)
         words_doc = json.loads(words_path.read_text(encoding="utf-8")) if words_path else None
+        cranial_ctx = context_doc if context_doc is not None else auto_load_face_context(context_path, work_dir, words_src_path)
         raw_spec = json.loads(spec_in.read_text(encoding="utf-8"))
         spec_meta = raw_spec.get("meta") if isinstance(raw_spec.get("meta"), dict) else {}
         ctx_dict = context_doc if isinstance(context_doc, dict) else {}
@@ -7908,7 +8286,7 @@ def main() -> int:
         # ======================================================================
         failure_owner_stage = "BUILD"
         t0 = time.perf_counter()
-        effective_rules = build_effective_rules(work_dir, args.target_lufs)
+        effective_rules = build_effective_rules(work_dir, args.target_lufs, args.audio_profile)
         audio_roles = present_audio_roles(sanitized_path)
         if audio_roles:
             r_plan = subprocess.run(
@@ -7928,7 +8306,7 @@ def main() -> int:
             )
             if r_plan.returncode != 0:
                 raise RuntimeError(f"audio_levels.py plan failed:\n{r_plan.stderr or r_plan.stdout}")
-            lufs_target_shift = round(float(args.target_lufs) - (-16.0), 2)
+            lufs_target_shift = _lufs_target_shift(args.audio_profile, args.target_lufs)
             init_vb_trim = round(-0.72 + lufs_target_shift, 2)
             init_sfx_trim = round(-0.50 + min(0.50, lufs_target_shift * 0.5), 2)
             adjust_spec_audio_gains(levels_path, init_vb_trim, init_sfx_trim)
@@ -8009,6 +8387,10 @@ def main() -> int:
         t0 = time.perf_counter()
         if words_path or manifest_path or args.strict_rules:
             rules_base = [py, str(EDIT_RULES_PY), "audit", str(levels_path)]
+            if args.profile == "dviet":
+                rules_base += ["--profile", "dviet"]
+            if args.profile == "dviet" or spec_has_rendered_plates(levels_spec_doc):
+                rules_base += ["--lane-b-plates"]
             if words_path:
                 rules_base += ["--words", str(words_path)]
             if manifest_path:
@@ -8109,7 +8491,7 @@ def main() -> int:
         cran_res = audit_cranial_exclusion(
             levels_spec_doc,
             raw_spec=raw_spec,
-            context_doc=context_doc,
+            context_doc=cranial_ctx,
             spec_meta=spec_meta,
             san_stats=san_stats,
             tier_used=tier_used,
@@ -8122,6 +8504,11 @@ def main() -> int:
             san_stats=san_stats,
             industry_skin_override=args.industry_skin,
             strict_cri100=bool(args.strict_cri100),
+            profile=args.profile,
+        )
+        dviet_caps_res = (
+            audit_dviet_wash_flash_caps(levels_spec_doc) if args.profile == "dviet"
+            else {"executed": False, "profile": args.profile, "warnings": []}
         )
         kinetic_typo_res = audit_kinetic_typography_choreography(
             levels_spec_doc,
@@ -8141,6 +8528,7 @@ def main() -> int:
         summary["secondary_text_groups"] = sec_grp_res
         summary["cranial_exclusion_audit"] = cran_res
         summary["industry_cri100_veto"] = cri100_res
+        summary["dviet_wash_flash_caps"] = dviet_caps_res
         summary["kinetic_typography_audit"] = kinetic_typo_res
 
         v60_warn_count = 0
@@ -8150,6 +8538,7 @@ def main() -> int:
             ("gate3_secondary_text_groups", sec_grp_res),
             ("gate3_cranial_exclusion", cran_res),
             ("gate3_industry_cri100_veto", cri100_res),
+            ("gate3_dviet_wash_flash", dviet_caps_res),
             ("gate3c_kinetic_typography", kinetic_typo_res),
         ):
             for w_item in audit_res.get("warnings") or []:
@@ -8388,9 +8777,9 @@ def main() -> int:
                 tier_used == "full"
                 and post_aac_tp_dbtp is not None
                 and math.isfinite(post_aac_tp_dbtp)
-                and post_aac_tp_dbtp > -1.5 + 1e-6
+                and post_aac_tp_dbtp > args.tp_ceiling + 1e-6
             )
-            need_pcm_tp_step = bool(audio_roles and ebur_metrics["true_peak_dbtp"] > -1.5 + 1e-6)
+            need_pcm_tp_step = bool(audio_roles and ebur_metrics["true_peak_dbtp"] > args.tp_ceiling + 1e-6)
 
             if attempt == 0 and (need_lufs_retrim or need_r35_limiter_step or need_pcm_tp_step):
                 vb_delta = 0.0
@@ -8399,18 +8788,19 @@ def main() -> int:
                 sfx_delta = 0.0
                 if need_lufs_retrim:
                     vb_delta = round(float(args.target_lufs) - ebur_metrics["lufs"], 2)
-                    # Keep voice_peak strictly inside [-4.92, -3.08] dBFS after initial_pretrim
-                    voice_delta = round(max(-0.92 - init_vb_trim, min(0.92 - init_vb_trim, vb_delta)), 2)
+                    # Keep voice_peak strictly inside the rules' window (default [-4.92, -3.08] dBFS) after initial_pretrim
+                    vd_lo, vd_hi = voice_delta_window(effective_rules, init_vb_trim)
+                    voice_delta = round(max(vd_lo, min(vd_hi, vb_delta)), 2)
                     bgm_delta = round(vb_delta + (vb_delta - voice_delta) * 1.25, 2)
                     sfx_delta = round(max(-3.0, min(0.45, vb_delta * 0.65)), 2)
                     closed_loop_delta = vb_delta
                     adjust_spec_audio_gains(levels_path, voice_delta, sfx_delta, delta_bgm_db=bgm_delta)
                     patch_fcproj_audio_gains(build_fcproj, voice_delta, sfx_delta, delta_bgm_db=bgm_delta)
                 if need_r35_limiter_step and post_aac_tp_dbtp is not None:
-                    step_down = max(0.15, round(post_aac_tp_dbtp - (-1.6), 2))
+                    step_down = max(0.15, round(post_aac_tp_dbtp - (args.tp_ceiling - 0.1), 2))
                     effective_limiter_db = round(effective_limiter_db - step_down, 2)
                 elif need_pcm_tp_step:
-                    step_down = max(0.20, round(ebur_metrics["true_peak_dbtp"] - (-1.65), 2))
+                    step_down = max(0.20, round(ebur_metrics["true_peak_dbtp"] - (args.tp_ceiling - 0.15), 2))
                     effective_limiter_db = round(effective_limiter_db - step_down, 2)
 
                 print(
@@ -8491,6 +8881,8 @@ def main() -> int:
                 srule = sc_item.get("rule")
                 if sid == "bgm_below_voice":
                     fix_sc = f"shift BGM clip `gain_db` to keep BGM within {srule} (measured {sval} LU)"
+                elif sid == "speech_floor" and args.audio_no_ducking:
+                    fix_sc = f"lower the static BGM `gain_db` (profile `{args.audio_profile}` forbids ducking; measured floor {sval} LU < {srule})"
                 elif sid == "speech_floor":
                     fix_sc = f"duck BGM `gain_db` by -3.0 dB during speech windows (measured floor {sval} LU < {srule})"
                 else:
@@ -8499,26 +8891,26 @@ def main() -> int:
                 concerns.append(f"Audio stem check `{sid}`: {sval} vs {srule} — Fix: {fix_sc}")
                 print(f"   ⚠️  [Gate 6 Audio Stem] {sid}={sval} ({srule}) — Fix: {fix_sc}")
 
-        tp_ok = ebur_metrics["true_peak_dbtp"] <= -1.5 + 1e-6
-        aac_tp_ok = (post_aac_tp_dbtp is None) or (post_aac_tp_dbtp <= -1.5 + 1e-6)
+        tp_ok = ebur_metrics["true_peak_dbtp"] <= args.tp_ceiling + 1e-6
+        aac_tp_ok = (post_aac_tp_dbtp is None) or (post_aac_tp_dbtp <= args.tp_ceiling + 1e-6)
         lufs_final_dev = abs(ebur_metrics["lufs"] - float(args.target_lufs)) if math.isfinite(ebur_metrics["lufs"]) else 0.0
         lufs_ok = (not audio_roles) or (lufs_final_dev <= 0.55 and tp_ok)
         if not lufs_ok:
             gates["gate6_closed_loop_loudness"] = "FAIL"
             fix_loud = (
                 f"shift audio track `gain_db` by {float(args.target_lufs) - ebur_metrics['lufs']:+.2f} dB "
-                f"and set `--limiter {min(effective_limiter_db, -2.5):.2f}`"
+                f"and set `--limiter {min(effective_limiter_db, args.tp_ceiling - 1.0):.2f}`"
             )
             _add_diag("gate6_audio_mastering", "ERROR", "master_loudness", f"I={ebur_metrics['lufs']} LUFS, TP={ebur_metrics['true_peak_dbtp']} dBTP", fix_loud)
             raise RuntimeError(
                 f"Gate 6 loudness check failed after {attempts_used} pass(es): "
                 f"measured={ebur_metrics['lufs']} LUFS (target={args.target_lufs}), "
-                f"TP={ebur_metrics['true_peak_dbtp']} dBTP (limit <= -1.5 dBTP) — Fix: {fix_loud}"
+                f"TP={ebur_metrics['true_peak_dbtp']} dBTP (limit <= {args.tp_ceiling:g} dBTP) — Fix: {fix_loud}"
             )
         if not aac_tp_ok and post_aac_tp_dbtp is not None:
-            fix_aac = f"lower `--limiter` ceiling to {round(effective_limiter_db - (post_aac_tp_dbtp - (-1.6)), 2):.2f} dB (R35 post-AAC TP={post_aac_tp_dbtp:.2f} dBTP)"
-            _add_diag("gate6_audio_mastering", "WARN", "r35_post_aac_tp", f"Post-AAC TP={post_aac_tp_dbtp:.2f} dBTP > -1.5 dBTP", fix_aac)
-            concerns.append(f"R35 Post-AAC True Peak {post_aac_tp_dbtp:.2f} dBTP > -1.5 dBTP — Fix: {fix_aac}")
+            fix_aac = f"lower `--limiter` ceiling to {round(effective_limiter_db - (post_aac_tp_dbtp - (args.tp_ceiling - 0.1)), 2):.2f} dB (R35 post-AAC TP={post_aac_tp_dbtp:.2f} dBTP)"
+            _add_diag("gate6_audio_mastering", "WARN", "r35_post_aac_tp", f"Post-AAC TP={post_aac_tp_dbtp:.2f} dBTP > {args.tp_ceiling:g} dBTP", fix_aac)
+            concerns.append(f"R35 Post-AAC True Peak {post_aac_tp_dbtp:.2f} dBTP > {args.tp_ceiling:g} dBTP — Fix: {fix_aac}")
 
         gates["gate6_closed_loop_loudness"] = "PASS"
         aac_log = f", AAC_TP={post_aac_tp_dbtp:.2f} dBTP" if post_aac_tp_dbtp is not None else ""
@@ -8579,7 +8971,8 @@ def main() -> int:
         sfx_rep = json.loads(sfx_json_path.read_text(encoding="utf-8"))
         repeated_takes = sfx_rep.get("repeated_takes", [])
         missing_sfx = int(sfx_rep.get("missing_files", 0))
-        clipping_sfx = [f["path"] for f in sfx_rep.get("files", []) if f.get("clipping")]
+        clipping_rows = [f for f in sfx_rep.get("files", []) if f.get("clipping")]  # judged on the post-gain peak (audit_sfx.py, v7.7.0)
+        clipping_sfx = [f["path"] for f in clipping_rows]
 
         # Ruling `R217` Normalized Cross-Correlation (`match_at`) SFX Sync Audit
         r217_res = audit_sfx_sync_r217(
@@ -8596,8 +8989,10 @@ def main() -> int:
             print(f"   ⚠️  [Gate 7 {w_r217}]")
 
         if clipping_sfx:
-            fix_clip = f"reduce source/clip `gain_db` by -3.0 dB on {[Path(p).name for p in clipping_sfx[:3]]}"
-            _add_diag("gate7_sfx_audit", "WARN", "SFX_SOURCE_CLIPPING", f"{len(clipping_sfx)} SFX source file(s) hit 0 dBFS", fix_clip)
+            worst_after = max((float(f.get("peak_dbfs_after_gain") or 0.0) for f in clipping_rows), default=0.0)
+            fix_clip = (f"lower the clip `gain_db` until the post-gain peak is <= -1.0 dBFS (worst now {worst_after:+.1f} dBFS after gain) "
+                        f"on {[Path(p).name for p in clipping_sfx[:3]]}")
+            _add_diag("gate7_sfx_audit", "WARN", "SFX_SOURCE_CLIPPING", f"{len(clipping_sfx)} SFX clip(s) reach 0 dBFS after their clip gain", fix_clip)
             concerns.append(f"SFX source clipping ({len(clipping_sfx)} file(s)) — Fix: {fix_clip}")
 
         summary["sfx_audit"] = {
@@ -8654,6 +9049,14 @@ def main() -> int:
         # GATE 8: Epistemic `claim_gate` (R200) + Tri-State Verdict + `EDITOR-REPORT.md`
         # ======================================================================
         t_g8 = time.perf_counter()
+        if args.hook_gates:
+            hook_res = run_hook_gates(args.preview, args.hook_mask)
+            summary["hook_gates"] = hook_res
+            if hook_res.get("ok"):
+                print(f"✅ [Hook gates] motion mean={hook_res['mean']:.2f}, max static run={hook_res['max_static_run_s']:.2f}s")
+            else:
+                concerns.append("hook_gates: " + "; ".join(hook_res.get("errors") or ["motion gate failed"]))
+                print(f"⚠️ [Hook gates] {concerns[-1]}")
         verdict = "DONE_WITH_CONCERNS" if concerns else "VERIFIED"
         summary["ok"] = True
         summary["verdict"] = verdict

@@ -68,6 +68,64 @@
       "layout": "A-roll centered + large Calligraphy/Accent CTA keyword",
       "fonts": { "lead": "sans", "hero": "script_calligraphy" },
       "sfx": "SUB_THUMP/BASS_HIT"
-    }
+    },
+      {
+          "id": "dviet_screen_strip_tutorial",
+          "trigger_modes": [
+              "Proof",
+              "Expand"
+          ],
+          "layout": "1080x~600 screen-record strip (y 660-1260) centred on the A-roll plate zoomed ~3x, blurred and darkened; caption y 67% right under the strip; title y ~23% above",
+          "template": "screen_strip",
+          "fonts": {
+              "caption": "sans",
+              "keyword": "sans_accent"
+          },
+          "sfx": "CLICK/FLASH/RISER_HI",
+          "source_videos": [
+              "7664969137445276949",
+              "7667598741888634132",
+              "7668334908615560469",
+              "7669054598971133204"
+          ],
+          "flag": "estimate"
+      },
+      {
+          "id": "dviet_card_916_labeled",
+          "trigger_modes": [
+              "Proof",
+              "Contrast"
+          ],
+          "layout": "Rounded 9:16 card with a solid white border (~8 px, radius ~28 px) on a spotlight-grey stage; yellow ExtraBold label overlapping the lower-left edge ('raw' / 'edited')",
+          "template": "card_916",
+          "fonts": {
+              "label": "sans_heavy"
+          },
+          "sfx": "WHOOSH/VOICE_PUNCH",
+          "source_videos": [
+              "7664633717771488532"
+          ],
+          "flag": "estimate"
+      },
+      {
+          "id": "dviet_profile_card",
+          "trigger_roles": [
+              "Hook",
+              "Body"
+          ],
+          "layout": "Fake social profile card ~70% width at y ~43%: avatar, handle, three counts, bio; semi-transparent dark grey (~60%)",
+          "template": "profile_card",
+          "fonts": {
+              "name": "sans_bold",
+              "stats": "sans",
+              "bio": "sans"
+          },
+          "sfx": "UI_POP",
+          "source_videos": [
+              "7664447064352509204",
+              "7667598741888634132"
+          ],
+          "flag": "estimate"
+      }
   ]
 }

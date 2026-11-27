@@ -492,5 +492,54 @@
       "cinematic_vlog": "discouraged",
       "b2b_saas_realestate": "primary"
     }
+  },
+  "profile_vetoes": {
+    "schema_version": "1.0.0",
+    "purpose": "Documents how profile-scoped atomics (presets/atomic_motion_library.json entries carrying profile_scope) are allowed or vetoed. This block is documentation only: enforcement lives in compile_and_verify.py (--profile default|dviet) and presets/profile_overrides.json.",
+    "default_profile": "default",
+    "scope_key": "profile_scope",
+    "scoped_atomics_dviet": [
+      "color_wash_multi_0p6s",
+      "film_burn_perf_5f",
+      "light_leak_overlay",
+      "white_flash_0p25s",
+      "vertical_roll_slide",
+      "orange_ghost_pre_cut_5f",
+      "vacuum_32db_0p4s"
+    ],
+    "profiles": {
+      "default": {
+        "allows_profile_scoped_atomics": false,
+        "note": "Atomics whose profile_scope does not include the active profile are vetoed."
+      },
+      "dviet": {
+        "allows_profile_scoped_atomics": [
+          "dviet"
+        ],
+        "caps_source": "each atomic's own max_duration and caps",
+        "decision": "references/23_dviet_profile_decisions_and_backlog.md (e)"
+      }
+    },
+    "veto_precedence": [
+      "1. Industry skin hard_veto_guards (warm_film_burn_veto on luxury_skincare, dental_clinic, beauty_spa) always win over profile dviet.",
+      "2. Without profile dviet, a profile-scoped atomic is a veto.",
+      "3. With profile dviet and no skin veto, the atomic is allowed within its max_duration and caps."
+    ],
+    "lifted_by_dviet": {
+      "CRI100_FORBIDDEN_WARM_FILM_BURN": [
+        "film_burn_perf_5f",
+        "light_leak_overlay",
+        "orange_ghost_pre_cut_5f",
+        "color_wash_multi_0p6s"
+      ],
+      "note": "Only when no active skin carries warm_film_burn_veto."
+    },
+    "not_lifted": [
+      "CRI100_FORBIDDEN_YELLOW_WARM_LUT",
+      "DENTAL_FORBIDDEN_HARSH_SFX",
+      "ENAMEL_GUM_TEXT_OCCLUSION",
+      "MACRO_SUBJECT_TEXT_OCCLUSION"
+    ],
+    "implementation_owner": "P1 (compile_and_verify.py, presets/profile_overrides.json); P3 provides data and docs only"
   }
 }

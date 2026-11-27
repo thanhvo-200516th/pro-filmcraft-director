@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Stateless Color-World & Multi-Hue Typography, Wall Micro-Words, Negative-Leading Kiss & 3-Cam Toolkit (`v6.0`)
+Stateless Color-World & Multi-Hue Typography, Wall Micro-Words, Negative-Leading Kiss & 3-Cam Toolkit (`v6.0` core, packaged as `v7.9.0`)
 ==============================================================================================================
+v7.4.0: `import os` crash fix (`--self-test` / `--self-test-v71` run clean); no API change.
 100% backward-compatible with `v5.1`/`v5.2` `opa-video-studio` & `craft-handoff` (`.craft.json` -> `fc_build.py` /
 `spec_lint.py` / `edit_rules.py` / `text_motion.py`), upgraded with `v6.0` `@__dviet` (`770765` + 19-video audit):
   - `DVIET_COLOR_WORLDS` & `plan_color_world_for_video`: Cohesive 1-World-per-video color system
@@ -21,6 +22,7 @@ import argparse
 import copy
 import json
 import math
+import os
 import re
 import sys
 import unicodedata
@@ -1642,7 +1644,120 @@ def _core_text_clip(
             clip["tracking"] = float(tracking)
         else:
             clip["tracking"] = _strict_kf(tracking, dur_s, fps)
+    # v7.9.0: blurred multi-word text widens its word gaps (tracking keys) while blurred. The widest key must stay inside the
+    # max width (full width for this transient frame): first REFLOW a one-line text of >= 3 words into two balanced lines, then
+    # shrink the size, never below TEXT_FLOOR_PX (64 px legibility floor).
+    design_trk = clip.get("tracking")
+    for _ in range(6):
+        clip["tracking"] = copy.deepcopy(design_trk)
+        if clip["tracking"] is None:
+            clip.pop("tracking")
+        apply_entrance_word_spacing(clip, fps)
+        trk = clip.get("tracking")
+        widest = max((float(k[1]) for k in trk), default=0.0) if isinstance(trk, list) else float(trk or 0.0)
+        if lock_size or widest <= (max_trk or 0.0) + 1e-6:
+            break
+        if measure_text_ink_width(clip["text"], font, style, clip["size"], tracking=widest) <= eff_max_w + 1e-6:
+            break
+        toks = clip["text"].split()
+        if "\n" not in clip["text"] and len(toks) >= 3:
+            k = _best_2line_split_index(toks, font=font, style=style, size=clip["size"])
+            clip["text"] = " ".join(toks[:k]) + "\n" + " ".join(toks[k:])
+            continue
+        refit = max(min(float(clip["size"]), TEXT_FLOOR_PX),
+                    fit_font_size(clip["text"], font=font, style=style, requested_size=float(clip["size"]), max_width_px=eff_max_w,
+                                  fit_ratio=1.0, tracking=widest))
+        if abs(refit - clip["size"]) < 0.25:
+            warnings.warn(f"{clip.get('name')}: the widened blur-in frame is wider than {eff_max_w:.0f}px at the {TEXT_FLOOR_PX}px floor; "
+                          "shorten the text or split it into two clips", stacklevel=2)
+            break
+        clip["size"] = float(refit)
+        clip["shadow"] = _build_shadow(refit, **sh_kw)
+        if anchor is None:
+            motion["anchor"] = [px, round(py - refit * 0.32, 2)]
     return clip
+
+
+# ---------------------------------------------------------------------------
+# v7.9.0 entrance word spacing (user decision 2026-11-26): a blurred multi-word text clip widens its word gaps while blurred
+# ---------------------------------------------------------------------------
+WS_NAT_MARGIN_EM = 0.02  # [ĐO] PIL ink metrics vs the renderer: assume the resting gap this much tighter (same as web_plate_builder)
+TEXT_FLOOR_PX = 64       # = web_plate_builder.MIN_OVERLAY_FONT_PX: the word-spacing refit never shrinks a text below it
+
+
+def _motion_gate() -> Any:
+    try:
+        import motion_gate as mod
+    except ImportError:  # pragma: no cover
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import motion_gate as mod
+    return mod
+
+
+def _kf_value(kf: Any, t: float, default: float = 0.0) -> float:
+    """Value of a constant or `[[t, v, interp], ...]` keyframe list at `t` (linear between keys, held outside)."""
+    if kf is None:
+        return float(default)
+    if isinstance(kf, (int, float)):
+        return float(kf)
+    keys = [(float(k[0]), float(k[1])) for k in kf]
+    if not keys:
+        return float(default)
+    if t <= keys[0][0]:
+        return keys[0][1]
+    for (t0, v0), (t1, v1) in zip(keys, keys[1:]):
+        if t <= t1:
+            return v0 if t1 <= t0 else v0 + (v1 - v0) * (t - t0) / (t1 - t0)
+    return keys[-1][1]
+
+
+def _kf_times(kf: Any) -> list[float]:
+    return [float(k[0]) for k in kf] if isinstance(kf, (list, tuple)) and kf and isinstance(kf[0], (list, tuple)) else []
+
+
+def apply_entrance_word_spacing(clip: dict[str, Any], fps: int = DEFAULT_FPS) -> dict[str, Any]:
+    """v7.9.0: FilmCraft text clips have no word-spacing property, so the extra word spacing of a blur entrance is keyed as TRACKING
+    (per mille em, applied after every character: a word gap gains 2 x tracking / 1000 em). At every `gaussian_blur` key the clip gets
+        tracking >= 500 x motion_gate.entrance_word_spacing_em(blurriness, min(scale, 1), size, resting gap)
+    (the helper the web plates use; `min(scale, 1)` covers both effect orders: blur before or after Motion), with the blur key's
+    interpolation, so the gap stays >= 0.25 em on every frame and the tracking returns to its resting value exactly as the blur
+    reaches 0 (resting value = the 0.25 em floor when the font's natural gap is under it). An existing tracking is kept wherever it is
+    already wider. One-word texts are untouched. Returns the same dict, modified."""
+    text = str(clip.get("text") or "")
+    if not any(len(ln.split()) >= 2 for ln in text.split("\n")):
+        return clip
+    blur = None
+    for fx in clip.get("effects") or []:
+        if isinstance(fx, dict) and fx.get("effect") == "gaussian_blur":
+            blur = (fx.get("params") or {}).get("blurriness")
+    if blur is None or (isinstance(blur, (int, float)) and float(blur) <= 0.0):
+        return clip
+    mg = _motion_gate()
+    nat = mg.natural_word_gap_em(text, _resolve_typo_font_path(str(clip.get("font")), str(clip.get("style"))), 0.0)
+    if nat is None:
+        return clip
+    nat -= WS_NAT_MARGIN_EM
+    size = float(clip.get("size") or 52.0)
+    dur = float(clip.get("dur") or 1.0)
+    scale_kf = (clip.get("motion") or {}).get("scale", 100.0)
+    old_trk = clip.get("tracking")
+    blur_keys = blur if isinstance(blur, list) else [[0.0, float(blur), "linear"], [dur, float(blur), "linear"]]
+    flags = {round(float(k[0]), 6): (str(k[2]) if len(k) >= 3 else "linear") for k in blur_keys}
+    if isinstance(old_trk, list):
+        for k in old_trk:
+            flags.setdefault(round(float(k[0]), 6), str(k[2]) if len(k) >= 3 else "linear")
+    times = sorted(flags)
+    out = []
+    for i, t in enumerate(times):
+        lo, hi = times[max(0, i - 1)], times[min(len(times) - 1, i + 1)]
+        probes = [lo, t, hi] + [x for x in _kf_times(scale_kf) if lo <= x <= hi]
+        s_min = min(_kf_value(scale_kf, x, 100.0) for x in probes) / 100.0
+        need = 500.0 * mg.entrance_word_spacing_em(_kf_value(blur_keys, t), min(s_min, 1.0), size, nat)
+        val = max(need, _kf_value(old_trk, t, 0.0) if old_trk is not None else 0.0)
+        out.append([t, round(math.ceil(val * 100) / 100, 2), flags[t]])
+    clip["tracking"] = _strict_kf(out, dur, fps)
+    return clip
+
 
 
 def _r30_quick_exit_timings(dur: float, fps: int = DEFAULT_FPS) -> tuple[float, float, float, list[list[Any]], list[list[Any]]]:
@@ -2437,6 +2552,9 @@ def apply_persistent_text_bridge(
             mv = mot.get(mk)
             if isinstance(mv, list) and mv and isinstance(mv[0], (list, tuple)):
                 mot[mk] = _retime_kf_list(mv)
+    trk_in = cl.get("tracking")
+    if isinstance(trk_in, list) and trk_in and isinstance(trk_in[0], (list, tuple)):
+        cl["tracking"] = _retime_kf_list(trk_in)
 
     for fx in cl.get("effects") or []:
         if not isinstance(fx, dict):
@@ -2460,7 +2578,7 @@ def apply_persistent_text_bridge(
                 if isinstance(pv, list) and pv and isinstance(pv[0], (list, tuple)):
                     params[pk] = _retime_kf_list(pv)
 
-    return cl
+    return apply_entrance_word_spacing(cl, fps_i)  # v7.9.0: the new blur keys get their word-spacing (tracking) keys
 
 
 def player3_air_cushion_slide(
@@ -3198,6 +3316,11 @@ def export_dviet_bevel_lockup_png(
         blocking thick plastic `render_dviet_3d_extruded_bevel_word`.
       - When `allow_static_thumbnail=True` and `extrude_px <= 0.0`: renders a razor-sharp 2x-supersampled
         flat optical kiss lockup PNG for cover thumbnails and strips PNG metadata cleanly on disk.
+      - v7.9.0 repair: the timeline entrance keeps its gaussian blur (12 -> 0 in, 0 -> 6 out) but a static PNG cannot widen its
+        word spacing, so the timeline gets `gfx_clips`: ONE clip per word (`<stem>__w<line><i>.png`, same canvas / anchor / scale
+        / opacity / blur keys) whose position keys spread the words apart with the blur by the helper's word spacing
+        (`motion_gate.entrance_word_spacing_em(blur, min(scale, 1), size, resting gap)`) and bring them back to rest as the blur
+        reaches 0, so every frame keeps the ink gap minus 2 x blur >= 0.25 em. `path` stays the full lockup (the thumbnail).
     """
     if not allow_static_thumbnail:
         warnings.warn(STATIC_HERO_PNG_VETO_MSG, UserWarning, stacklevel=2)
@@ -3237,40 +3360,65 @@ def export_dviet_bevel_lockup_png(
         return (int(s_h[0:2], 16), int(s_h[2:4], 16), int(s_h[4:6], 16), alpha)
 
     cx_s, cy_s = cx * ss, cy * ss
+    # (text, font, size px, baseline y, shadow dy, shadow alpha, rgba) per line, drawn centred on cx (anchor "ms")
     if fmt_lead.strip():
         gap_s = (lead_size * 0.42 + hero_size * 0.45) * (float(line_height) / 0.80) * ss
         ly_s = cy_s - 0.5 * gap_s
         hy_s = cy_s + 0.5 * gap_s
-        draw.text((cx_s, ly_s + 3 * ss), fmt_lead, font=f_lead, fill=(0, 0, 0, 128), anchor="ms")
-        draw.text((cx_s, ly_s), fmt_lead, font=f_lead, fill=_hex_rgba(eff_lead_hex), anchor="ms")
-        draw.text((cx_s, hy_s + 5 * ss), fmt_hero, font=f_hero, fill=(0, 0, 0, 148), anchor="ms")
-        draw.text((cx_s, hy_s), fmt_hero, font=f_hero, fill=_hex_rgba(eff_hero_hex), anchor="ms")
+        lines = [(fmt_lead, f_lead, l_font_path, float(lead_size), ly_s, 3, 128, _hex_rgba(eff_lead_hex)),
+                 (fmt_hero, f_hero, h_font_path, float(hero_size), hy_s, 5, 148, _hex_rgba(eff_hero_hex))]
     else:
-        draw.text((cx_s, cy_s + 5 * ss), fmt_hero, font=f_hero, fill=(0, 0, 0, 148), anchor="ms")
-        draw.text((cx_s, cy_s), fmt_hero, font=f_hero, fill=_hex_rgba(eff_hero_hex), anchor="ms")
+        lines = [(fmt_hero, f_hero, h_font_path, float(hero_size), cy_s, 5, 148, _hex_rgba(eff_hero_hex))]
+    for txt_l, ft_l, _fp, _sz, y_l, sh_dy, sh_a, rgba_l in lines:
+        draw.text((cx_s, y_l + sh_dy * ss), txt_l, font=ft_l, fill=(0, 0, 0, sh_a), anchor="ms")
+        draw.text((cx_s, y_l), txt_l, font=ft_l, fill=rgba_l, anchor="ms")
 
-    if abs(float(tilt_deg)) > 0.05:
-        hi_img = hi_img.rotate(-float(tilt_deg), resample=Image.Resampling.BICUBIC, center=(cx_s, cy_s))
-    rgba = hi_img.resize((w_cv, h_cv), resample=Image.Resampling.LANCZOS)
+    def _finish(img: Image.Image) -> Image.Image:
+        if abs(float(tilt_deg)) > 0.05:
+            img = img.rotate(-float(tilt_deg), resample=Image.Resampling.BICUBIC, center=(cx_s, cy_s))
+        return img.resize((w_cv, h_cv), resample=Image.Resampling.LANCZOS)
 
+    def _save_png(img: Image.Image, path: Path) -> None:
+        img.save(path, format="PNG", optimize=True)
+        # Strip PNG metadata cleanly if local strip_metadata helper is installed
+        strip_mod_path = Path.home() / ".gemini/config/skills/strip-media-metadata/scripts"
+        if strip_mod_path.is_dir():
+            try:
+                if str(strip_mod_path) not in sys.path:
+                    sys.path.insert(0, str(strip_mod_path))
+                import strip_metadata as _sm  # type: ignore
+
+                raw_bytes = path.read_bytes()
+                if hasattr(_sm, "strip_png"):
+                    cleaned_bytes, _ = _sm.strip_png(raw_bytes, keep_icc=False)
+                    path.write_bytes(cleaned_bytes)
+            except Exception:
+                pass
+
+    rgba = _finish(hi_img)
     out_p = Path(out_path)
     out_p.parent.mkdir(parents=True, exist_ok=True)
-    rgba.save(out_p, format="PNG", optimize=True)
+    _save_png(rgba, out_p)
 
-    # Strip PNG metadata cleanly if local strip_metadata helper is installed
-    strip_mod_path = Path.home() / ".gemini/config/skills/strip-media-metadata/scripts"
-    if strip_mod_path.is_dir():
-        try:
-            if str(strip_mod_path) not in sys.path:
-                sys.path.insert(0, str(strip_mod_path))
-            import strip_metadata as _sm  # type: ignore
-
-            raw_bytes = out_p.read_bytes()
-            if hasattr(_sm, "strip_png"):
-                cleaned_bytes, _ = _sm.strip_png(raw_bytes, keep_icc=False)
-                out_p.write_bytes(cleaned_bytes)
-        except Exception:
-            pass
+    # v7.9.0 repair: one PNG per word at its resting place (with its shadow) for the spreading timeline clips
+    word_layers = []  # (png path, line index, word index, words in line, font px, natural gap em)
+    mg = _motion_gate()
+    for li, (txt_l, ft_l, fp_l, sz_l, y_l, sh_dy, sh_a, rgba_l) in enumerate(lines):
+        words_l = txt_l.split(" ")
+        nat_l = mg.natural_word_gap_em(txt_l, fp_l, 0.0)
+        x_left = cx_s - 0.5 * ft_l.getlength(txt_l)
+        pos = 0
+        for wi, word in enumerate(words_l):
+            if word:
+                img_w = Image.new("RGBA", (w_cv * ss, h_cv * ss), (0, 0, 0, 0))
+                d_w = ImageDraw.Draw(img_w)
+                x_w = x_left + (ft_l.getlength(txt_l[:pos]) if pos else 0.0)
+                d_w.text((x_w, y_l + sh_dy * ss), word, font=ft_l, fill=(0, 0, 0, sh_a), anchor="ls")
+                d_w.text((x_w, y_l), word, font=ft_l, fill=rgba_l, anchor="ls")
+                p_w = out_p.with_name(f"{out_p.stem}__w{li}{wi:02d}.png")
+                _save_png(_finish(img_w), p_w)
+                word_layers.append((p_w, li, wi, len(words_l), sz_l, None if nat_l is None else nat_l - WS_NAT_MARGIN_EM))
+            pos += len(word) + 1
 
     at_s = max(0.0, snap_time(at, fps))
     dur_s = max(round(6 / fps, 6), snap_time(dur, fps))
@@ -3278,38 +3426,42 @@ def export_dviet_bevel_lockup_png(
     t_out = snap_time(max(t_in + 2 / fps, dur_s - min(0.16, dur_s * 0.22)), fps)
     mid_x, mid_y = w_cv * 0.5, h_cv * 0.5
 
-    gfx_clip: dict[str, Any] = {
-        "name": f"Flat Optical · {clean_display_text(hero_text)[:18]}",
-        "src": str(out_p.resolve()),
-        "at": at_s,
-        "dur": dur_s,
-        "motion": {
-            "anchor": [cx, cy],
-            "position": _strict_kf(
-                [[0.0, [mid_x, mid_y + 22.0], "easeOut"], [t_in, [mid_x, mid_y], "easeIn"], [dur_s, [mid_x, mid_y - 5.0], "linear"]],
+    pos_kf = [[0.0, [mid_x, mid_y + 22.0], "easeOut"], [t_in, [mid_x, mid_y], "easeIn"], [dur_s, [mid_x, mid_y - 5.0], "linear"]]
+    scale_kf = [[0.0, 94.0, "easeOut"], [t_in, 100.0, "easeIn"], [t_out, 102.2, "linear"], [dur_s, 103.0, "linear"]]
+    blur_kf = [[0.0, 12.0, "easeOut"], [t_in, 0.0, "easeIn"], [t_out, 0.0, "linear"], [dur_s, 6.0, "easeIn"]]
+    cos_t, sin_t = math.cos(math.radians(float(tilt_deg))), math.sin(math.radians(float(tilt_deg)))
+
+    def _pos_at(t: float) -> list[float]:
+        xs = [[k[0], k[1][0]] for k in pos_kf]
+        ys = [[k[0], k[1][1]] for k in pos_kf]
+        return [_kf_value(xs, t), _kf_value(ys, t)]
+
+    def _word_clip(p_w: Path, li: int, wi: int, n_w: int, size: float, nat: float | None) -> dict[str, Any]:
+        keys = []
+        for t, _b, interp in blur_kf:  # the spread follows the blur keys and their easing
+            sc = _kf_value(scale_kf, t, 100.0) / 100.0
+            em = mg.entrance_word_spacing_em(_kf_value(blur_kf, t), min(sc, 1.0), size, nat) if nat is not None else 0.0
+            off = (wi - (n_w - 1) / 2.0) * em * size * sc  # canvas px: each gap widens by em x size x scale
+            x0, y0 = _pos_at(t)
+            keys.append([t, [round(x0 + off * cos_t, 3), round(y0 + off * sin_t, 3)], interp])
+        return {
+            "name": f"Flat Optical · {clean_display_text(hero_text)[:18]} · w{li}{wi:02d}",
+            "src": str(p_w.resolve()),
+            "at": at_s,
+            "dur": dur_s,
+            "word_line": li,
+            "word_index": wi,
+            "word_count": n_w,
+            "font_px": size,
+            "motion": {"anchor": [cx, cy], "position": _strict_kf(keys, dur_s, fps), "scale": _strict_kf(scale_kf, dur_s, fps)},
+            "opacity": _strict_kf(
+                [[0.0, 0.0, "easeOut"], [min(0.16, t_in), 100.0, "easeIn"], [t_out, 100.0, "linear"], [dur_s, 0.0, "easeIn"]],
                 dur_s, fps,
             ),
-            "scale": _strict_kf(
-                [[0.0, 94.0, "easeOut"], [t_in, 100.0, "easeIn"], [t_out, 102.2, "linear"], [dur_s, 103.0, "linear"]],
-                dur_s, fps,
-            ),
-        },
-        "opacity": _strict_kf(
-            [[0.0, 0.0, "easeOut"], [min(0.16, t_in), 100.0, "easeIn"], [t_out, 100.0, "linear"], [dur_s, 0.0, "easeIn"]],
-            dur_s, fps,
-        ),
-        "effects": [
-            {
-                "effect": "gaussian_blur",
-                "params": {
-                    "blurriness": _strict_kf(
-                        [[0.0, 12.0, "easeOut"], [t_in, 0.0, "easeIn"], [t_out, 0.0, "linear"], [dur_s, 6.0, "easeIn"]],
-                        dur_s, fps,
-                    )
-                },
-            }
-        ],
-    }
+            "effects": [{"effect": "gaussian_blur", "params": {"blurriness": _strict_kf(blur_kf, dur_s, fps)}}],
+        }
+
+    gfx_clips = [_word_clip(*wl) for wl in word_layers]
 
     return {
         "path": str(out_p.resolve()),
@@ -3318,7 +3470,7 @@ def export_dviet_bevel_lockup_png(
         "world_id": wid,
         "hero_hex": eff_hero_hex,
         "lead_hex": eff_lead_hex,
-        "gfx_clip": gfx_clip,
+        "gfx_clips": gfx_clips,
     }
 
 
@@ -6413,6 +6565,24 @@ def _select_kinetic_templates_for_beats(
     return chosen
 
 
+_SAFE_X_MIN, _SAFE_X_MAX = 48.0, 1032.0  # 1080-wide border-safe box (matches `resolve_dual_rail_safe_y` margins)
+
+
+def _kt05_ink_x_in_plate(plate_w: float, left_text: str, main_text: str, accent_text: str) -> tuple[float, float]:
+    """Horizontal ink span `(x0, x1)` in plate px of the `kt05` left/right counterpoint: the left clause is centred at
+    28% (max 45% wide, ~48px), the right hero + sub at 72% (max 46% wide, ~64px / ~40px) of the plate."""
+    spans: list[tuple[float, float]] = []
+    if left_text:
+        w = min(0.45 * plate_w, 0.52 * 48.0 * len(left_text))
+        spans.append((0.28 * plate_w - 0.5 * w, 0.28 * plate_w + 0.5 * w))
+    right_w = min(0.46 * plate_w, max(0.58 * 64.0 * len(main_text), 0.50 * 40.0 * len(accent_text)))
+    if right_w > 0.0:
+        spans.append((0.72 * plate_w - 0.5 * right_w, 0.72 * plate_w + 0.5 * right_w))
+    if not spans:
+        return 0.5 * plate_w - 195.0, 0.5 * plate_w + 195.0
+    return min(a for a, _ in spans), max(b for _, b in spans)
+
+
 def plan_dviet_kinetic_beat_schedule(
     beats: Sequence[dict[str, Any] | str],
     words_tl: Any = None,
@@ -6792,25 +6962,30 @@ def plan_dviet_kinetic_beat_schedule(
             z_plane=z_plane,
         )
 
+        plate_w = int(tpl_meta["width"])
+        plate_h = int(tpl_meta["height"])
         if tpl_id == "kt05_wall_spatial_counterpoint" or pref_rail == "wall_third":
             rail_label = "wall_third"
-            pos_x = 345.0 if cam_mode == "right_third" else 735.0
-            ink_half_w = 195.0
+            pos_x = {"right_third": 345.0, "left_third": 735.0}.get(cam_mode, 540.0)
+            if tpl_id == "kt05_wall_spatial_counterpoint":
+                ink_px0, ink_px1 = _kt05_ink_x_in_plate(plate_w, kicker_clean, main_clean, accent_clean)
+            else:
+                ink_px0, ink_px1 = plate_w / 2.0 - 195.0, plate_w / 2.0 + 195.0
+            # The plate is centred on `pos_x`; slide it so its real ink stays inside the safe box.
+            sx0 = pos_x - plate_w / 2.0
+            shift = max(0.0, _SAFE_X_MIN - (sx0 + ink_px0))
+            if sx0 + ink_px1 + shift > _SAFE_X_MAX:
+                shift = _SAFE_X_MAX - (sx0 + ink_px1)
+            pos_x = round(pos_x + shift, 1)
+            ink_x0, ink_x1 = pos_x - plate_w / 2.0 + ink_px0, pos_x - plate_w / 2.0 + ink_px1
         else:
             rail_label = str(rail_res["rail"])
             pos_x = 540.0
-            ink_half_w = 360.0
+            ink_x0, ink_x1 = max(50.0, pos_x - 360.0), min(1030.0, pos_x + 360.0)
 
         pos_y = float(rail_res["y"])
         iy0, iy1 = float(rail_res["ink_y_span"][0]), float(rail_res["ink_y_span"][1])
-        ink_bbox_screen = [
-            round(max(50.0, pos_x - ink_half_w), 1),
-            round(iy0, 1),
-            round(min(1030.0, pos_x + ink_half_w), 1),
-            round(iy1, 1),
-        ]
-        plate_w = int(tpl_meta["width"])
-        plate_h = int(tpl_meta["height"])
+        ink_bbox_screen = [round(ink_x0, 1), round(iy0, 1), round(ink_x1, 1), round(iy1, 1)]
         # Align plate center vertically to the midpoint of `[iy0, iy1]` so plate ink matches `ink_bbox_screen`!
         plate_center_y = round(0.5 * (iy0 + iy1), 1)
 
@@ -7356,7 +7531,7 @@ def _run_self_tests() -> int:
 
 def _cli(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        description="Universal Studio Director v7.1 — Syllable-Locked @__dviet Kinetic Beat Planner, Dual-Rail Cranial Lock & 4-Act Jewel Toolkit"
+        description="Universal Studio Director v7.9.0 — Syllable-Locked @__dviet Kinetic Beat Planner, Dual-Rail Cranial Lock & 4-Act Jewel Toolkit"
     )
     ap.add_argument("--list", dest="flag_list", action="store_true", help="Print JSON catalog of all v7.1 kinetic templates, palettes, presets, and camera/J-cut modes")
     ap.add_argument("--self-test", action="store_true", help="Run built-in v7.0 + v7.1 typography physics & Cranial Lock self-tests")

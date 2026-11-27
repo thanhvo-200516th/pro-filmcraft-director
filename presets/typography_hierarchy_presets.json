@@ -269,7 +269,7 @@
       "pos_y_offset_px": [36, 0],
       "scale": [94.0, 101.0, 100.0],
       "mutex_with": [],
-      "nfc_guardrails": { "grapheme_safe": true, "word_spacing_em": 0.25 }
+      "nfc_guardrails": { "grapheme_safe": true, "word_spacing_em": 0.25, "max_word_scale_pct": 100.0, "word_gap_doc": "v7.9.0: clamp every per-word scale key to max_word_scale_pct (the 101 overshoot eats the 0.25 em word gap; motion_gate.check_word_gaps)" }
     },
     "mask_line_wipe": {
       "base_fps": 30,
@@ -298,7 +298,8 @@
       "opacity": [10.0, 100.0],
       "frames": 10,
       "mutex_with": [],
-      "nfc_guardrails": { "max_blur_px": 20.0 }
+      "nfc_guardrails": { "max_blur_px": 20.0 },
+      "entrance_word_spacing": {"helper": "motion_gate.entrance_word_spacing_em(blur_px, min(scale, 1), font_px, natural_gap_em)", "reference_font_px": 84, "natural_gap_em": 0.23, "word_spacing_em": [0.4962, 0.02], "filmcraft_tracking_per_mille": [248.1, 10.0], "doc": "v7.9.0 (user decision 2026-11-26): keep the blur, widen the word spacing with it so check_word_gaps (>= 0.25 em after 2 x sigma) holds on every frame; it eases back to the resting spacing exactly as the blur reaches 0 (same keys and easing as the blur). Web plates: CSS word-spacing; FilmCraft: tracking keys (typography_composer.apply_entrance_word_spacing). Values scale with the font: recompute with the helper for other sizes."}
     },
     "tracking_expand": {
       "base_fps": 30,
@@ -427,7 +428,8 @@
       "glow_color": "#FFB830",
       "lowercase_tight_tracking_em": -0.03,
       "mutex_with": ["flash_out_4f"],
-      "nfc_guardrails": { "max_blur_px": 20.0 }
+      "nfc_guardrails": { "max_blur_px": 20.0 },
+      "entrance_word_spacing": {"helper": "motion_gate.entrance_word_spacing_em(blur_px, min(scale, 1), font_px, natural_gap_em)", "reference_font_px": 84, "natural_gap_em": 0.17, "word_spacing_em": [0.5562, 0.08], "filmcraft_tracking_per_mille": [278.1, 40.0], "doc": "v7.9.0 (user decision 2026-11-26): keep the blur, widen the word spacing with it so check_word_gaps (>= 0.25 em after 2 x sigma) holds on every frame; it eases back to the resting spacing exactly as the blur reaches 0 (same keys and easing as the blur). Web plates: CSS word-spacing; FilmCraft: tracking keys (typography_composer.apply_entrance_word_spacing). Values scale with the font: recompute with the helper for other sizes. xuanart_blur_amber_glow documents its blur only by nfc_guardrails.max_blur_px (20): the spacing guards that worst case. Its lowercase_tight_tracking_em (-0.03) lands twice inside a word gap, so the resting gap is 0.23 - 0.06 = 0.17 em."}
     },
     "xuanart_rgb_chromatic_pulse": {
       "base_fps": 60,
@@ -477,7 +479,8 @@
       "optional_sine_wave_warp": true,
       "frames": 22,
       "mutex_with": [],
-      "nfc_guardrails": { "padding_top_em": 0.30, "line_height": 1.25 }
+      "nfc_guardrails": { "padding_top_em": 0.30, "line_height": 1.25 },
+      "entrance_word_spacing": {"helper": "motion_gate.entrance_word_spacing_em(blur_px, min(scale, 1), font_px, natural_gap_em)", "reference_font_px": 84, "natural_gap_em": 0.23, "word_spacing_em": [0.401, 0.02], "filmcraft_tracking_per_mille": [200.5, 10.0], "doc": "v7.9.0 (user decision 2026-11-26): keep the blur, widen the word spacing with it so check_word_gaps (>= 0.25 em after 2 x sigma) holds on every frame; it eases back to the resting spacing exactly as the blur reaches 0 (same keys and easing as the blur). Web plates: CSS word-spacing; FilmCraft: tracking keys (typography_composer.apply_entrance_word_spacing). Values scale with the font: recompute with the helper for other sizes. PIL twin: vietanh_35_typography_engine.render_va_fam01_baseline_mask_slide (word_gap_guard)."}
     },
     "va_fam02_diagonal_rotation_whip": {
       "source_presets": ["#2 Orange", "#26 Speed Up"],
@@ -492,7 +495,9 @@
       "hdr_glow_color": "#FF5E1A",
       "frames": 22,
       "mutex_with": [],
-      "nfc_guardrails": { "padding_top_em": 0.30 }
+      "nfc_guardrails": { "padding_top_em": 0.30 },
+      "gaussian_blur": [18.0, 0.0],
+      "entrance_word_spacing": {"helper": "motion_gate.entrance_word_spacing_em(blur_px, min(scale, 1), font_px, natural_gap_em)", "reference_font_px": 84, "natural_gap_em": 0.23, "word_spacing_em": [0.4486, 0.02], "filmcraft_tracking_per_mille": [224.3, 10.0], "doc": "v7.9.0 (user decision 2026-11-26): keep the blur, widen the word spacing with it so check_word_gaps (>= 0.25 em after 2 x sigma) holds on every frame; it eases back to the resting spacing exactly as the blur reaches 0 (same keys and easing as the blur). Web plates: CSS word-spacing; FilmCraft: tracking keys (typography_composer.apply_entrance_word_spacing). Values scale with the font: recompute with the helper for other sizes. PIL twin: vietanh_35_typography_engine.render_va_fam02_diagonal_rotation_whip orange_whip (word_gap_guard; the blur follows the 148% scale, so the PIL guard uses blur / min(scale, 1)). gaussian_blur = the orange_whip text blur 18 -> 0 (code value)."}
     },
     "va_fam03_center_cursor_bars_expand": {
       "source_presets": ["#4 Text Focused"],
@@ -520,7 +525,8 @@
       "gaussian_blur": [22.0, 0.0],
       "frames": 25,
       "mutex_with": [],
-      "nfc_guardrails": { "line_height": 1.25 }
+      "nfc_guardrails": { "line_height": 1.25 },
+      "entrance_word_spacing": {"helper": "motion_gate.entrance_word_spacing_em(blur_px, min(scale, 1), font_px, natural_gap_em)", "reference_font_px": 84, "natural_gap_em": 0.23, "word_spacing_em": [0.5439, 0.02], "filmcraft_tracking_per_mille": [271.95, 10.0], "doc": "v7.9.0 (user decision 2026-11-26): keep the blur, widen the word spacing with it so check_word_gaps (>= 0.25 em after 2 x sigma) holds on every frame; it eases back to the resting spacing exactly as the blur reaches 0 (same keys and easing as the blur). Web plates: CSS word-spacing; FilmCraft: tracking keys (typography_composer.apply_entrance_word_spacing). Values scale with the font: recompute with the helper for other sizes. PIL twin: vietanh_35_typography_engine.render_va_fam04_vertical_passthrough_crossover (word_gap_guard)."}
     },
     "va_fam05_soft_wipe_glow_watermark": {
       "source_presets": ["#6 Soft Motion", "#19 Simple Type", "#20 Bright Silver", "#32 MONEY $100"],
@@ -534,7 +540,9 @@
       "background_watermark_opacity": 0.14,
       "frames": 26,
       "mutex_with": [],
-      "nfc_guardrails": { "padding_top_em": 0.30 }
+      "nfc_guardrails": { "padding_top_em": 0.30 },
+      "gaussian_blur": [18.0, 2.5],
+      "entrance_word_spacing": {"helper": "motion_gate.entrance_word_spacing_em(blur_px, min(scale, 1), font_px, natural_gap_em)", "reference_font_px": 84, "natural_gap_em": 0.23, "word_spacing_em": [0.4486, 0.0796], "filmcraft_tracking_per_mille": [224.3, 39.8], "doc": "v7.9.0 repair (user decision 2026-11-26): keep the soft wipe and its glowing blurred leading edge, but the blurred copy eases from sigma 18 to a resting sigma 2.5 as the wipe lands (it stayed at sigma 18 under the text at 35 % and merged the words on every frame), and the word spacing widens with that sigma so check_word_gaps (>= 0.25 em after 2 x sigma) holds on every frame; at rest it keeps the spacing of the 2.5 px halo. gaussian_blur = [wipe start, rest] sigma (code: FAM05_HALO_REST_SIGMA). PIL twin: vietanh_35_typography_engine.render_va_fam05_soft_wipe_glow_watermark (word_gap_guard)."}
     },
     "va_fam06_overlapping_character_rollout": {
       "source_presets": ["#15 Subtitles", "#16 Movement Fluid", "#22 Create Freely", "#23 Stay stunning", "#24 Made Simple", "#27 Edit Customize Presets", "#28 Text Spotlight", "#34 THE ESSENTIAL", "#35 Instant upgrades"],
@@ -588,7 +596,10 @@
       "phase2_red_laser_strikethrough_sec": 0.28,
       "golden_bokeh_morph_dilation_px": 22,
       "mutex_with": [],
-      "nfc_guardrails": { "padding_top_em": 0.30 }
+      "nfc_guardrails": { "padding_top_em": 0.30 },
+      "gaussian_blur": [20.0, 0.0],
+      "frames": 17,
+      "entrance_word_spacing": {"helper": "motion_gate.entrance_word_spacing_em(blur_px, min(scale, 1), font_px, natural_gap_em)", "reference_font_px": 84, "natural_gap_em": 0.23, "word_spacing_em": [0.4962, 0.02], "filmcraft_tracking_per_mille": [248.1, 10.0], "engine_spread_px": 58.0, "engine_word_spacing_em": [1.401, 0.02], "doc": "v7.9.0 (user decision 2026-11-26): keep the blur, widen the word spacing with it so check_word_gaps (>= 0.25 em after 2 x sigma) holds on every frame; it eases back to the resting spacing exactly as the blur reaches 0 (same keys and easing as the blur). Web plates: CSS word-spacing; FilmCraft: tracking keys (typography_composer.apply_entrance_word_spacing). Values scale with the font: recompute with the helper for other sizes. PIL twins (word_gap_guard): vietanh_35_typography_engine.render_va_fam09_error_neon_strikethrough and render_va_fam09_golden_bokeh_collapse. gaussian_blur / frames = the #8 Error phase-1 text de-blur 20 -> 0 over 0.28 s (17 frames at 60 fps). engine_spread_px / engine_word_spacing_em = the #14 golden bokeh: dilate radius 22 + 2 x sigma 18 at its first frame (the gain pushes the visible edge ~2 sigma out), the helper's spacing for that spread -> rest."}
     },
     "va_fam10_3d_swivel_and_horizon_gradient_rise": {
       "source_presets": ["#29 Energy Rising", "#30 Dynamic Rotating", "#31 Future Digital"],
@@ -985,5 +996,151 @@
       },
       "choreography_spec": "Dual-mode dynamic contrast breather: Mode A renders ultra-clean 26-30pt R209 fixed-slot whisper words lighting from 46% -> 100% on exact phrase_word_onsets_f; Mode B renders Video #19's flat geometric keyword firing 2 stepped upward-right (+18px, -16px / +36px, -32px) directional blur glow echoes on echo_step_1_f/2_f."
     }
-  }
+  },
+    "caption_y_by_layout_v74": {
+      "source": "presets/dviet_style_tokens.json caption_y_pct",
+      "flag": "measured",
+      "talking_head_pct": {
+        "value": 55,
+        "range": [
+          52,
+          58
+        ]
+      },
+      "panel_pct": {
+        "value": 67,
+        "range": [
+          66,
+          72
+        ]
+      },
+      "hero_above_panel_pct": {
+        "value": 27,
+        "range": [
+          25,
+          30
+        ]
+      },
+      "bilingual_en_pct": {
+        "value": 82.5,
+        "range": [
+          80,
+          85
+        ],
+        "style": "yellow italic"
+      },
+      "scope": "profile dviet only; the older whisper y=1590 (83 %) and minimal captions y=1440 (75 %) stay the default for every other profile",
+      "videos": [
+        "7664447064352509204",
+        "7664969137445276949",
+        "7667598741888634132",
+        "7668334908615560469",
+        "7669054598971133204",
+        "7672413018575146261",
+        "7688934517783989524"
+      ]
+    },
+    "script_accent_whole_word_v74": {
+      "rule": "Under profile dviet, role script_accent renders the WHOLE keyword (for example 'chuyên nghiệp', 'overthinking', 'Lưu lại') in a script face that carries the Vietnamese diacritics. The swash_initial_hybrid law ([0] swash + [1..n] NFC italic) is retained only for this role, and is the fallback when the script face lacks glyphs for the word.",
+      "fonts": [
+        "SVN-Aaron Script",
+        "Playfair Display"
+      ],
+      "glyph_check": "scripts/tools/dviet_text.py warns (never errors) when the font is missing",
+      "flag": "estimate",
+      "videos": [
+        "7664447064352509204",
+        "7666801391284964628",
+        "7667598741888634132"
+      ]
+    },
+    "keyword_caps_small_yellow_v74": {
+      "rule": "A small yellow ALL-CAPS keyword may sit inside a caption (for example 'MÁY PHÁT NHẠC 3', 'LÀ OKE'). This is NOT the banned em-dash ALL-CAPS kicker above a hero (0.0 % of @__dviet frames): it is inline, at most one per caption, accent colour from dviet_style_tokens.json.",
+      "size_px": [
+        24,
+        34
+      ],
+      "case": "upper",
+      "color": "palette.accents.yellow_bright",
+      "flag": "estimate",
+      "videos": [
+        "7667598741888634132"
+      ]
+    },
+    "native_effect_presets_v74": {
+      "rgb_fringe_text_native": {
+        "status": "experimental",
+        "behaviour_unverified_in_app": true,
+        "flag": "estimate",
+        "native_preset": true,
+        "extends": "glitch_rgb_split",
+        "keys_unit": "frames",
+        "duration_frames": 3,
+        "returns_to_rest": true,
+        "description": "Native FilmCraft rgb_split (Linear, horizontal) on a text clip, hold-keyed over 3 frames from the offsets of glitch_rgb_split ([14, -10, 5, 0] px, here abs values: the sign/direction of `amount` is unverified). Does not replace glitch_rgb_split (the plate/engine recipe); mutex_with and nfc_guardrails (horizontal only, max 14) are inherited.",
+        "clips": [
+          {
+            "role": "text",
+            "fields": {
+              "effects": [
+                {
+                  "effect": "rgb_split",
+                  "params": {
+                    "mode": "Linear",
+                    "angle": 0.0,
+                    "blend": 0.0,
+                    "amount": [
+                      [
+                        0,
+                        14.0,
+                        "hold"
+                      ],
+                      [
+                        1,
+                        10.0,
+                        "hold"
+                      ],
+                      [
+                        2,
+                        5.0,
+                        "hold"
+                      ],
+                      [
+                        3,
+                        0.0,
+                        "hold"
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "param_ranges": {
+          "rgb_split.amount": [
+            0,
+            14
+          ],
+          "rgb_split.angle": [
+            0,
+            360
+          ],
+          "rgb_split.blend": [
+            0,
+            100
+          ]
+        },
+        "param_choices": {
+          "rgb_split.mode": [
+            "Linear",
+            "Radial"
+          ]
+        },
+        "ref": "references/27_premiere_recipes_to_filmcraft.md section 3.8",
+        "videos": [
+          "7688934517783989524"
+        ]
+      }
+    }
 }

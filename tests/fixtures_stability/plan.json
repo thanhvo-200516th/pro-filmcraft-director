@@ -1,0 +1,26 @@
+{
+  "version": "7.1",
+  "fps": 30,
+  "craft_clips": [
+    {
+      "name": "KT01 · kt01 · xin chào",
+      "src": "plates/kt_01_kt01.mov",
+      "in": 0.0,
+      "at": 0.4,
+      "dur": 0.8,
+      "motion": {"anchor": [540.0, 220.0], "position": [540.0, 354.4], "scale": 100.0},
+      "opacity": 100.0,
+      "typo_kinetic_meta": {"main_text": "xin chào", "base_hex": "#FAFAFA", "pos_x": 540.0, "pos_y": 354.4}
+    },
+    {
+      "name": "KT02 · kt05 · các bạn",
+      "src": "plates/kt_02_kt05.mov",
+      "in": 0.0,
+      "at": 1.6,
+      "dur": 0.8,
+      "motion": {"anchor": [540.0, 170.0], "position": [735.0, 351.9], "scale": 100.0},
+      "opacity": 100.0,
+      "typo_kinetic_meta": {"main_text": "các bạn", "base_hex": "#FAFAFA", "pos_x": 735.0, "pos_y": 351.9}
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "schema_version": "1.0.0",
+  "version": "7.4.0",
+  "_about": "Canvas presets seen in the 17 @__dviet videos (references/dviet_19/INDEX.md). platform_safe_zones.json is unchanged and remains the source for 9:16; the other canvases carry safe boxes scaled from it. Scaled boxes are derived estimates, not platform-published values.",
+  "default": "9x16_1080_60",
+  "canvases": {
+    "9x16_1080_60": {
+      "width": 1080,
+      "height": 1920,
+      "fps": 60,
+      "aspect": "9:16",
+      "videos": 13,
+      "flag": "measured",
+      "safe_zone": {
+        "source": "platform_safe_zones.json aspect_ratios[9:16]",
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "core_safe_box_px": {
+          "x_min": 60,
+          "x_max": 920,
+          "y_min": 240,
+          "y_max": 1440
+        },
+        "subtitle_y_px": [
+          1220,
+          1420
+        ]
+      },
+      "notes": "Default of the skill and 13 of 17 videos."
+    },
+    "9x16_1080_30": {
+      "width": 1080,
+      "height": 1920,
+      "fps": 30,
+      "aspect": "9:16",
+      "videos": 1,
+      "flag": "measured",
+      "safe_zone": {
+        "source": "platform_safe_zones.json aspect_ratios[9:16]",
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "core_safe_box_px": {
+          "x_min": 60,
+          "x_max": 920,
+          "y_min": 240,
+          "y_max": 1440
+        },
+        "subtitle_y_px": [
+          1220,
+          1420
+        ]
+      },
+      "notes": "Same geometry as 60 fps; only frame counts change (halve every 60 fps frame count, double the 30 fps base of atomic_motion_library.json). Seen in 7677448217667063061."
+    },
+    "4x3_1440_24": {
+      "width": 1440,
+      "height": 1080,
+      "aspect": "4:3",
+      "fps": 24,
+      "videos": 1,
+      "flag": "measured",
+      "safe_zone": {
+        "derived_from": "platform_safe_zones.json aspect_ratios[16:9]",
+        "scale_x": 0.75,
+        "scale_y": 1.0,
+        "core_safe_box_px": {
+          "x_min": 90,
+          "x_max": 1350,
+          "y_min": 80,
+          "y_max": 920
+        },
+        "subtitle_y_px": [
+          820,
+          920
+        ],
+        "flag": "derived_estimate"
+      },
+      "notes": "Storytelling canvas of 7706183278461570356. Text sits beside the subject (negative space), not on the chest; do not reuse 9:16 y percentages."
+    },
+    "4x3_1440_30": {
+      "width": 1440,
+      "height": 1080,
+      "aspect": "4:3",
+      "fps": 30,
+      "videos": 1,
+      "flag": "measured",
+      "safe_zone": {
+        "derived_from": "platform_safe_zones.json aspect_ratios[16:9]",
+        "scale_x": 0.75,
+        "scale_y": 1.0,
+        "core_safe_box_px": {
+          "x_min": 90,
+          "x_max": 1350,
+          "y_min": 80,
+          "y_max": 920
+        },
+        "subtitle_y_px": [
+          820,
+          920
+        ],
+        "flag": "derived_estimate"
+      },
+      "notes": "Tutorial canvas of 7707653827016674580."
+    },
+    "wide_1332_30": {
+      "width": 1332,
+      "height": 720,
+      "aspect": "1.85:1",
+      "fps": 30,
+      "videos": 1,
+      "flag": "measured",
+      "safe_zone": {
+        "derived_from": "platform_safe_zones.json aspect_ratios[16:9]",
+        "scale_x": 0.6937,
+        "scale_y": 0.6667,
+        "core_safe_box_px": {
+          "x_min": 83,
+          "x_max": 1249,
+          "y_min": 53,
+          "y_max": 613
+        },
+        "subtitle_y_px": [
+          547,
+          613
+        ],
+        "flag": "derived_estimate"
+      },
+      "notes": "Text-first canvas of 7664835388476755220; constellation layout is defined on this canvas."
+    }
+  },
+  "safe_zone_scaling_rule": {
+    "vertical_9x16": "unchanged: use platform_safe_zones.json 9:16 values.",
+    "landscape_and_4x3": "scale the 16:9 entry of platform_safe_zones.json: x by (width / 1920), y by (height / 1080). Percent-based caption y (dviet_style_tokens.json caption_y_pct) is defined for 9:16 only.",
+    "fps": "fps does not change safe zones; it changes frame counts only.",
+    "flag": "derived_estimate"
+  },
+  "limits": "The compositor and compile_and_verify pipeline are written for 1080x1920; non-9:16 canvases are data here and are not verified end to end."
+}

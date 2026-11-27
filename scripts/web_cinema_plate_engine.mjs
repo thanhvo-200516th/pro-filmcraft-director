@@ -586,6 +586,286 @@ async function applyFrameState(cdp, sessionId, frameIdx, totalFrames, fps) {
   }
 }
 
+
+// v7.9.0: in-page text probes. TEXT_SIZE_PROBE_JS returns every text-bearing element with its computed font size times its screen
+// scale (the size it is DRAWN at, before the plate scale). WORD_GAP_PROBE_JS measures, on the current frame, the INK gap between
+// adjacent words of the guarded lines ([data-ws-nat0] / [data-pfd-line], or the ids given) minus the screen-space blur of both
+// neighbours, against 0.25 em (motion_gate.check_word_gaps).
+const PROBE_COMMON_JS = String.raw`
+  const __pfdSkip = new Set(["SCRIPT", "STYLE", "TITLE", "DEFS", "NOSCRIPT", "TEMPLATE"]);
+  function __pfdMatScale(el) {
+    let m = new DOMMatrix();
+    for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+      const t = getComputedStyle(n).transform;
+      if (t && t !== "none") m = new DOMMatrix(t).multiply(m);
+    }
+    return Math.sqrt(Math.abs(m.a * m.d - m.b * m.c));
+  }
+  function __pfdBoxScale(el) {
+    const r = el.getBoundingClientRect();
+    if (el instanceof SVGElement) {
+      let bb = null;
+      try { bb = el.getBBox(); } catch (e) { bb = null; }
+      if (!bb || !(bb.width > 0) || !(bb.height > 0)) return null;
+      return Math.min(r.width / bb.width, r.height / bb.height);
+    }
+    const sz = __pfdLayoutSize(el);
+    if (!sz) return null;
+    const rr = sz[2].getBoundingClientRect();
+    return Math.min(rr.width / sz[0], rr.height / sz[1]);
+  }
+  // Untransformed border-box size in FRACTIONAL px of el, or of its nearest non-inline ancestor for an inline box (CSS transforms do
+  // not apply to inline boxes). offsetWidth / offsetHeight are rounded to whole px: a 42.6 px box read as 43 gave a 0.99x "scale".
+  function __pfdLayoutSize(el) {
+    for (let n = el; n && n.nodeType === 1 && !(n instanceof SVGElement); n = n.parentElement) {
+      const cs = getComputedStyle(n);
+      if (!cs.width.endsWith("px") || !cs.height.endsWith("px")) continue;
+      let w = parseFloat(cs.width), h = parseFloat(cs.height);
+      if (cs.boxSizing !== "border-box") {
+        const px = (k) => parseFloat(cs[k]) || 0;
+        w += px("paddingLeft") + px("paddingRight") + px("borderLeftWidth") + px("borderRightWidth");
+        h += px("paddingTop") + px("paddingBottom") + px("borderTopWidth") + px("borderBottomWidth");
+      }
+      if (!(w > 0) || !(h > 0) || Math.abs(w - n.offsetWidth) > 1 || Math.abs(h - n.offsetHeight) > 1) return null;
+      return [w, h, n];
+    }
+    return null;
+  }
+  function __pfdScale(el) {
+    const m = el instanceof SVGElement ? null : __pfdMatScale(el);
+    const b = __pfdBoxScale(el);
+    if (m == null) return b == null ? 1 : b;
+    return b == null ? m : Math.min(m, b);
+  }
+  function __pfdBlurPx(el) {
+    const f = getComputedStyle(el).filter;
+    if (!f || f === "none") return 0;
+    let s = 0;
+    for (const m of f.matchAll(/blur\(\s*([\d.]+)px\s*\)/g)) s += Number(m[1]);
+    return s;
+  }
+  function __pfdLabel(el) {
+    return el.id ? "#" + el.id : (el.getAttribute("class") || el.tagName.toLowerCase()).split(/\s+/)[0].replace(/^/, ".");
+  }
+`;
+
+const TEXT_SIZE_PROBE_JS = `(() => {
+  ${PROBE_COMMON_JS}
+  const out = [];
+  for (const el of document.querySelectorAll("body *")) {
+    if (__pfdSkip.has(el.tagName.toUpperCase())) continue;
+    let txt = "";
+    for (const c of el.childNodes) if (c.nodeType === 3) txt += c.textContent;
+    txt = txt.replace(/\\s+/g, " ").trim();
+    if (!txt) continue;
+    if (el.getClientRects().length === 0) continue;
+    const fs = parseFloat(getComputedStyle(el).fontSize) || 0;
+    const sc = __pfdScale(el);
+    let box = null;
+    for (const c of el.childNodes) {
+      if (c.nodeType !== 3 || !c.textContent.trim()) continue;
+      const rg = document.createRange();
+      rg.selectNodeContents(c);
+      const r = rg.getBoundingClientRect();
+      if (!(r.width > 0)) continue;
+      box = box ? [Math.min(box[0], r.left), Math.min(box[1], r.top), Math.max(box[2], r.right), Math.max(box[3], r.bottom)]
+                : [r.left, r.top, r.right, r.bottom];
+    }
+    out.push({ label: __pfdLabel(el), text: txt.slice(0, 48), fontPx: +fs.toFixed(2), scale: +sc.toFixed(4), effPx: +(fs * sc).toFixed(2),
+               box: box ? box.map((v) => +v.toFixed(1)) : null, view: [window.innerWidth, window.innerHeight] });
+  }
+  return out;
+})()`;
+
+function wordGapProbeJs(ids) {
+  return `(() => {
+  ${PROBE_COMMON_JS}
+  ${TEXT_PATH_COMMON_JS}
+  const ids = ${JSON.stringify(ids || null)};
+  // "*" = EVERY drawn text line of the page (the nearest non-inline ancestor of each non-empty text node, glow / echo copies included),
+  // so a line the page guard does not know about is measured too
+  const all = ids === "*";
+  const rootOf = (node) => {
+    let n = node.parentElement;
+    if (!n || !node.textContent.trim() || n.closest("script, style, title, defs, noscript, template")) return null;
+    if (n instanceof SVGElement) return n.closest("text") || n;
+    while (n.parentElement && n !== document.body && getComputedStyle(n).display.startsWith("inline")) n = n.parentElement;
+    return n;
+  };
+  const allRoots = () => {
+    const set = new Set();
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) { const r = rootOf(node); if (r && !r.closest("[data-pfd-glow]")) set.add(r); }
+    return Array.from(set);
+  };
+  const roots = all ? allRoots() : ids ? ids.map((i) => document.getElementById(i)).filter(Boolean)
+                    : Array.from(document.querySelectorAll("[data-ws-nat0], [data-pfd-line]"));
+  const ctx = document.createElement("canvas").getContext("2d");
+  const derot = [];
+  const fix = (el) => {
+    for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+      const t = getComputedStyle(n).transform;
+      if (!t || t === "none") continue;
+      const m = new DOMMatrix(t);
+      if (Math.abs(m.b) < 1e-6 && Math.abs(m.c) < 1e-6) continue;
+      const s = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c));
+      derot.push([n, n.style.transform]);
+      n.style.transform = "matrix(" + s + ",0,0," + s + "," + m.e + "," + m.f + ")";
+    }
+  };
+  roots.forEach(fix);
+  const opacityOf = (el) => { let o = 1; for (let n = el; n && n.nodeType === 1; n = n.parentElement) { const cs = getComputedStyle(n);
+    if (cs.visibility === "hidden" || cs.display === "none") return 0; o *= parseFloat(cs.opacity); } return o; };
+  const blurOf = (el) => { let b = 0; for (let n = el; n && n.nodeType === 1; n = n.parentElement) { const v = __pfdBlurPx(n); if (v) b += v * __pfdScale(n); } return b; };
+  const ink = (el, ch) => {
+    const cs = getComputedStyle(el);
+    ctx.font = cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+    const m = ctx.measureText(ch);
+    return { l: m.actualBoundingBoxLeft, r: m.actualBoundingBoxRight };
+  };
+  const out = [];
+  const rect = (c) => { const r = document.createRange(); r.setStart(c.node, c.i); r.setEnd(c.node, c.i + c.g.length); return r.getBoundingClientRect(); };
+  for (const root of roots) {
+    const chars = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const host = node.parentElement;
+      if (!host || (!all && host.closest("[data-pfd-glow]"))) continue;
+      if (all && rootOf(node) !== root) continue;  // a nested block line is its own root
+      const seg = typeof Intl !== "undefined" && Intl.Segmenter ? Array.from(new Intl.Segmenter("vi", { granularity: "grapheme" }).segment(node.textContent), (x) => [x.index, x.segment]) : Array.from(node.textContent).map((c, i) => [i, c]);
+      for (const [i, g] of seg) chars.push({ node, i, g, host, space: /^\\s+$/.test(g) });
+    }
+    let worst = null;
+    for (let k = 1; k < chars.length - 1; k++) {
+      if (!chars[k].space || chars[k - 1].space) continue;
+      let j = k; while (j < chars.length && chars[j].space) j++;
+      if (j >= chars.length) break;
+      const a = chars[k - 1], b = chars[j];
+      const opA = opacityOf(a.host), opB = opacityOf(b.host);
+      if (Math.min(opA, opB) < 0.15) continue;
+      const ra = rect(a), rb = rect(b);
+      if (Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top) < 0.5 * Math.min(ra.height, rb.height)) continue;  // line break
+      let sa = __pfdScale(a.host), sb = __pfdScale(b.host);
+      const ia = ink(a.host, a.g), ib = ink(b.host, b.g);
+      let gap = (rb.left - ib.l * sb) - (ra.left + ia.r * sa);
+      if (a.host === b.host && a.node === b.node && a.host instanceof SVGTextContentElement && typeof a.host.getSubStringLength === "function") {
+        // text on a path (kt11 arc): glyphs are rotated, so measure the ink gap ALONG the path (advance offsets from the DOM, which
+        // include letter- / word-spacing) and scale it to the screen; text above a convex arc only fans out, so this is the narrowest
+        const ctm = a.host.getScreenCTM();
+        const k = ctm ? Math.sqrt(Math.abs(ctm.a * ctm.d - ctm.b * ctm.c)) : 1;
+        const ua = a.host.getSubStringLength(0, a.i), ub = a.host.getSubStringLength(0, b.i);
+        sa = sb = k;
+        gap = ((ub - ib.l) - (ua + ia.r)) * k;
+      }
+      const blur = blurOf(a.host) + blurOf(b.host);
+      const fa = parseFloat(getComputedStyle(a.host).fontSize) * sa, fb = parseFloat(getComputedStyle(b.host).fontSize) * sb;
+      const need = 0.25 * Math.max(fa, fb);
+      const eff = gap - blur;
+      const rec = { pair: a.g + "|" + b.g, gapPx: +gap.toFixed(2), blurPx: +blur.toFixed(2), effPx: +eff.toFixed(2), needPx: +need.toFixed(2),
+                    emPx: +Math.max(fa, fb).toFixed(2), opacity: +Math.min(opA, opB).toFixed(3) };
+      if (!worst || eff - need < worst.effPx - worst.needPx) worst = rec;
+    }
+    // rows = laid-out text lines of the root (a line that reflows while its spacing widens changes this count)
+    const centers = chars.filter((c) => !c.space).map((c) => rect(c)).filter((r) => r.height > 0)
+                         .map((r) => [(r.top + r.bottom) / 2, r.height]).sort((x, y) => x[0] - y[0]);
+    let rows = 0, lastY = -1e9;
+    for (const [cy, hh] of centers) if (cy - lastY > 0.5 * hh) { rows++; lastY = cy; }
+    // text on a path is one line by construction (row centres along an arc mean nothing); report whether every glyph is still drawn
+    const tps = root instanceof SVGElement ? Array.from(root.querySelectorAll("textPath")) : [];
+    const onPath = tps.length ? tps.map((tp) => { const i = __pfdTextPathInfo(tp); return { rendered: i.rendered, chars: i.chars, overflow: i.overflow }; }) : undefined;
+    out.push({ id: root.id || __pfdLabel(root), wordSpacing: getComputedStyle(root).wordSpacing, rows: tps.length ? tps.length : rows, worst, onPath });
+  }
+  for (const [n, t] of derot.reverse()) n.style.transform = t;
+  return out;
+})()`;
+}
+
+// v7.9.0 repair: an SVG <textPath> silently drops every glyph whose advance midpoint falls off its path (the long kt11 arc lost
+// its first / last words while every size audit passed). TEXT_PATH_COMMON_JS lays each textPath out along its path from the DOM
+// metrics (getComputedTextLength / getSubStringLength vs getTotalLength, startOffset, text-anchor) and returns the screen extents of
+// the glyphs that are actually drawn (getExtentOfChar through getScreenCTM), so the content box measures real ink, never the bbox
+// Chrome reports for the dropped glyphs.
+const TEXT_PATH_COMMON_JS = String.raw`
+  function __pfdTextPathInfo(tp) {
+    const href = tp.getAttribute("href") || tp.getAttribute("xlink:href") || "";
+    const path = href.startsWith("#") ? document.getElementById(href.slice(1)) : null;
+    const text = tp.closest("text");
+    const n = tp.getNumberOfChars();
+    const rec = { id: tp.id || (path && path.id) || "textPath", text: (tp.textContent || "").replace(/\s+/g, " ").trim().slice(0, 64),
+                  chars: n, rendered: 0, textLen: 0, pathLen: 0, start: 0, end: 0, overflow: true, inkBox: null, glyphBoxes: [] };
+    if (!path || !text || typeof path.getTotalLength !== "function") { rec.error = "textPath without a path"; return rec; }
+    const pathLen = path.getTotalLength();
+    const textLen = tp.getComputedTextLength();
+    const so = String(tp.getAttribute("startOffset") || "0").trim();
+    const off = so.endsWith("%") ? parseFloat(so) / 100 * pathLen : (parseFloat(so) || 0);
+    const anchor = getComputedStyle(tp).textAnchor || getComputedStyle(text).textAnchor;
+    const start = anchor === "middle" ? off - textLen / 2 : (anchor === "end" ? off - textLen : off);
+    const ctm = text.getScreenCTM();
+    let ink = null;
+    for (let i = 0; i < n; i++) {
+      const adv = tp.getSubStringLength(i, 1);
+      const mid = start + tp.getSubStringLength(0, i) + adv / 2;
+      if (mid < 0 || mid > pathLen) continue;  // the SVG rule: a glyph whose midpoint is off the path is not rendered
+      rec.rendered++;
+      if (!ctm) continue;
+      let e = null;
+      try { e = text.getExtentOfChar(i); } catch (err) { e = null; }
+      if (!e || !(e.width > 0 || e.height > 0)) continue;
+      const pts = [[e.x, e.y], [e.x + e.width, e.y], [e.x, e.y + e.height], [e.x + e.width, e.y + e.height]]
+        .map(([x, y]) => new DOMPoint(x, y).matrixTransform(ctm));
+      const b = [Math.min(...pts.map((q) => q.x)), Math.min(...pts.map((q) => q.y)), Math.max(...pts.map((q) => q.x)), Math.max(...pts.map((q) => q.y))];
+      rec.glyphBoxes.push(b);
+      ink = ink ? [Math.min(ink[0], b[0]), Math.min(ink[1], b[1]), Math.max(ink[2], b[2]), Math.max(ink[3], b[3])] : b;
+    }
+    rec.textLen = +textLen.toFixed(2); rec.pathLen = +pathLen.toFixed(2); rec.start = +start.toFixed(2); rec.end = +(start + textLen).toFixed(2);
+    rec.overflow = rec.rendered < n || start < -0.5 || start + textLen > pathLen + 0.5;
+    rec.inkBox = ink ? ink.map((v) => +v.toFixed(1)) : null;
+    return rec;
+  }
+`;
+
+const TEXT_PATH_PROBE_JS = `(() => {
+  ${TEXT_PATH_COMMON_JS}
+  return Array.from(document.querySelectorAll("textPath")).map((tp) => { const r = __pfdTextPathInfo(tp); delete r.glyphBoxes; return r; });
+})()`;
+
+// Union screen box [left, top, right, bottom] of everything a kinetic plate draws that must stay inside it: every visible text run
+// (range boxes, after transforms) and every optional pill. Used to grow a default-height kt plate to its content.
+const CONTENT_BOX_PROBE_JS = `(() => {
+  ${TEXT_PATH_COMMON_JS}
+  const vis = (el) => { let o = 1; for (let n = el; n && n.nodeType === 1; n = n.parentElement) { const cs = getComputedStyle(n);
+    if (cs.visibility === "hidden" || cs.display === "none") return 0; o *= parseFloat(cs.opacity); } return o; };
+  let box = null;
+  const add = (r) => { if (!(r.width > 0) || !(r.height > 0)) return;
+    box = box ? [Math.min(box[0], r.left), Math.min(box[1], r.top), Math.max(box[2], r.right), Math.max(box[3], r.bottom)] : [r.left, r.top, r.right, r.bottom]; };
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const host = node.parentElement;
+    if (!host || !node.textContent.trim() || ["SCRIPT", "STYLE", "TITLE"].includes(host.tagName.toUpperCase()) || vis(host) < 0.02) continue;
+    if (host.closest("textPath")) continue;  // measured per drawn glyph below
+    const rg = document.createRange(); rg.selectNodeContents(node); add(rg.getBoundingClientRect());
+  }
+  document.querySelectorAll("textPath").forEach((tp) => { if (vis(tp) < 0.02) return;
+    for (const b of __pfdTextPathInfo(tp).glyphBoxes) add({ left: b[0], top: b[1], right: b[2], bottom: b[3], width: b[2] - b[0], height: b[3] - b[1] }); });
+  document.querySelectorAll(".kt-opt-pill").forEach((el) => { if (vis(el) >= 0.02) add(el.getBoundingClientRect()); });
+  return box;
+})()`;
+
+async function evalValue(cdp, sessionId, expression) {
+  const res = await cdp.send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true }, sessionId);
+  if (res.exceptionDetails) {
+    throw new Error(`probe evaluation failed: ${JSON.stringify(res.exceptionDetails)}`);
+  }
+  return res.result?.value;
+}
+
+// Settled state (what a still renders) -> every drawn text with its on-plate size.
+async function probeSettledTextSizes(cdp, sessionId, fps, hasSetFrame) {
+  if (hasSetFrame) await applyFrameState(cdp, sessionId, 0, 1, fps);
+  return evalValue(cdp, sessionId, TEXT_SIZE_PROBE_JS);
+}
+
 async function captureRgbaPngBuffer(cdp, sessionId) {
   const shot = await cdp.send(
     "Page.captureScreenshot",
@@ -722,6 +1002,29 @@ async function renderSingleJob(
       job.timeoutMs ?? defaults.timeoutMs ?? 30000
     );
 
+    if (mode === "probe") {
+      // v7.9.0: no pixels written. Steps frames [probeFrom, probeTo] of a `totalFrames` clip and returns the word-gap probe per frame.
+      const from = Math.max(0, Number.parseInt(job.probeFrom ?? 0, 10));
+      const to = Math.min(totalFrames - 1, Number.parseInt(job.probeTo ?? totalFrames - 1, 10));
+      const frames = [];
+      for (let frameIdx = from; frameIdx <= to; frameIdx++) {
+        if (readyInfo.hasSetFrame) await applyFrameState(cdp, sessionId, frameIdx, totalFrames, fps);
+        frames.push({ frameIdx, lines: await evalValue(cdp, sessionId, wordGapProbeJs(job.probeIds || null)) });
+      }
+      // `contentBoxFrames` (frame indices of this clip, null = the settled still): union box of what the plate draws on those frames
+      let contentBox = null;
+      if (Array.isArray(job.contentBoxFrames)) {
+        for (const f of job.contentBoxFrames) {
+          if (readyInfo.hasSetFrame) await applyFrameState(cdp, sessionId, f == null ? 0 : Number(f), f == null ? 1 : totalFrames, fps);
+          const b = await evalValue(cdp, sessionId, CONTENT_BOX_PROBE_JS);
+          if (b) contentBox = contentBox ? [Math.min(contentBox[0], b[0]), Math.min(contentBox[1], b[1]), Math.max(contentBox[2], b[2]), Math.max(contentBox[3], b[3])] : b;
+        }
+      }
+      const textSizes = await probeSettledTextSizes(cdp, sessionId, fps, readyInfo.hasSetFrame);
+      const textPaths = await evalValue(cdp, sessionId, TEXT_PATH_PROBE_JS);
+      return { ok: true, mode: "probe", fps, frames: totalFrames, wordGaps: frames, textSizes, textPaths, contentBox, elapsedMs: Date.now() - startedAt };
+    }
+
     if (mode === "still") {
       await fsp.mkdir(path.dirname(outPath), { recursive: true });
       if (readyInfo.hasSetFrame) {
@@ -739,6 +1042,8 @@ async function renderSingleJob(
       } else {
         await fsp.writeFile(outPath, pngBuf);
       }
+      const textSizes = await probeSettledTextSizes(cdp, sessionId, fps, readyInfo.hasSetFrame);
+      const textPaths = await evalValue(cdp, sessionId, TEXT_PATH_PROBE_JS);
       const elapsedMs = Date.now() - startedAt;
       if (!quiet) {
         console.error(
@@ -748,6 +1053,8 @@ async function renderSingleJob(
       return {
         ok: true,
         mode: "still",
+        textSizes,
+        textPaths,
         out: outPath,
         width: outWidth,
         height: outHeight,
@@ -844,6 +1151,8 @@ async function renderSingleJob(
         throw new Error(`ffmpeg exited with code ${exitCode}: ${ffStderr.trim()}`);
       }
 
+      const textSizes = await probeSettledTextSizes(cdp, sessionId, fps, readyInfo.hasSetFrame);
+      const textPaths = await evalValue(cdp, sessionId, TEXT_PATH_PROBE_JS);
       const stat = await fsp.stat(outPath);
       const elapsedMs = Date.now() - startedAt;
       if (!quiet) {
@@ -854,6 +1163,8 @@ async function renderSingleJob(
       return {
         ok: true,
         mode: "mov",
+        textSizes,
+        textPaths,
         codec: codecTag,
         alphaCodec,
         out: outPath,
@@ -884,6 +1195,8 @@ async function renderSingleJob(
         }
         framePaths.push(frameFile);
       }
+      const textSizes = await probeSettledTextSizes(cdp, sessionId, fps, readyInfo.hasSetFrame);
+      const textPaths = await evalValue(cdp, sessionId, TEXT_PATH_PROBE_JS);
       const elapsedMs = Date.now() - startedAt;
       if (!quiet) {
         console.error(
@@ -893,6 +1206,8 @@ async function renderSingleJob(
       return {
         ok: true,
         mode: "sequence",
+        textSizes,
+        textPaths,
         out: outPath,
         frames: totalFrames,
         fps,
@@ -999,13 +1314,15 @@ async function main() {
     }
 
     const totalElapsedMs = Date.now() - batchStartedAt;
-    process.stdout.write(
+    // a pipe write is asynchronous: wait for it to flush before process.exit (a multi-MB probe result was cut at ~3.9 MB)
+    await new Promise((resolve) => process.stdout.write(
       `${JSON.stringify(
         args.batchJson
           ? { ok: true, concurrency: workerCount, totalElapsedMs, results }
           : results[0]
-      )}\n`
-    );
+      )}\n`,
+      resolve
+    ));
   } finally {
     await session.close();
   }

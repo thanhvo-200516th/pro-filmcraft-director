@@ -24,5 +24,25 @@
     "lock_in_frame_offset": 0,
     "tail_preservation": true,
     "min_forced_fadeout_ms": 200
+  },
+  "heavy_whoosh_cap_per_min": 5,
+  "heavy_groups": ["whoosh", "boom_pre", "flash_hit", "suck_in", "leak"],
+  "organic_foley_7": {
+    "note": "When the heavy-whoosh budget is spent, a transition cue falls back to the next Organic Foley archetype (round-robin).",
+    "archetypes": [
+      "archival_paper_slide", "mech_key_tactile_tick", "leica_shutter_click", "muted_felt_thud",
+      "crystal_glass_ping", "linen_cloth_brush", "soft_air_puff"
+    ],
+    "catalog_groups": [
+      "foley_paper_slide", "foley_key_tick", "foley_shutter_click", "foley_felt_muted",
+      "foley_glass_ping", "foley_cloth_brush", "foley_air_puff"
+    ]
+  },
+  "cue_to_group_offsets": {
+    "note": "Used by scripts/tools/sfx_auto.py. offset_ms = where the aligned sound (peak or onset, per the catalog group) lands relative to the cue time t; negative = before the cue.",
+    "hero_word": { "group": "key_hit", "offset_ms": 150, "offset_ms_range": [100, 300], "name_tag": "Từ khoá" },
+    "transition": { "group": "whoosh", "offset_ms": 0, "offset_ms_range": [-134, 0] },
+    "punch": { "group": "key_hit", "offset_ms": 0, "offset_ms_range": [-50, 100], "name_tag": "nhấn nỗi đau" },
+    "opening": { "at_frames": [0, 1] }
   }
 }

@@ -1,0 +1,98 @@
+{
+  "_doc": "PFD v7.6.0 profile overrides. `audio_profiles` feed compile_and_verify `--audio-profile`; `profiles` feed `--profile`. `default` = historical behaviour (empty overrides).",
+  "version": "7.6.0",
+  "audio_profiles": {
+    "platform": {
+      "_doc": "Historical behaviour: ovs F3 rules (-16 LUFS, true peak <= -1.5 dBTP, BGM 15-20 LU under voice).",
+      "target_lufs": -16.0,
+      "true_peak_dbtp": -1.5,
+      "limiter_db": -2.2,
+      "rules_override": {}
+    },
+    "studio_14": {
+      "_doc": "Look S (Studio) default, v7.6.0: the V19..V21 reference masters (-14.0 LUFS / -1.3 dBTP in V19, -14.1 / -1.2 in V21; references/24_studio_look_recipe.md). Ducking stays ON under the voice, meta.bgm_stops vacuums are allowed (V19: -inf dB at 11.80-12.28 s and 14.95-15.08 s, drop at 15.08 s) and up to 72 SFX cues on lanes A3..A8. Only the loudness and true-peak numbers are measured from the masters; the ducking depth and the BGM-under-voice gap are NOT set here and follow the platform rules. Wiring `--audio-profile studio_14` into compile_and_verify.py is owned by the scripts package.",
+      "target_lufs": -14.0,
+      "true_peak_dbtp": -1.2,
+      "limiter_db": -2.2,
+      "no_ducking": false,
+      "bgm_stops_allowed": true,
+      "sfx_max_cues": 72,
+      "provenance": "measured on the V19 and V21 masters (walkthroughs in references/24_studio_look_recipe.md)",
+      "rules_override": {
+        "master_lufs": {
+          "final": -14.0,
+          "social": -14.0,
+          "tol_lu": 0.5
+        },
+        "master_true_peak_dbtp": -1.2
+      }
+    },
+    "tiktok_loud": {
+      "_doc": "Look D (dviet channel) loud short-form mastering, NOT the Look S default (use studio_14 for that). Every number below is UNVALIDATED on real speech unless the text says MEASURED. Loud short-form mastering, table of references/25 sections 7 and 9 (v7.5.0). TikTok does not publish a loudness target: -12 LUFS is a conservative choice from the channel evidence, not an official TikTok figure. MEASURED: -12 LUFS (17 reference videos, -10.7..-12.6), the ~14 LU voice-over-bed gap (13.3..16.6), and the direction of the AAC overshoot (a -0.5 dBTP master exceeds 0 dBFS after native ffmpeg AAC; one synthetic signal, directional only), hence the -1.0 dBTP ceiling. DERIVED / UNVALIDATED on real speech: the 8 LU speech floor, the SFX tiers (A hit/impact -4 [-5..-3], B hard whoosh/whip/burn -7 [-9..-5], C soft whoosh/UI/click -10 [-12..-8]), the 0.25 s duck ramp, the voice-peak upper bound -1.5, the no-voice bed 6 LU [4..8] and the LRA/short-term-max warnings (EBU R128 s1 applied by analogy). Gates: LUFS (mix.wav +/-0.5), true peak, voice peak, bed gap and speech floor are FAIL; no-voice bed, LRA > 6 and short-term max > -7 LUFS are WARN only. Overrides the ovs -16 LUFS rule so Gate 6 stops fighting it.",
+      "target_lufs": -12.0,
+      "true_peak_dbtp": -1.0,
+      "limiter_db": -1.2,
+      "no_ducking": true,
+      "bgm_below_voice_db": 14.0,
+      "provenance": "measured -10.7..-12.6 LUFS in 17 videos; table of references/25 (measured vs derived split in _doc)",
+      "rules_override": {
+        "master_lufs": {
+          "final": -12.0,
+          "social": -12.0,
+          "tol_lu": 0.5
+        },
+        "master_true_peak_dbtp": -1.0,
+        "voice_peak_dbfs": {
+          "min": -3.5,
+          "max": -1.5,
+          "target": -2.0
+        },
+        "bgm_below_voice_lu": {
+          "min": 12.0,
+          "max": 17.0,
+          "target": 14.0
+        },
+        "bgm_speech_floor_lu": 8.0,
+        "sfx_peak_dbfs": {
+          "min": -12.0,
+          "max": -3.0,
+          "target": -10.0,
+          "tier": {
+            "A": -4.0,
+            "B": -7.0,
+            "C": -10.0
+          }
+        },
+        "bgm_no_voice_lu": {
+          "min": 4.0,
+          "max": 8.0,
+          "target": 6.0,
+          "min_gap_s": 1.5
+        },
+        "lra_warn_lu": 6.0,
+        "short_term_max_lufs": -7.0,
+        "no_ducking": true
+      }
+    }
+  },
+  "profiles": {
+    "default": {},
+    "dviet": {
+      "_doc": "Scopes the CRI100_FORBIDDEN_WARM_FILM_BURN veto and the white-flash ban: lifted ONLY for capped wash/flash events. The 4-Cut Grammar (40-75% clean cuts, OVER_TRANSITIONED_SPAM > 45%) stays HARD. ovs C1 (every cut has a transition) is NOT adopted.",
+      "lifted_vetoes": [
+        "CRI100_FORBIDDEN_WARM_FILM_BURN",
+        "WHITE_FLASH_BAN"
+      ],
+      "wash_flash": {
+        "max_event_s": 0.6,
+        "max_flash_family_share": 0.2,
+        "min_gap_cuts": 4,
+        "repeat_severity": "SOFT"
+      },
+      "keeps_hard": [
+        "OVER_TRANSITIONED_SPAM",
+        "FOUR_CUT_GRAMMAR"
+      ]
+    }
+  }
+}

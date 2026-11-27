@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-probe_and_align.py (v7.0.0) — Universal Stateless Ingest, Probe, Audit, Alignment,
+probe_and_align.py (v7.9.0) — Universal Stateless Ingest, Probe, Audit, Alignment,
 10x8 Multi-Industry Routing, Cranial Dual-Rail & Zero-Face Macro Safe-Zone Engine.
 
 100% format-agnostic, stateless atomic CLI & Python library for `pro-filmcraft-director`
@@ -33,7 +33,16 @@ CLI Usage:
     [--script <OPTIONAL_TXT_MD_OR_STORYBOARD_JSON>] \
     [--backup] \
     [--whisper-model small] \
-    [--self-test]
+    [--whisper-threads N] [--timeout SECONDS] [--force] [--music-only] \
+    [--skip-whisper] [--self-test]
+
+v7.4 ingest hardening: `media_probe.json` is written BEFORE ASR starts; per-segment progress goes unbuffered to
+stderr; a lock file in `--work` refuses a duplicate run (`--force` overrides); `--timeout` is a hard wall-clock limit;
+`--whisper-threads` / env `PFD_WHISPER_THREADS` (default 1 while the host load average exceeds the CPU count);
+`vad_filter` is always on, a repetition filter drops text repeated >= 3 times in a row, `--music-only` plus an
+RMS/VAD no-speech gate keep music from becoming fake speech; `visual_cuts.json` (ffmpeg scene 0.10, clustered within
+0.3 s); loudness audit warning when integrated LUFS > -10 or true peak > -1 dBTP; `cuts=N` is now
+`speech_cadence_points=N` (JSON key `boundary_count` kept as an alias).
 """
 from __future__ import annotations
 
@@ -49,6 +58,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unicodedata
 import xml.etree.ElementTree as ET
@@ -60,7 +70,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
-VERSION = "7.0.0"
+VERSION = "7.9.0"
 SKILL_ROOT = Path(__file__).resolve().parents[2]
 HAAR_CASCADE_XML = SKILL_ROOT / "data" / "haarcascade_frontalface_default.xml"
 TEXT_VI_JSON = SKILL_ROOT / "data" / "text_vi.json"
@@ -1164,6 +1174,7 @@ def build_cadence_and_jcut_plan(
         },
         "summary": {
             "boundary_count": len(boundaries),
+            "speech_cadence_points": len(boundaries),
             "fast_chain_count": n_fast,
             "natural_clause_count": n_nat,
             "chapter_pivot_count": n_piv,
@@ -4496,6 +4507,169 @@ def _resolve_whisper_model_name(
     return requested_model
 
 
+# ---------------------------------------------------------------------------
+# v7.4 Ingest hardening helpers (progress, lock, threads, repetition filter, no-speech gate, visual cuts)
+# ---------------------------------------------------------------------------
+
+LOCK_NAME = ".probe_and_align.lock"
+VISUAL_SCENE_THRESHOLD = 0.10
+VISUAL_CLUSTER_GAP_S = 0.3
+
+
+def _progress(msg: str) -> None:
+    """Unbuffered progress line on stderr (so a hung/slow ASR run is observable)."""
+    print(f"[probe] {msg}", file=sys.stderr, flush=True)
+
+
+class ProbeLockError(RuntimeError):
+    pass
+
+
+def _pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def acquire_lock(work_dir: Path, force: bool = False) -> Path:
+    """Create `<work>/.probe_and_align.lock`; refuse when a live process already owns it unless `force`."""
+    work_dir.mkdir(parents=True, exist_ok=True)
+    lock = work_dir / LOCK_NAME
+    if lock.exists():
+        try:
+            owner = int(json.loads(lock.read_text(encoding="utf-8")).get("pid", 0))
+        except (OSError, ValueError, json.JSONDecodeError):
+            owner = 0
+        if owner and _pid_alive(owner) and not force:
+            raise ProbeLockError(
+                f"another probe_and_align run (pid {owner}) holds the lock {lock}; wait for it or pass --force to override"
+            )
+        lock.unlink(missing_ok=True)
+    fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump({"pid": os.getpid(), "started": time.time(), "argv": sys.argv[1:]}, fh)
+    return lock
+
+
+def release_lock(lock: Path) -> None:
+    try:
+        if int(json.loads(lock.read_text(encoding="utf-8")).get("pid", -1)) == os.getpid():
+            lock.unlink(missing_ok=True)
+    except (OSError, ValueError, json.JSONDecodeError):
+        pass
+
+
+def resolve_whisper_threads(requested: int | None = None, load: float | None = None, cpus: int | None = None) -> int:
+    """`--whisper-threads` > env `PFD_WHISPER_THREADS` > 1 when the host is oversubscribed > the physical-core formula."""
+    if requested is None and os.environ.get("PFD_WHISPER_THREADS"):
+        try:
+            requested = int(os.environ["PFD_WHISPER_THREADS"])
+        except ValueError:
+            requested = None
+    if requested is not None:
+        return max(1, int(requested))
+    n_cpu = cpus if cpus is not None else (os.cpu_count() or 8)
+    try:
+        cur_load = load if load is not None else os.getloadavg()[0]
+    except (OSError, AttributeError):
+        cur_load = 0.0
+    if cur_load > n_cpu:
+        return 1
+    return min(6, max(4, n_cpu // 2))
+
+
+def drop_repeated_phrases(words: list[list[Any]], min_repeats: int = 3, max_ngram: int = 8) -> list[list[Any]]:
+    """Drop ASR hallucination loops: any phrase (1..`max_ngram` tokens) repeated >= `min_repeats` times back-to-back
+    is removed entirely (all copies). Phrases repeated fewer times are kept. Items are returned by identity."""
+    n = len(words)
+    toks = [norm_tok(str(w[0])) for w in words]
+    drop = [False] * n
+    i = 0
+    while i < n:
+        hit = 0
+        for size in range(1, max_ngram + 1):
+            if i + size * min_repeats > n:
+                break
+            gram = toks[i:i + size]
+            if not any(gram):
+                continue
+            reps = 1
+            while i + (reps + 1) * size <= n and toks[i + reps * size:i + (reps + 1) * size] == gram:
+                reps += 1
+            if reps >= min_repeats:
+                hit = size * reps
+                break
+        if hit:
+            for k in range(i, i + hit):
+                drop[k] = True
+            i += hit
+        else:
+            i += 1
+    return [w for w, d in zip(words, drop) if not d]
+
+
+def cluster_cut_times(times: Sequence[float], gap_s: float = VISUAL_CLUSTER_GAP_S) -> list[float]:
+    """Collapse detections closer than `gap_s` to the first one of each cluster."""
+    out: list[float] = []
+    for t in sorted(float(x) for x in times):
+        if not out or t - out[-1] > gap_s:
+            out.append(round(t, 4))
+    return out
+
+
+def detect_visual_cuts(media_path: Path, threshold: float = VISUAL_SCENE_THRESHOLD, gap_s: float = VISUAL_CLUSTER_GAP_S) -> dict[str, Any]:
+    """Cheap scene-change scan (ffmpeg `select=gt(scene,thr)` on a 320px-wide proxy), clustered within `gap_s`."""
+    proc = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-nostats", "-i", str(media_path), "-an", "-vf",
+         f"scale=320:-2,select='gt(scene,{threshold})',showinfo", "-f", "null", "-"],
+        capture_output=True, text=True, check=False,
+    )
+    raw = [float(x) for x in re.findall(r"pts_time:\s*([-\d.]+)", proc.stderr or "")]
+    return {
+        "source": str(media_path),
+        "scene_threshold": threshold,
+        "cluster_gap_s": gap_s,
+        "raw_count": len(raw),
+        "cuts": cluster_cut_times(raw, gap_s),
+    }
+
+
+def loudness_audit_warnings(lufs: float | None, true_peak: float | None) -> list[str]:
+    out: list[str] = []
+    if lufs is not None and lufs > -10.0:
+        out.append(f"Source loudness is hot: integrated {lufs:.1f} LUFS > -10 LUFS (expect clipping / limiter pumping; consider --audio-profile tiktok_loud only if intentional)")
+    if true_peak is not None and true_peak > -1.0:
+        out.append(f"Source true peak {true_peak:.1f} dBTP > -1 dBTP (inter-sample clipping risk after AAC encode)")
+    return out
+
+
+def speech_gate(pcm_16k: np.ndarray, sr: int = 16000, min_speech_s: float = 0.3, min_rms_db: float = -55.0) -> dict[str, Any]:
+    """RMS + Silero-VAD no-speech gate (conservative: only declares 'no speech' when BOTH energy or VAD say so)."""
+    n = int(len(pcm_16k))
+    dur = n / float(sr) if sr else 0.0
+    rms = float(np.sqrt(np.mean(np.square(pcm_16k.astype(np.float64))))) if n else 0.0
+    rms_db = round(20.0 * math.log10(max(rms, 1e-9)), 2)
+    gate: dict[str, Any] = {"has_speech": True, "reason": "vad_ok", "rms_db": rms_db, "vad_speech_s": None, "duration_s": round(dur, 3)}
+    if n < 400 or rms_db < min_rms_db:
+        gate.update(has_speech=False, reason="rms_below_floor", vad_speech_s=0.0)
+        return gate
+    try:
+        from faster_whisper.vad import VadOptions, get_speech_timestamps
+
+        ts = get_speech_timestamps(pcm_16k.astype(np.float32), VadOptions(min_silence_duration_ms=500, speech_pad_ms=100), sampling_rate=sr)
+        speech_s = sum(float(t["end"] - t["start"]) for t in ts) / float(sr)
+        gate["vad_speech_s"] = round(speech_s, 3)
+        if speech_s < min_speech_s:
+            gate.update(has_speech=False, reason="vad_no_speech")
+    except Exception as exc:  # VAD unavailable: do not block ASR
+        gate["reason"] = f"vad_unavailable:{type(exc).__name__}"
+    return gate
+
+
 def run_single_pass_whisper(
     pcm_16k: np.ndarray,
     whisper_model_name: str = "small",
@@ -4503,10 +4677,13 @@ def run_single_pass_whisper(
     has_ground_truth_script: bool = False,
     script_hint: str | None = None,
     use_vad: bool = False,
+    whisper_threads: int | None = None,
 ) -> tuple[list[list[Any]], list[dict[str, Any]]]:
     """
     Run single-pass `faster-whisper` (`int8`, `word_timestamps=True`) on a 16kHz mono float32 RAM buffer.
-    Uses `vad_filter=True` on long raw recordings (`use_vad=True`) to skip dead air for ~2.5x speedup.
+    `vad_filter` is always on (v7.4); `use_vad=True` (long recordings) additionally tightens the silence window.
+    Thread count: `--whisper-threads` / `PFD_WHISPER_THREADS`, else 1 on an oversubscribed host. A phrase repeated
+    >= 3 times in a row is dropped as an ASR hallucination. Progress is printed per segment on stderr.
     """
     from faster_whisper import WhisperModel
 
@@ -4514,7 +4691,7 @@ def run_single_pass_whisper(
         return [], []
 
     # Physical core count + deterministic temperature=0.0 avoids SMT spin-locks & 6x fallback retries
-    cpu_threads = min(6, max(4, (os.cpu_count() or 8) // 2))
+    cpu_threads = resolve_whisper_threads(whisper_threads)
     beam_size = 1 if (has_ground_truth_script or use_vad) else 2
 
     try:
@@ -4528,14 +4705,17 @@ def run_single_pass_whisper(
     transcribe_kwargs: dict[str, Any] = {
         "language": lang_arg,
         "word_timestamps": True,
-        "vad_filter": bool(use_vad),
+        "vad_filter": True,
         "beam_size": beam_size,
         "temperature": 0.0,
         "condition_on_previous_text": False,
     }
-    if use_vad:
-        transcribe_kwargs["vad_parameters"] = {"min_silence_duration_ms": 500, "speech_pad_ms": 250}
+    transcribe_kwargs["vad_parameters"] = (
+        {"min_silence_duration_ms": 500, "speech_pad_ms": 250} if use_vad else {"min_silence_duration_ms": 700, "speech_pad_ms": 400}
+    )
 
+    total_s = len(pcm_16k) / 16000.0
+    _progress(f"asr start: model={whisper_model_name} threads={cpu_threads} audio={total_s:.1f}s vad_filter=on")
     segs_gen, _ = model.transcribe(pcm_16k, **transcribe_kwargs)
 
     raw_words: list[list[Any]] = []
@@ -4549,6 +4729,7 @@ def run_single_pass_whisper(
                 raw_words.append(rec)
                 seg_words.append(rec)
         seg_txt = nfc(sg.text).strip()
+        _progress(f"asr seg {idx}: {float(sg.start):.1f}-{float(sg.end):.1f}s / {total_s:.1f}s {seg_txt[:60]!r}")
         if seg_txt or seg_words:
             s_t = round(float(sg.start), 4)
             e_t = round(float(sg.end), 4)
@@ -4561,6 +4742,19 @@ def run_single_pass_whisper(
                 "words": seg_words,
             })
 
+    kept = drop_repeated_phrases(raw_words, min_repeats=3)
+    if len(kept) != len(raw_words):
+        kept_ids = {id(w) for w in kept}
+        _progress(f"asr repetition filter dropped {len(raw_words) - len(kept)} looped word(s)")
+        for seg in speech_segments:
+            seg["words"] = [w for w in seg["words"] if id(w) in kept_ids]
+            if not seg["words"]:
+                seg["text"] = ""
+            else:
+                seg["text"] = " ".join(str(w[0]) for w in seg["words"])
+        speech_segments = [seg for seg in speech_segments if seg["words"]]
+        raw_words = kept
+    _progress(f"asr done: {len(raw_words)} word(s) in {len(speech_segments)} segment(s)")
     return raw_words, speech_segments
 
 
@@ -4796,9 +4990,11 @@ def probe_and_align(
     refine_onsets: bool | None = None,
     industry_skin: str | None = None,
     format_mode: str | None = None,
+    music_only: bool = False,
+    whisper_threads: int | None = None,
 ) -> dict[str, Any]:
     """
-    Universal Stateless Ingest, Probe, Audit & Alignment entrypoint (`v7.0.0`).
+    Universal Stateless Ingest, Probe, Audit & Alignment entrypoint (`v7.9.0`).
     Auto-detects `raw_video` | `project_bundle` | `fcproj_file`, resolves `--tier {auto,fast,studio,full}`,
     computes Cranial Exclusion Bands, Dual-Rail Safe Zones, and Zero-Face Macro Safe-Zones
     (`enamel_gum_bbox` & `macro_subject_bbox`), writes unified artifacts into `work_dir`,
@@ -4835,6 +5031,12 @@ def probe_and_align(
         has_audio = bool(pinfo.get("has_audio")) and duration_sec > 0.0
         fps_num = float(pinfo.get("fps_num") or 30.0) if has_video else 30.0
         fps_grid = snap_fps_grid(fps_num)
+
+        # v7.4: persist the probe BEFORE any ASR so a hung/killed run still leaves usable telemetry
+        early_probe_path = out_dir / "media_probe.json"
+        early_probe_path.write_text(json.dumps({key: pinfo}, ensure_ascii=False, indent=2), encoding="utf-8")
+        artifacts["media_probe"] = str(early_probe_path)
+        _progress(f"media_probe.json written ({key}: {duration_sec:.2f}s, audio={has_audio}, video={has_video})")
 
         audio_telemetry: dict[str, Any] = {
             "integrated_lufs": None,
@@ -4894,10 +5096,26 @@ def probe_and_align(
                 audio_telemetry = fut_lufs.result()
                 pcm_16k = fut_pcm.result()
 
+        gate_info: dict[str, Any] = {"has_speech": None, "reason": "not_evaluated"}
+        asr_skipped_reason: str | None = "skip_whisper" if skip_whisper else None
+        if music_only:
+            asr_skipped_reason = "music_only"
+            gate_info = {"has_speech": False, "reason": "music_only_flag"}
+        elif has_audio and len(pcm_16k) > 400 and not skip_whisper:
+            gate_info = speech_gate(pcm_16k)
+            _progress(f"speech gate: has_speech={gate_info['has_speech']} reason={gate_info['reason']} rms={gate_info['rms_db']}dB vad={gate_info['vad_speech_s']}s")
+            if not gate_info["has_speech"]:
+                asr_skipped_reason = f"no_speech_gate:{gate_info['reason']}"
+                audit_warnings.append(
+                    f"No speech detected ({gate_info['reason']}, rms={gate_info['rms_db']} dB, vad={gate_info['vad_speech_s']}s): ASR skipped; "
+                    "treating the file as music/ambience (speech_summary.has_speech=false)"
+                )
+        audit_warnings.extend(loudness_audit_warnings(audio_telemetry.get("integrated_lufs"), audio_telemetry.get("true_peak_dbtp")))
+
         # Run CTranslate2 Whisper BEFORE OpenCV (`cv2.resize`/`cv2.integral`) so OpenCV does not alter OpenMP thread affinity
         if has_audio and len(pcm_16k) > 0:
             rms_pauses = find_pauses(pcm_16k, sr=16000)
-            if len(pcm_16k) > 400 and not skip_whisper:
+            if len(pcm_16k) > 400 and asr_skipped_reason is None:
                 eff_model = _resolve_whisper_model_name(whisper_model, execution_tier_used, bool(script_info["full_text"]))
                 r_words, speech_segments = run_single_pass_whisper(
                     pcm_16k,
@@ -4906,6 +5124,7 @@ def probe_and_align(
                     has_ground_truth_script=bool(script_info["full_text"]),
                     script_hint=script_info["full_text"],
                     use_vad=(len(pcm_16k) > 20 * 16000),
+                    whisper_threads=whisper_threads,
                 )
                 if use_refine_onsets and rms_pauses and r_words:
                     r_words, tightened_onset_count = tighten_raw_words_onsets(r_words, speech_segments, rms_pauses)
@@ -4941,6 +5160,12 @@ def probe_and_align(
             gesture_peaks = []
 
         artifacts["assets_contact_sheet"] = str(sheet_path)
+        if has_video:
+            visual_cuts = detect_visual_cuts(in_path)
+            visual_cuts_path = out_dir / "visual_cuts.json"
+            visual_cuts_path.write_text(json.dumps(visual_cuts, ensure_ascii=False, indent=2), encoding="utf-8")
+            artifacts["visual_cuts"] = str(visual_cuts_path)
+            _progress(f"visual_cuts.json: {len(visual_cuts['cuts'])} cut(s) (scene>{VISUAL_SCENE_THRESHOLD}, cluster {VISUAL_CLUSTER_GAP_S}s)")
         pinfo["integrated_lufs"] = audio_telemetry["integrated_lufs"]
         pinfo["true_peak_dbtp"] = audio_telemetry["true_peak_dbtp"]
         pinfo["lra_lu"] = audio_telemetry["lra_lu"]
@@ -5058,6 +5283,9 @@ def probe_and_align(
                 "has_speech": len(words_tl) > 0,
                 "word_count": len(words_tl),
                 "segment_count": len(speech_segments),
+                "music_only": bool(music_only),
+                "asr_skipped_reason": asr_skipped_reason,
+                "speech_gate": gate_info,
                 "slice_count": 0,
                 "aligned_to_script": bool(script_info["full_text"] and words_tl),
                 "refine_onsets_used": use_refine_onsets,
@@ -5130,6 +5358,11 @@ def probe_and_align(
 
     # 12-thread ffprobe across all discovered media files
     probed = probe_media_files(discovered_files, base_dir=bundle_dir, max_workers=12)
+    # v7.4: persist the probe BEFORE any ASR starts
+    early_probe = out_dir / "media_probe.json"
+    early_probe.write_text(json.dumps(probed, ensure_ascii=False, indent=2), encoding="utf-8")
+    artifacts["media_probe"] = str(early_probe)
+    _progress(f"media_probe.json written ({len(probed)} file(s))")
 
     # Audit `.fcproj` if present (now with exact ffprobe durations for EOF overrun detection!)
     fcproj_audit: dict[str, Any] | None = None
@@ -5285,7 +5518,7 @@ def probe_and_align(
         int,
     ]:
         dur_s = float((fcproj_audit or {}).get("sequence_settings", {}).get("duration_sec") or 0.0)
-        if skip_whisper:
+        if skip_whisper or music_only:
             return [], [], [], dur_s, [], 0
 
         if voice_slices_files:
@@ -5307,6 +5540,7 @@ def probe_and_align(
                 has_ground_truth_script=bool(script_info["full_text"]),
                 script_hint=script_info["full_text"],
                 use_vad=False,
+                whisper_threads=whisper_threads,
             )
             snapped_n = 0
             if use_refine_onsets and pauses_20ms and r_words:
@@ -5343,6 +5577,7 @@ def probe_and_align(
                     has_ground_truth_script=bool(script_info["full_text"]),
                     script_hint=script_info["full_text"],
                     use_vad=(len(pcm_b) > 25 * 16000),
+                    whisper_threads=whisper_threads,
                 )
                 if r_words:
                     snapped_n = 0
@@ -5539,6 +5774,17 @@ def probe_and_align(
             )
             artifacts["speech_segments"] = str(speech_seg_path)
 
+    # v7.4: cheap visual cut map for the primary video (A-roll if named, else first video)
+    primary_video = next(
+        (p for p in video_clips_for_sheet if "a-roll" in p.name.lower() or "aroll" in p.name.lower()),
+        video_clips_for_sheet[0] if video_clips_for_sheet else None,
+    )
+    if primary_video is not None:
+        visual_cuts = detect_visual_cuts(primary_video)
+        visual_cuts_path = out_dir / "visual_cuts.json"
+        visual_cuts_path.write_text(json.dumps(visual_cuts, ensure_ascii=False, indent=2), encoding="utf-8")
+        artifacts["visual_cuts"] = str(visual_cuts_path)
+
     # Summarize media inventory by category
     by_cat: dict[str, int] = {}
     for pinfo in probed.values():
@@ -5583,6 +5829,7 @@ def probe_and_align(
         "speech_summary": {
             "has_speech": len(words_tl) > 0,
             "word_count": len(words_tl),
+            "music_only": bool(music_only),
             "slice_count": len(slices_meta),
             "aligned_to_script": bool(script_info["full_text"] and words_tl),
             "refine_onsets_used": use_refine_onsets,
@@ -5767,7 +6014,7 @@ def run_v6_self_tests() -> int:
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="probe_and_align.py",
-        description="Universal Stateless Ingest, Probe, Audit, Alignment, 10x8 Industry Routing & Safe-Zone Engine v7.0.0.",
+        description="Universal Stateless Ingest, Probe, Audit, Alignment, 10x8 Industry Routing & Safe-Zone Engine v7.9.0.",
     )
     parser.add_argument(
         "--input",
@@ -5829,6 +6076,28 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Skip faster-whisper transcription (audit & media probe only).",
     )
     parser.add_argument(
+        "--whisper-threads",
+        type=int,
+        default=None,
+        help="CPU threads for faster-whisper (env PFD_WHISPER_THREADS; default 1 when the load average exceeds the CPU count, else min(6, max(4, cpus//2))).",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=None,
+        help="Hard wall-clock limit in seconds for the whole run (exit 124; media_probe.json is already on disk).",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help=f"Override the {LOCK_NAME} lock file held by another (or crashed) run in --work.",
+    )
+    parser.add_argument(
+        "--music-only",
+        action="store_true",
+        help="The input has no speech (music/ambience): skip ASR entirely and report has_speech=false.",
+    )
+    parser.add_argument(
         "--self-test",
         action="store_true",
         help="Run built-in v6.0 + v7.0 verification self-tests and exit.",
@@ -5846,19 +6115,43 @@ def main(argv: list[str] | None = None) -> int:
     if not args.input or not args.work:
         parser.error("the following arguments are required: --input, --work")
 
-    ctx = probe_and_align(
-        input_path=args.input,
-        work_dir=args.work,
-        script_path=args.script,
-        backup=args.backup,
-        whisper_model=args.whisper_model,
-        language=args.language,
-        skip_whisper=args.skip_whisper,
-        tier=args.tier,
-        refine_onsets=args.refine_onsets,
-        industry_skin=args.industry_skin,
-        format_mode=args.format_mode,
-    )
+    work_dir = Path(args.work).resolve()
+    try:
+        lock = acquire_lock(work_dir, force=args.force)
+    except ProbeLockError as exc:
+        print(f"probe_and_align: {exc}", file=sys.stderr)
+        return 3
+
+    watchdog: threading.Timer | None = None
+    if args.timeout and args.timeout > 0:
+        def _on_timeout() -> None:
+            print(f"probe_and_align: --timeout {args.timeout:g}s exceeded; aborting (media_probe.json, if written, is kept)", file=sys.stderr, flush=True)
+            release_lock(lock)
+            os._exit(124)
+
+        watchdog = threading.Timer(float(args.timeout), _on_timeout)
+        watchdog.daemon = True
+        watchdog.start()
+    try:
+        ctx = probe_and_align(
+            input_path=args.input,
+            work_dir=args.work,
+            script_path=args.script,
+            backup=args.backup,
+            whisper_model=args.whisper_model,
+            language=args.language,
+            skip_whisper=args.skip_whisper,
+            tier=args.tier,
+            refine_onsets=args.refine_onsets,
+            industry_skin=args.industry_skin,
+            format_mode=args.format_mode,
+            music_only=args.music_only,
+            whisper_threads=args.whisper_threads,
+        )
+    finally:
+        if watchdog is not None:
+            watchdog.cancel()
+        release_lock(lock)
 
     sp = ctx["speech_summary"]
     cad = sp.get("cadence_summary") or {}
@@ -5870,7 +6163,7 @@ def main(argv: list[str] | None = None) -> int:
         f"[PROBE & ALIGN v{VERSION} OK] mode={ctx['mode']} | tier={ctx['execution_tier_used']}(rec={ctx['recommended_compile_tier']}) | "
         f"{route_tag}elapsed={ctx['elapsed_sec']:.2f}s | dur={ctx['duration_sec']:.2f}s @ {ctx['fps_grid']}fps | "
         f"media={ctx['media_inventory']['total_files']} | slices={sp.get('slice_count', 0)} | "
-        f"words={sp.get('word_count', 0)} | cuts={cad.get('boundary_count', 0)}"
+        f"words={sp.get('word_count', 0)} | speech_cadence_points={cad.get('speech_cadence_points', cad.get('boundary_count', 0))}"
         f"(fast={cad.get('fast_chain_count', 0)}/pivot={cad.get('chapter_pivot_count', 0)}/vjcut={sp.get('vocal_jcut_candidate_count', 0)}) | "
         f"peaks={sp.get('gesture_action_peak_count', 0)} | warnings={warns} -> {ctx['work_dir']}"
     )

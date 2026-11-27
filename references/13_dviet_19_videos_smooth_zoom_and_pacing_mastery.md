@@ -100,4 +100,4 @@ Trên toàn bộ 19 video, `@__dviet` ưu tiên **Zoom-Out mượt gấp gần `
   - `SmoothCameraTrack`, `CameraKeyframe`, `render_camera_plate_60fps`: Nội suy `C²` + `180°` Shutter Blur.
   - `SubPixelSprite`, `composite_subpixel_sprite`, `apply_subpixel_micro_float_pil`: Chống rung bậc thang `1px` tuyệt đối cho chữ và thẻ nổi.
   - `render_25d_parallax_smooth` & `LayeredFrameCompositor`: Parallax 2.5D bokeh `shift=4` (`1/16px`) và cô lập hoàn toàn lớp chữ `V7/V8`.
-- **Pipeline kết xuất Master V14:** [`scripts/build_v14_dviet_smooth_master.py`](../scripts/build_v14_dviet_smooth_master.py) (tích hợp `ffmpeg-skill v4.5.3`, chuẩn hóa BT.709, âm thanh EBU R128 `-14 LUFS`, và bắt buộc cờ **`-sn`** không nhúng phụ đề chìm `mov_text`).
+- **Pipeline kết xuất Master V14:** `scripts/build_v14_dviet_smooth_master.py` (script ngoài, không đi kèm skill này) (tích hợp `ffmpeg-skill v4.5.3`, chuẩn hóa BT.709, âm thanh EBU R128 `-14 LUFS`, và bắt buộc cờ **`-sn`** không nhúng phụ đề chìm `mov_text`).

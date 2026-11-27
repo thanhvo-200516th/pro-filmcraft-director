@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """
-Automated Verification Suite for `pro-filmcraft-director` v7.3.0.
-Checks syntax, portable paths, preset catalogs, references, and v7.3 compositor/audio-sync guards.
+Automated Verification Suite for `pro-filmcraft-director` (version-agnostic, >= 7.6.0).
+Checks syntax, portable paths, preset catalogs, references (01..27 + dviet_19 index), the v7.4.0 compositor/audio-sync guards
+the v7.5.0 files (loudness table, ducking keyframes, control-bridge shim, flicker schedule)
+and the v7.6.0 Look S files (studio look recipe, scene planner, studio_14 audio profile).
 """
 
 from __future__ import annotations
 
 import json
 import py_compile
+import re
 import sys
 import tempfile
 import wave
@@ -44,18 +47,22 @@ def test_01_python_syntax_and_zero_hardcoded_user_paths() -> None:
 
 def test_02_presets_and_references() -> None:
     presets = sorted((SKILL_ROOT / "presets").glob("*.json"))
-    assert len(presets) >= 9, f"Expected >=9 JSON presets, found {len(presets)}"
+    assert len(presets) >= 11, f"Expected >=11 JSON presets, found {len(presets)}"
     for pj in presets:
         data = json.loads(pj.read_text(encoding="utf-8"))
         assert isinstance(data, (dict, list)) and len(data) > 0, f"Empty preset {pj.name}"
 
     refs = sorted((SKILL_ROOT / "references").glob("*.md"))
-    assert len(refs) >= 20, f"Expected >=20 markdown references (01..20), found {len(refs)}"
+    assert len(refs) >= 28, f"Expected >=28 markdown references (01..27 + 24_studio_look_recipe), found {len(refs)}"
+    assert (SKILL_ROOT / "references" / "23_dviet_profile_decisions_and_backlog.md").is_file(), "Missing reference 23"
+    for ref in ("30_filmcraft_control_bridge", "24_studio_look_recipe", "25_loudness_tiktok_vs_nle", "26_dviet_fonts", "27_premiere_recipes_to_filmcraft"):
+        assert (SKILL_ROOT / "references" / f"{ref}.md").is_file(), f"Missing reference {ref}"
+    assert (SKILL_ROOT / "references" / "dviet_19" / "INDEX.md").is_file(), "Missing references/dviet_19/INDEX.md"
     assert (SKILL_ROOT / "SKILL.md").is_file(), "Missing SKILL.md"
     print(f"[PASS] Verified {len(presets)} JSON preset catalogs & {len(refs)} reference documents")
 
 
-def test_03_v73_compositor_and_sync_guard() -> None:
+def test_03_v74_compositor_and_sync_guard() -> None:
     import fast_studio_compositor as fsc
 
     # 1. Hair-safe wall init + rounded hair crown preservation
@@ -112,11 +119,35 @@ def test_03_v73_compositor_and_sync_guard() -> None:
             caught = True
         assert caught, "verify_audio_voice_sync_guard failed to reject drifted audio duration!"
 
-    print("[PASS] Verified v7.3 Hair-Safe Opening, Hybrid Option A1/A2/B Renderers & VoiceSyncGuard")
+    print("[PASS] Verified v7.6.0 Hair-Safe Opening, Hybrid Option A1/A2/B Renderers & VoiceSyncGuard")
+
+
+def test_04_v75_files_exist_and_compile() -> None:
+    v75_files = [
+        "scripts/tools/duck_keyframes.py",
+        "scripts/tools/filmcraft_cli.py",
+        "scripts/tools/flicker_schedule.py",
+        "tests/test_loudness_v75.py",
+        "tests/test_ducking.py",
+        "scripts/tools/studio_recipe.py",
+        "tests/test_studio_recipe.py",
+    ]
+    for rel in v75_files:
+        path = SKILL_ROOT / rel
+        assert path.is_file(), f"Missing v7.5.0 / v7.6.0 file {rel}"
+        py_compile.compile(str(path), doraise=True)
+    for rel in ("presets/profile_overrides.json",):
+        ver = json.loads((SKILL_ROOT / rel).read_text(encoding="utf-8"))["version"]
+        assert tuple(int(x) for x in ver.split(".")) >= (7, 6, 0), f"{rel} must carry >= 7.6.0, has {ver}"
+    assert (SKILL_ROOT / "presets" / "studio_scene_recipe.json").is_file(), "Missing presets/studio_scene_recipe.json"
+    print(f"[PASS] Verified {len(v75_files)} v7.5.0 / v7.6.0 files exist and py_compile")
 
 
 if __name__ == "__main__":
     test_01_python_syntax_and_zero_hardcoded_user_paths()
     test_02_presets_and_references()
-    test_03_v73_compositor_and_sync_guard()
-    print("TẤT CẢ ĐẠT (pro-filmcraft-director v7.3.0)")
+    test_03_v74_compositor_and_sync_guard()
+    test_04_v75_files_exist_and_compile()
+    ver = re.search(r"\bv(\d+\.\d+\.\d+)", (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8").split("---", 2)[1]).group(1)
+    assert tuple(int(x) for x in ver.split(".")) >= (7, 6, 0), f"SKILL.md version {ver} is older than 7.6.0"
+    print(f"TẤT CẢ ĐẠT (pro-filmcraft-director v{ver})")
