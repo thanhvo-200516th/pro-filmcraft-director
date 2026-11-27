@@ -1,4 +1,4 @@
-# Dual-Channel Frame-by-Frame Forensics: `@__dviet` (N=13) vs `@xuanart.visual` (N=66)
+# 07 — Dual-Channel Frame-by-Frame Forensics: `@__dviet` (N=13) vs `@xuanart.visual` (N=66)
 
 Tài liệu này tổng hợp kết quả đo đạc định lượng và bóc tách từng khung hình (step 1–2 frames @ 24/30/60fps) trên **13 video `@__dviet`** và **66 video `@xuanart.visual`**.
 

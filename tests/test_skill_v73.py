@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Automated Verification Suite for `pro-filmcraft-director` (version-agnostic, >= 7.6.0).
-Checks syntax, portable paths, preset catalogs, references (01..27 + dviet_19 index), the v7.4.0 compositor/audio-sync guards
+Checks syntax, portable paths, preset catalogs, references (01..30 + dviet_19 index), the v7.4.0 compositor/audio-sync guards
 the v7.5.0 files (loudness table, ducking keyframes, control-bridge shim, flicker schedule)
 and the v7.6.0 Look S files (studio look recipe, scene planner, studio_14 audio profile).
 """
@@ -53,9 +53,11 @@ def test_02_presets_and_references() -> None:
         assert isinstance(data, (dict, list)) and len(data) > 0, f"Empty preset {pj.name}"
 
     refs = sorted((SKILL_ROOT / "references").glob("*.md"))
-    assert len(refs) >= 28, f"Expected >=28 markdown references (01..27 + 24_studio_look_recipe), found {len(refs)}"
+    assert len(refs) >= 30, f"Expected >=30 markdown references (01..30), found {len(refs)}"
+    prefixes = sorted({r.name[:2] for r in refs})
+    assert prefixes == [f"{i:02d}" for i in range(1, 31)], f"reference prefixes must be exactly 01..30, got {prefixes}"
     assert (SKILL_ROOT / "references" / "23_dviet_profile_decisions_and_backlog.md").is_file(), "Missing reference 23"
-    for ref in ("30_filmcraft_control_bridge", "24_studio_look_recipe", "25_loudness_tiktok_vs_nle", "26_dviet_fonts", "27_premiere_recipes_to_filmcraft"):
+    for ref in ("30_filmcraft_control_bridge", "24_studio_look_recipe", "28_hook_first_5s_and_pacing", "29_popout_card_premiere_to_filmcraft", "25_loudness_tiktok_vs_nle", "26_dviet_fonts", "27_premiere_recipes_to_filmcraft"):
         assert (SKILL_ROOT / "references" / f"{ref}.md").is_file(), f"Missing reference {ref}"
     assert (SKILL_ROOT / "references" / "dviet_19" / "INDEX.md").is_file(), "Missing references/dviet_19/INDEX.md"
     assert (SKILL_ROOT / "SKILL.md").is_file(), "Missing SKILL.md"

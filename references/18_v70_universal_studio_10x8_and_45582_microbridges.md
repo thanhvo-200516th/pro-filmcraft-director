@@ -1,8 +1,10 @@
 # 18 — `v7.0` Universal Studio Director: `45,582`-Frame `@__dviet` Micro-Bridges, 3-Lane Web-Cinema Orchestration & Orthogonal `10×8` Matrix
 
-`pro-filmcraft-director v7.0` (**Universal Studio Director**) synthesizes the native-frame forensic audit of **`45,582` frames across 19 `@__dviet` master videos** (`60fps` & `30fps` native streams) with a **3-Lane Render Architecture** and an **Orthogonal `10 Format Modes × 8 Industry Skins` Matrix** (`80` canonical studio profiles & `240+` hybrid variants).
+> **Historical reference (v7.0).** Kept as design history; the current spec is [reference 21](./21_craft_json_minimal_spec.md) and the current process is [`SKILL.md`](../SKILL.md). Where this file disagrees with them, they win. Rule A1 and its Look S MP4 exception are stated once, in `SKILL.md` section 3.8.1.
 
-### Forensic Post-Mortem: What `v7.0` Permanently Abolishes from `v6.0`
+`pro-filmcraft-director v7.0` (**Universal Studio Director**) synthesizes the native-frame forensic audit of **`45,582` frames across the 19 `@__dviet` master videos of the v7.1 pass** (17 have evidence files in [`dviet_19/`](./dviet_19/INDEX.md)) (`60fps` & `30fps` native streams) with a **3-Lane Render Architecture** and an **Orthogonal `10 Format Modes × 8 Industry Skins` Matrix** (`80` canonical studio profiles & `240+` hybrid variants).
+
+## Forensic Post-Mortem: What `v7.0` Permanently Abolishes from `v6.0`
 | `v6.0` Failure Mode | Why It Failed Studio Quality Inspection | `v7.0` Universal Studio Director Law |
 |---|---|---|
 | **1. `PIL/OpenCV` 3D Bevel Extrusion & Flat Box Cards** | Raster pixel-offset "3D bevels" and `cv2.rectangle` cards look like cheap plastic stickers with jagged kerning and dead edges | **PERMANENT BAN (`NO_PIL_PLASTIC_BEVEL`).** Route typography/UI plates to **Lane B** ([`web_plate_builder.py`](../scripts/tools/web_plate_builder.py): Headless Chrome `HTML5/CSS3/SVG @2x DPR` → RGBA PNG / ProRes 4444) with `0px` hard stroke |
@@ -167,4 +169,4 @@ All frame counts below are specified at **native `60fps`** (`1f = 16.67ms`), wit
 4. **Chromatic Discipline:** Does the timeline follow `color_world_polarity` OR chapter-clean `semantic_4act_jewel` (`<= 1` jewel hue per act, `0` intra-sentence rainbow soup)?
 5. **14 Micro-Bridges:** Are cuts smoothed with `player3_air_cushion_20f`, `rack_focus_13f`, `persistent_text_bridge_11f`, `optical_flow_morph_6f`, `exposure_bloom_3f`, and `bimodal_vocal_jcut_deep` (`<= 45%` `wgpu` transitions)?
 6. **Acoustic Contrast & 7 Organic Foley:** Are `meta.bgm_stops` (`>= 0.50s` `-inf dB`) and `organic_foley_7_pack` (`R217` `[-1f, +2f]`, `-16/-14 LUFS`, `R35` TP) verified?
-7. **Rule A1 Native Handoff:** Does compilation output an editable `.fcproj` + `1440×2560` QA contact sheet without exporting `.mp4` unless requested?
+7. **Rule A1 Native Handoff:** Does compilation output an editable `.fcproj` + `1440×2560` QA contact sheet without exporting `.mp4` unless requested (Look S exception: MP4 master plus the `.fcproj` mirror, `SKILL.md` section 3.8.1)?

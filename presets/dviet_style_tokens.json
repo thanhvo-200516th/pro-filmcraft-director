@@ -550,7 +550,10 @@
       "videos_in_range": 13,
       "source_peak_up_to_dbfs": 3.0,
       "tp_cap_dbtp": -0.5,
-      "note": "Cap of -0.5 dBTP when enabled; do not copy the source's peaks above 0 dBFS (clipping)."
+      "note": "Cap of -0.5 dBTP when enabled; do not copy the source's peaks above 0 dBFS (clipping).",
+      "tp_cap_dbtp_v791": -1.0,
+      "bgm_below_voice_db_v791": 14,
+      "note_v791": "v7.9.1: supersedes tp_cap_dbtp (-0.5 was stale): the tiktok_loud profile masters to -1.0 dBTP (a -0.5 dBTP master exceeds 0 dBFS after AAC) with the BGM bed ~14 dB below the voice. Source of truth: presets/profile_overrides.json audio profile `tiktok_loud` (true_peak_dbtp, enforced by compile_and_verify.py --audio-profile tiktok_loud)."
     }
   },
   "fonts": {

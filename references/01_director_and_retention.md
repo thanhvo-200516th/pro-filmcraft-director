@@ -1,4 +1,4 @@
-# Trụ cột 1 & 4: Tư duy Đạo diễn, Cấu trúc Kể chuyện & Tâm lý Giữ chân
+# 01 — Trụ cột 1 & 4: Tư duy Đạo diễn, Cấu trúc Kể chuyện & Tâm lý Giữ chân
 
 ## 1. Khóa Core Intent (Trước khi cắt bất kỳ frame nào)
 - **Business Goal:** `Conversion` | `LeadGen` | `Trust` | `Discovery` | `Retention`.

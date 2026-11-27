@@ -147,6 +147,8 @@ The `fc_build` spec has **no `masks` key**: Mask Path, Expansion and Feather as 
 
 ### 4.2 RVM fringe
 
+> The skill ships **no RVM model**. The person matte it can make itself is `u2netp` / `birefnet-portrait` (rembg, `scripts/tools/fast_studio_compositor.py`); "RVM alpha" in this file means any person matte passed as `person_alpha_u8`, e.g. one made by the RVM tool of another skill.
+
 The RVM alpha leaves a **grey halo** (a fringe) left of the hair in the proof frame [ĐO, one frame]; it is most visible on a light card, and the likely cause is leftover wall colour in the semi-transparent edge pixels [ƯỚC]. A choke of 2 px (`pop_alpha_choke`) alone does **not** clear it. Before shipping a pop-out plate, apply one of:
 
 1. **Decontaminate the colour with the alpha** (estimate the foreground colour from the alpha and replace the edge colour; do not just erode).

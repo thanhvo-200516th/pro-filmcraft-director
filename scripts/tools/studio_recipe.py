@@ -46,7 +46,7 @@ def _load(path: Path = PRESET) -> dict:
 
 def _words(doc) -> list[tuple[str, float, float]]:
     seq = (doc.get("words") or doc.get("words_tl") or []) if isinstance(doc, dict) else doc
-    return [(str(w[0]), float(w[1]), float(w[2])) for w in seq]
+    return [(str(w.get("word", w.get("text", ""))), float(w["start"]), float(w["end"])) if isinstance(w, dict) else (str(w[0]), float(w[1]), float(w[2])) for w in seq]
 
 
 def _kept_grid(grid: list[dict], words, duration: float, rec: dict) -> list[tuple[dict, float]]:
@@ -111,13 +111,13 @@ def check_scenes(scenes: list[dict], duration: float, preset: dict | None = None
     return bad
 
 
-def plan_scenes(words_tl, duration: float, look: str = "S", preset: dict | None = None) -> dict:
+def plan_scenes(words_tl, duration: float, look: str = "S", preset: dict | None = None, strict: bool = False) -> dict:
     rec = preset or _load()
     if look not in ("S", "D"):
         raise ValueError(f"look must be 'S' or 'D', got {look!r}")
-    if duration < 2 * rec["min_scene_s"]:
-        raise ValueError(f"duration must be >= {2 * rec['min_scene_s']} s, got {duration}")
-    words, end = _words(words_tl), round(float(duration), 3)
+    words, end = _words(words_tl), round(float(duration), 3)  # strict (the CLI): >= 1 word, finite times, the timeline reaches the last word
+    if not math.isfinite(duration) or duration < 2 * rec["min_scene_s"] or (strict and (not words or not all(math.isfinite(t) for w in words for t in w[1:]) or max(w[2] for w in words) > duration + 0.05)):
+        raise ValueError(f"duration must be finite and >= {2 * rec['min_scene_s']} s" + (" with >= 1 word of finite start / end seconds and the last word ending by it" if strict else "") + f", got {duration} s and {len(words)} words" + (f" (last word ends at {max(w[2] for w in words):.3f} s)" if words else ""))
     if look == "D":
         one = {"id": "D01", "start": 0.0, "end": end, "mode": "D", "kind": "strip", "chapter": 0, "act": 0, "family": "strip", "hue": None,
                "jewel": None, "render": rec["modes"]["D"]["render"], "bg": None, "template": "screen_strip", "text": ""}
@@ -457,14 +457,14 @@ def check_source_reuse(shots: list[dict], preset: dict | None = None) -> list[di
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Look S scene planner (V21 pattern): words json + duration -> scenes.json")
-    ap.add_argument("--words", required=True, help="words_tl json: probe dict doc ({'words': ...}) or bare [[word, t0, t1], ...]")
+    ap.add_argument("--words", required=True, help="words_tl json: probe dict doc ({'words': ...}) or bare list; a word is [word, t0, t1] or whisper {word, start, end}")
     ap.add_argument("--duration", required=True, type=float, help="timeline duration in seconds")
     ap.add_argument("--out", required=True, help="scenes.json to write")
     ap.add_argument("--look", default="S", choices=("S", "D"), help="S studio (default) or D plain screen-strip")
     args = ap.parse_args(argv)
     try:
-        plan = plan_scenes(json.loads(Path(args.words).read_text(encoding="utf-8")), args.duration, args.look)
-    except (OSError, ValueError, TypeError, IndexError) as exc:
+        plan = plan_scenes(json.loads(Path(args.words).read_text(encoding="utf-8")), args.duration, args.look, strict=True)
+    except (OSError, ValueError, TypeError, IndexError, KeyError) as exc:
         print(f"studio_recipe: {exc}", file=sys.stderr)
         return 2
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)

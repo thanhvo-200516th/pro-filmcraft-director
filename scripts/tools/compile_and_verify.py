@@ -32,7 +32,8 @@ Execution Tiers:
               fast audio-only re-trim if `|measured_lufs - target_lufs| > 0.45 LU`).
               NOTE: the loop only converges on REAL SPEECH (tone / music-only / silent fixtures cannot be gain-matched
               to the LUFS target and will report Gate 6 FAIL or non-converged by design). `--audio-profile studio_14`
-              (-14 LUFS, <= -1.2 dBTP, ducking ON, Look S) or `tiktok_loud` (-12 LUFS, <= -0.5 dBTP, no ducking, BGM 6.6 dB under voice)
+              (-14 LUFS, <= -1.2 dBTP, ducking ON, Look S) or `tiktok_loud` (-12 LUFS, <= -1.0 dBTP, no ducking, BGM 14 dB under voice;
+              the numbers live in presets/profile_overrides.json and `--help` prints them from there)
               overrides the ovs -16 LUFS rule.
       Gate 7: SFX Integrity (`audit_sfx.py`) + Ruling `R217` Normalized Cross-Correlation (`match_at`)
               SFX Sync Audit + Optional Portable Relative Bundle Mode (`--portable-root`)
@@ -208,9 +209,12 @@ FC_FAST_QA_PY = OPA_SCRIPTS / "fc_fast_qa.py"
 AUDIT_SFX_PY = OPA_SCRIPTS / "audit_sfx.py"
 DEFAULT_RULES_JSON = OPA_SKILL / "rules.json"
 
-CACHE_ROOT = Path.home() / ".cache" / "opa-video-studio"
+# v7.9.1: one cache root for this skill (env PFD_CACHE_DIR); the pre-7.9.1 opa-video-studio cache is still READ as a fallback.
+LEGACY_CACHE_ROOT = Path.home() / ".cache" / "opa-video-studio"
+CACHE_ROOT = Path(os.environ["PFD_CACHE_DIR"]).expanduser() if os.environ.get("PFD_CACHE_DIR") else Path.home() / ".cache" / "pro-filmcraft-director"
 BACKUP_DIR = CACHE_ROOT / "backup"
 SFX_ACOUSTIC_CACHE_PATH = CACHE_ROOT / "sfx_acoustic_cache_v51.json"
+LEGACY_SFX_ACOUSTIC_CACHE_PATH = LEGACY_CACHE_ROOT / "sfx_acoustic_cache_v51.json"
 
 MEDIA_EXT = {".mp4", ".mov", ".mkv", ".webm", ".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg"}
 VIDEO_EXT = {".mp4", ".mov", ".mkv", ".webm"}
@@ -218,6 +222,18 @@ AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg"}
 VALID_INTERP = {"linear", "bezier", "easeIn", "easeOut", "hold"}
 MAIN_TEXT_LANES = {"text", "text_top", "text_sub", "text_img"}
 ABS_FS_PREFIXES = ("/home/", "/tmp/", "/mnt/", "/var/", "/opt/", "/usr/", "/root/", "/media/", "/etc/")
+_WIN_ABS_PATH_RE = re.compile(r"^(?:[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/])")  # C:\x, D:/x, \\server\share
+
+
+def _is_abs_media_path(s: str) -> bool:
+    """Absolute filesystem path on any host: a POSIX root path, a Windows drive path or a UNC share."""
+    return bool(s) and (os.path.isabs(s) or s.startswith("/") or bool(_WIN_ABS_PATH_RE.match(s)))
+
+
+def _same_media_path(a: str, b: str) -> bool:
+    """Compare two media paths after Unicode NFC (macOS / some exports write NFD Vietnamese names)."""
+    na, nb = unicodedata.normalize("NFC", str(a)), unicodedata.normalize("NFC", str(b))
+    return na == nb or Path(na).resolve() == Path(nb).resolve()
 
 SAFE_ZONE_BOX = {"x_min": 50.0, "x_max": 1030.0, "y_min": 140.0, "y_max": 1760.0}
 EYE_REL_BOX = (0.10, 0.30, 0.90, 0.50)    # matches thlib/facesafe.py face.eye_box
@@ -341,9 +357,11 @@ def _load_disk_sfx_cache() -> dict[str, dict[str, Any]]:
     global _DISK_SFX_CACHE
     if _DISK_SFX_CACHE is not None:
         return _DISK_SFX_CACHE
-    if SFX_ACOUSTIC_CACHE_PATH.is_file():
+    for cache_path in (SFX_ACOUSTIC_CACHE_PATH, LEGACY_SFX_ACOUSTIC_CACHE_PATH):
+        if not cache_path.is_file():
+            continue
         try:
-            data = json.loads(SFX_ACOUSTIC_CACHE_PATH.read_text(encoding="utf-8"))
+            data = json.loads(cache_path.read_text(encoding="utf-8"))
             if isinstance(data, dict):
                 _DISK_SFX_CACHE = data
                 return _DISK_SFX_CACHE
@@ -359,10 +377,12 @@ def _flush_disk_sfx_cache() -> None:
         return
     try:
         SFX_ACOUSTIC_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        SFX_ACOUSTIC_CACHE_PATH.write_text(
+        tmp_path = SFX_ACOUSTIC_CACHE_PATH.with_name(f"{SFX_ACOUSTIC_CACHE_PATH.name}.{os.getpid()}.tmp")
+        tmp_path.write_text(
             json.dumps(_DISK_SFX_CACHE, ensure_ascii=False, separators=(",", ":")),
             encoding="utf-8",
         )
+        os.replace(tmp_path, SFX_ACOUSTIC_CACHE_PATH)  # atomic: parallel compiles never read a half-written cache
         _DISK_SFX_CACHE_DIRTY = False
     except OSError:
         pass
@@ -477,7 +497,7 @@ def measure_sfx_acoustic_profile(path_str: str) -> dict[str, Any] | None:
       - Decodes mono 48kHz PCM
       - Computes `5ms` (`240`-sample) boxcar envelope `env5`
       - Finds exact acoustic climax `lag_ms = argmax(env5) / 48.0`, `dur_s`, and file `md5`
-      - Cached in memory and `~/.cache/opa-video-studio/sfx_acoustic_cache_v51.json`
+      - Cached in memory and `$PFD_CACHE_DIR/sfx_acoustic_cache_v51.json` (default `~/.cache/pro-filmcraft-director`)
     """
     global _DISK_SFX_CACHE_DIRTY
     p = Path(path_str)
@@ -2526,7 +2546,7 @@ def _is_v1_broll_clip(clip: dict[str, Any], primary_aroll_src: str | None = None
         return True
     if cname.startswith(("a-roll", "aroll")) or "a-roll" in fn or "aroll" in fn:
         return False
-    if primary_aroll_src and src and Path(src).resolve() != Path(primary_aroll_src).resolve():
+    if primary_aroll_src and src and not _same_media_path(src, primary_aroll_src):
         return True
     return False
 
@@ -5466,7 +5486,7 @@ def audit_cranial_exclusion(
                 cname_v1.startswith(("a-roll", "aroll"))
                 or "aroll" in Path(src_v1).name
                 or "a-roll" in Path(src_v1).name
-                or (primary_aroll_src is not None and str(v1_cl.get("src") or "") == primary_aroll_src)
+                or (primary_aroll_src is not None and _same_media_path(str(v1_cl.get("src") or ""), primary_aroll_src))
             )
             if is_aroll:
                 no_cranial_data_hits.append(ts)  # no face data anywhere: report it, never invent a box
@@ -6984,12 +7004,12 @@ def build_4x4_contact_sheet(
 
 
 def backup_existing_fcproj(out_path: Path) -> Path | None:
-    """Rule A3: Backup existing .fcproj into ~/.cache/opa-video-studio/backup/ before overwriting."""
+    """Rule A3: Backup existing .fcproj into `$PFD_CACHE_DIR/backup/` (default ~/.cache/pro-filmcraft-director) before overwriting."""
     if not out_path.is_file():
         return None
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-    bk_path = BACKUP_DIR / f"{out_path.stem}-{stamp}{out_path.suffix}"
+    bk_path = BACKUP_DIR / f"{out_path.stem}-{stamp}-{os.getpid()}{out_path.suffix}"
     shutil.copy2(out_path, bk_path)
     return bk_path
 
@@ -7015,7 +7035,7 @@ def relativize_and_verify_bundle(
         str(portable_root.absolute()).rstrip("/") + "/assets/",
         str((portable_root / "assets").resolve()).rstrip("/") + "/",
     }:
-        prefixes_to_strip.append(assets_cand)
+        prefixes_to_strip.append(unicodedata.normalize("NFC", assets_cand))
 
     doc = json.loads(compiled_fcproj.read_text(encoding="utf-8"))
 
@@ -7025,9 +7045,10 @@ def relativize_and_verify_bundle(
         if isinstance(node, list):
             return [_rewrite_node(x) for x in node]
         if isinstance(node, str):
+            node_nfc = unicodedata.normalize("NFC", node)
             for pref in prefixes_to_strip:
-                if node.startswith(pref):
-                    return "assets/" + node[len(pref) :]
+                if node_nfc.startswith(pref):
+                    return "assets/" + node_nfc[len(pref) :]
             return node
         return node
 
@@ -7047,7 +7068,7 @@ def relativize_and_verify_bundle(
             is_path_key = key_name in ("path", "file", "src")
             if node.startswith("assets/"):
                 referenced_rels.append(node)
-            elif (is_path_key and node.startswith("/")) or node.startswith(ABS_FS_PREFIXES):
+            elif (is_path_key and _is_abs_media_path(node)) or node.startswith(ABS_FS_PREFIXES) or _WIN_ABS_PATH_RE.match(node):
                 leftover_abs.append(node)
 
     _audit_paths(rel_doc)
@@ -7385,6 +7406,39 @@ def sync_sidecar_metadata(spec_in: Path, work_dir: Path, portable_root: Path | N
             if cand_dir is not None and (cand_dir / fname).is_file():
                 shutil.copy2(cand_dir / fname, dst)
                 break
+
+
+def run_edit_rules_json(cmd: list[str]) -> list[dict[str, Any]]:
+    """Run `edit_rules.py audit ... --json`; a crash or non-JSON output raises instead of reading as "0 errors".
+
+    edit_rules exits 0 when clean and 1 when it reports LỖI items; any other exit code, a non-list output,
+    or exit 1 without a LỖI item (a traceback after partial output) is a crash.
+    """
+    r = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    tail = (r.stderr or r.stdout or "").strip()[-300:]
+    try:
+        items = json.loads(r.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"edit_rules crashed: exit {r.returncode}, non-JSON output ({exc}): {tail}") from exc
+    if not isinstance(items, list):
+        raise RuntimeError(f"edit_rules crashed: exit {r.returncode}, expected a JSON list, got {type(items).__name__}")
+    has_err = any(isinstance(it, dict) and it.get("status") == "LỖI" for it in items)
+    if r.returncode not in (0, 1) or (r.returncode == 1) != has_err:
+        raise RuntimeError(f"edit_rules crashed: exit {r.returncode} with {'' if has_err else 'no '}LỖI items: {tail}")
+    return items
+
+
+def gate_tally(gates: dict[str, str]) -> dict[str, Any]:
+    """Honest gate count for the final banner: only `PASS...` counts as passed; SKIPPED / WARN / other states are named."""
+    passed = [k for k, v in gates.items() if str(v).startswith("PASS")]
+    skipped = [k for k, v in gates.items() if str(v).startswith("SKIPPED")]
+    other = [k for k, v in gates.items() if k not in passed and k not in skipped]
+    banner = f"{len(passed)}/{len(gates)} GATES PASSED"
+    if skipped:
+        banner += f" · SKIPPED: {', '.join(skipped)}"
+    if other:
+        banner += " · NOT PASSED: " + ", ".join(f"{k}={gates[k]}" for k in other)
+    return {"passed": len(passed), "total": len(gates), "skipped": skipped, "not_passed": other, "banner": banner}
 
 
 def resolve_execution_tier(
@@ -8031,9 +8085,17 @@ def parse_args() -> argparse.Namespace:
         "--profile", choices=("default", "dviet"), default="default",
         help="Style profile: `default` = historical behaviour; `dviet` scopes the Warm Film Burn / white-flash vetoes to capped wash/flash events (4-Cut Grammar stays HARD)",
     )
+    audio_profiles = _load_profile_overrides()["audio_profiles"]
+    pl, s14, tl = (audio_profiles[k] for k in ("platform", "studio_14", "tiktok_loud"))
     ap.add_argument(
-        "--audio-profile", choices=tuple(_load_profile_overrides()["audio_profiles"]), default="platform",
-        help="Loudness profile (presets/profile_overrides.json): `platform` (-16 LUFS, <= -1.5 dBTP, default), `studio_14` (Look S: -14 LUFS, <= -1.2 dBTP, ducking ON) or `tiktok_loud` (-12 LUFS, <= -0.5 dBTP limiter, no ducking, BGM 6.6 dB under voice)",
+        "--audio-profile", choices=tuple(audio_profiles), default="platform",
+        help=(
+            "Loudness profile (presets/profile_overrides.json): "
+            f"`platform` ({pl['target_lufs']:g} LUFS, <= {pl['true_peak_dbtp']:g} dBTP, default), "
+            f"`studio_14` (Look S: {s14['target_lufs']:g} LUFS, <= {s14['true_peak_dbtp']:g} dBTP, ducking ON) or "
+            f"`tiktok_loud` ({tl['target_lufs']:g} LUFS, <= {tl['true_peak_dbtp']:g} dBTP, "
+            f"{'no ducking' if tl.get('no_ducking') else 'ducking ON'}, BGM {tl['bgm_below_voice_db']:g} dB under voice)"
+        ),
     )
     ap.add_argument("--portable-root", help="Optional bundle root dir to relativize `assets/...` & update bundle_manifest.json")
     ap.add_argument("--auto-sfx-dir", help="Optional directory to auto-resolve `src: 'AUTO:<keyword>'` SFX clips")
@@ -8053,7 +8115,10 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--hook-mask", action="append", default=[], metavar="X0,Y0,X1,Y1",
                     help="Normalised rect (0..1) ignored by --hook-gates (PiP / text box); repeatable")
     ap.add_argument("--open-app", action="store_true", help="Launch FilmCraft desktop GUI (--no-recover) on completion")
-    ap.add_argument("--display", default=":0", help="X11 DISPLAY for --open-app (default: :0)")
+    ap.add_argument(
+        "--display", default=os.environ.get("CRAFT_DISPLAY") or ":93",
+        help="X11 DISPLAY for --open-app (default: $CRAFT_DISPLAY or :93, the isolated craftctl display; pass :0 to open on your desktop)",
+    )
     ap.add_argument("--self-test", action="store_true", help="Run v7.0 Stateless Gatekeeper unit & FilmCraft AdjustmentLayer smoke tests")
     args = ap.parse_args()
     if args.hook_gates and not args.preview:
@@ -8396,8 +8461,11 @@ def main() -> int:
             if manifest_path:
                 rules_base += ["--manifest", str(manifest_path)]
 
-            r_rules_json = subprocess.run([*rules_base, "--json"], capture_output=True, text=True, check=False)
-            rules_items = json.loads(r_rules_json.stdout) if r_rules_json.stdout.strip().startswith("[") else []
+            try:
+                rules_items = run_edit_rules_json([*rules_base, "--json"])
+            except RuntimeError as exc:
+                gates["gate3_edit_rules"] = f"FAIL ({exc})"
+                raise RuntimeError(f"Gate 3 failed: {exc}") from exc
             v60_adj_res = adjudicate_v60_cut_grammar_and_c7(
                 levels_spec_doc,
                 words=words_doc,
@@ -8449,7 +8517,7 @@ def main() -> int:
             )
         else:
             timings["gate3_edit_rules"] = 0.0
-            gates["gate3_edit_rules"] = "PASS"
+            gates["gate3_edit_rules"] = "SKIPPED"
             summary["edit_rules"] = {"executed": False, "reason": "neither --words nor --manifest provided"}
             print("ℹ️  [Gate 3/8] Edit Rules Audit skipped (no --words or --manifest provided)")
 
@@ -9070,6 +9138,9 @@ def main() -> int:
         timings["gate8_report_and_verdict"] = round(time.perf_counter() - t_g8, 3)
         summary["total_elapsed_sec"] = round(time.perf_counter() - t_start_all, 3)
         summary["completed_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
+        tally = gate_tally(gates)
+        summary["gates_passed"] = tally["passed"]
+        summary["gates_skipped"] = tally["skipped"]
 
         write_editor_report_md(editor_report_path, summary)
         serialized_summary = json.dumps(summary, ensure_ascii=False, indent=2)
@@ -9078,7 +9149,7 @@ def main() -> int:
 
         claim_banner = " · [R200 CLAIM_GATE: HOLD PUBLISH UNTIL USER CONFIRMS]" if claim_gate_active else ""
         print(
-            f"🚀 [8/8 GATES PASSED · {verdict}] Tier=`{tier_used}` · Compiled `{out_fcproj.name}` "
+            f"🚀 [{tally['banner']} · {verdict}] Tier=`{tier_used}` · Compiled `{out_fcproj.name}` "
             f"in {summary['total_elapsed_sec']:.2f}s!{claim_banner}\n"
             f"   📄 Report  -> {editor_report_path}\n"
             f"   📊 Summary -> {compile_report_path} (& {summary_path.name})"

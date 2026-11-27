@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Stateless Multi-Style Visual Primitives, Living Motion Canvases & B-Roll Hygiene (`visual_blocks.py` `v6.0`)
-============================================================================================================
+Stateless Multi-Style Visual Primitives, Living Motion Canvases & B-Roll Hygiene (`visual_blocks.py` `v6.0` core, packaged as `v7.9.1`)
+=====================================================================================================================================
 Provides 13 crisp, 2x-supersampled RGBA/RGB primitives (zero system color emojis — 100% anti-aliased
 vector geometric icons: padlock, arrow/spark, aperture) PLUS 4 full-screen living `.mp4` Motion-Design
 Canvases (`dviet_motion_canvas_engine.py` `v6.0`), `anchor_shape_xyr` match-cut telemetry, B-roll
-border/flatness hygiene, 46-token anti-slop prompt linting, and automatic metadata stripping.
+border/flatness hygiene, B-roll prompt linting (presets/broll_lint_contract.json), and automatic metadata stripping.
 
 Callable individually from Python OR via CLI:
   python3 scripts/tools/visual_blocks.py --list
@@ -46,7 +46,6 @@ import importlib.util
 import json
 import math
 import re
-import subprocess
 import unicodedata
 import warnings
 from functools import lru_cache
@@ -61,6 +60,7 @@ SS = 2  # 2x supersampling factor for razor-sharp anti-aliased vector geometry &
 
 STRIP_METADATA_SCRIPT = Path.home() / ".gemini/config/skills/strip-media-metadata/scripts/strip_metadata.py"
 
+# v7.9.1: optional extra dirs; `$PFD_FONT_DIR` is searched first (web_plate_builder.env_font_dirs)
 FONT_DIRS = [
     Path.home() / ".local/share/fonts/tnedit",
     Path.home() / ".local/share/fonts/Montserrat_Static",
@@ -219,12 +219,26 @@ class VisualBlockResult(type(Path())):
 @lru_cache(maxsize=64)
 def _resolve_font_path(role: str) -> str:
     candidates = FONT_CANDIDATES.get(role, FONT_CANDIDATES["be_bold"])
+    wpb = _wpb()
     for fname in candidates:
-        for fdir in FONT_DIRS:
+        for fdir in (*wpb.env_font_dirs(), *FONT_DIRS):
             cand = fdir / fname
             if cand.is_file():
                 return str(cand)
-    raise FileNotFoundError(f"Could not locate any local font for role={role!r}")
+    for fname in candidates:  # v7.9.1: fontconfig knows the file under another folder
+        hit = wpb.find_font_file(fname)
+        if hit is not None:
+            return str(hit)
+    raise FileNotFoundError(f"Could not locate any local font for role={role!r} (tried {candidates}); install it or set PFD_FONT_DIR")
+
+
+def _wpb() -> Any:
+    """web_plate_builder (lazy): the shared font search and metadata strip helpers."""
+    if str(Path(__file__).resolve().parent) not in sys.path:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import web_plate_builder as mod
+
+    return mod
 
 
 @lru_cache(maxsize=256)
@@ -262,13 +276,8 @@ def strip_image_metadata(path: str | Path) -> None:
             if cleaned != raw:
                 p.write_bytes(cleaned)
             return
-    if STRIP_METADATA_SCRIPT.is_file():
-        subprocess.run(
-            [sys.executable, str(STRIP_METADATA_SCRIPT), str(p)],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+    # v7.9.1: shared helper (the sibling skill's CLI, else a PIL re-save; warns loudly when both fail) instead of a silent skip
+    _wpb().strip_media_metadata(p, keep_icc=False)
 
 
 def strip_png_metadata(path: str | Path) -> None:
@@ -2174,17 +2183,27 @@ def clean_broll_plate(
     return res
 
 
-# Ported 46-token anti-slop hallucination banlist from `opa-video-studio` `broll_plan.py` (`1.2.3 F2`)
-BROLL_BANNED_TOKENS: tuple[str, ...] = (
-    "logo", "watermark", "text", "subtitle",
-    # 1.2.2 F2: layout splits, fake labels, hallucinated charts/metrics, branded platforms/devices, IP characters
-    "side-by-side", "split screen", "comparison", "label", "labels", "caption", "captions", "annotation", "annotations",
-    "notes", "graph", "chart", "metrics", "analytics", "statistics", "engagement", "youtube", "tiktok", "facebook",
-    "instagram", "iphone", "macbook", "apple", "samsung", "google", "game character",
-    # 1.2.3 F2: sticky notes, checklists, handwriting, chat/messaging bubbles
-    "note", "checklist", "checklists", "checkbox", "checkboxes", "written", "bullet", "bullets", "handwritten",
-    "handwriting", "chat", "chatting", "message", "messages", "messaging", "texting",
-)
+# v7.9.1: ONE B-roll prompt lint. The word range and every token list come from presets/broll_lint_contract.json (the ingest
+# contract of broll_from_video.py); BROLL_BANNED_TOKENS is derived (TEXT_IN_IMAGE + BRAND tokens, a superset of the 46 tokens
+# ported from `opa-video-studio` `broll_plan.py` 1.2.3 F2), and FACE / R200 apply here too.
+BROLL_LINT_CONTRACT_PATH = Path(__file__).resolve().parents[2] / "presets" / "broll_lint_contract.json"
+
+
+@lru_cache(maxsize=1)
+def _broll_contract() -> dict[str, Any]:
+    return json.loads(BROLL_LINT_CONTRACT_PATH.read_text(encoding="utf-8"))
+
+
+def _broll_lint_module():
+    if str(Path(__file__).resolve().parent) not in sys.path:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import broll_from_video as bv  # stdlib-only module: the shared matcher
+
+    return bv
+
+
+BROLL_BANNED_TOKENS: tuple[str, ...] = tuple(dict.fromkeys(
+    t for r in ("TEXT_IN_IMAGE", "BRAND") for t in _broll_contract()["rules"][r]["tokens"]))
 
 _VI_DIACRITICS_RE = re.compile(
     r"[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]",
@@ -2227,22 +2246,18 @@ _BANNED_HINT_GROUPS: list[tuple[frozenset[str], str]] = [
 ]
 
 
-def _hint_for_banned_token(tok: str) -> str:
-    for group_set, hint in _BANNED_HINT_GROUPS:
-        if tok in group_set:
-            return hint
-    return f"Remove '{tok}' and describe concrete physical lighting, subject action, and unbranded objects."
-
-
-def lint_broll_prompt(prompt: str, min_words: int = 8, max_words: int = 95) -> dict[str, Any]:
+def lint_broll_prompt(prompt: str, min_words: int | None = None, max_words: int | None = None) -> dict[str, Any]:
     """
-    Stateless B-Roll Prompt Hygiene Linter (`v5.1`, ported from `broll_plan.py` `1.2.3 F2`):
-      - Checks word count (`8..95` words).
+    Stateless B-Roll Prompt Hygiene Linter (v7.9.1: the plate-level face of the ONE lint in presets/broll_lint_contract.json):
+      - Checks word count (contract `min_words`..`max_words` = 8..60 unless overridden).
       - Rejects Vietnamese diacritics (prompts for image/video generators must be English).
-      - Scans all 46 anti-slop hallucination tokens (`side-by-side`, `split screen`, `graph`, `chart`,
-        `metrics`, `checklist`, `handwritten`, `chat`, `youtube`, `tiktok`, `iphone`, `macbook`, `logo`, `watermark`, ...)
-        and returns actionable replacement hints.
+      - Scans the contract rules through broll_from_video.prompt_rule_hits: TEXT_IN_IMAGE + BRAND tokens (`BROLL_BANNED_TOKENS`),
+        FACE (minus its allowed phrases) and R200 evidence terms, and returns actionable replacement hints.
+      No anchor_quote check (that is ingest-only, `broll_from_video.py check-prompts`).
     """
+    contract = _broll_contract()
+    min_words = int(contract["min_words"] if min_words is None else min_words)
+    max_words = int(contract["max_words"] if max_words is None else max_words)
     norm = unicodedata.normalize("NFC", str(prompt or "")).strip()
     words = norm.split() if norm and norm != "?" else []
     word_count = len(words)
@@ -2272,21 +2287,27 @@ def lint_broll_prompt(prompt: str, min_words: int = 8, max_words: int = 95) -> d
         errors.append("Prompt contains Vietnamese diacritics (must be 100% English).")
         hints.append("Translate the visual scene description into natural English with zero Vietnamese words or accents.")
 
-    low = norm.lower()
-    banned_hits: list[str] = []
+    rule_hits = _broll_lint_module().prompt_rule_hits(norm, contract)
+    banned_hits: list[str] = [t for code in ("TEXT_IN_IMAGE", "BRAND") for t in rule_hits.get(code, [])]
     seen_hints: set[str] = set()
-    for tok in BROLL_BANNED_TOKENS:
-        pat = r"[-\s]+".join(re.escape(part) for part in re.split(r"[-\s]+", tok) if part)
-        if re.search(rf"\b{pat}\b", low):
-            banned_hits.append(tok)
-            h = _hint_for_banned_token(tok)
-            replacements[tok] = h
-            if h not in seen_hints:
-                seen_hints.add(h)
-                hints.append(h)
+    for tok in banned_hits:
+        h = next((hint for group_set, hint in _BANNED_HINT_GROUPS if tok in group_set), None) or contract["rules"][
+            "TEXT_IN_IMAGE" if tok in rule_hits.get("TEXT_IN_IMAGE", []) else "BRAND"]["hint"]
+        replacements[tok] = h
+        if h not in seen_hints:
+            seen_hints.add(h)
+            hints.append(h)
 
     if banned_hits:
         errors.append("Banned anti-slop tokens detected: " + ", ".join(banned_hits))
+    for code, label in (("FACE", "Shows a face"), ("R200", "Would pass as claim evidence (R200)")):
+        if rule_hits.get(code):
+            errors.append(f"{label}: " + ", ".join(rule_hits[code]))
+            banned_hits.extend(rule_hits[code])
+            hint = contract["rules"][code]["hint"]
+            if hint not in seen_hints:
+                seen_hints.add(hint)
+                hints.append(hint)
 
     ok = len(errors) == 0
     return {
@@ -2835,7 +2856,7 @@ def _print_list_catalog() -> int:
     print(
         json.dumps(
             {
-                "version": "6.0",
+                "version": "7.9.1",
                 "primitives": PRIMITIVE_SCHEMAS,
                 "motion_canvases": mce.CANVAS_STAGE_SCHEMAS,
                 "canvas_themes": list(mce.COLOR_WORLD_THEMES.keys()),
@@ -2859,7 +2880,7 @@ def _cli(argv: Sequence[str] | None = None) -> int:
 
     # Direct top-level `--canvas <stage> [--spec '{...}'] -o stage.mp4` shortcut
     if "--canvas" in eff_argv and (not eff_argv or eff_argv[0] not in ("render", "render-canvas", "lint-prompt", "list")):
-        c_parser = argparse.ArgumentParser(description="Render a v6.0 Living Motion-Design Canvas (.mp4)")
+        c_parser = argparse.ArgumentParser(description="Render a Living Motion-Design Canvas (.mp4), visual_blocks v7.9.1")
         c_parser.add_argument("--canvas", required=True, help="Stage name (`timeline_playhead_stage`, `concentric_lock_lab_stage`, `giant_numeral_3d_ui_stage`, `bento_kinetic_matrix_stage`)")
         c_parser.add_argument("--spec", default="{}", help="Inline JSON spec string or path to `.json` spec file")
         c_parser.add_argument("-o", "--output", required=True, help="Output `.mp4` path")
@@ -2871,7 +2892,7 @@ def _cli(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(res, ensure_ascii=False, indent=2))
         return 0
 
-    parser = argparse.ArgumentParser(description="Stateless 13-Primitive Visual Blocks, 4 Living Motion Canvases & B-Roll Hygiene Toolkit (v6.0)")
+    parser = argparse.ArgumentParser(description="Stateless 13-Primitive Visual Blocks, 4 Living Motion Canvases & B-Roll Hygiene Toolkit (v7.9.1)")
     parser.add_argument("--list", action="store_true", help="Print JSON schema of all 13 visual primitives and 4 animated motion canvases")
     sub = parser.add_subparsers(dest="cmd", required=False)
 
@@ -2880,13 +2901,13 @@ def _cli(argv: Sequence[str] | None = None) -> int:
     p_render = sub.add_parser("render", help="Batch-render blocks/canvases from a JSON spec file or inline JSON")
     p_render.add_argument("--spec", required=True, help="Path to JSON list of block specs (or inline JSON)")
 
-    p_canvas = sub.add_parser("render-canvas", help="Render an animated full-screen v6.0 Motion-Design Canvas (.mp4)")
+    p_canvas = sub.add_parser("render-canvas", help="Render an animated full-screen Motion-Design Canvas (.mp4)")
     p_canvas.add_argument("stage_pos", nargs="?", help="Stage name positional")
     p_canvas.add_argument("--canvas", dest="canvas_flag", help="Stage name flag")
     p_canvas.add_argument("--spec", default="{}", help="Inline JSON spec string or path to `.json` file")
     p_canvas.add_argument("-o", "--output", required=True, help="Output `.mp4` path")
 
-    p_lint = sub.add_parser("lint-prompt", help="Audit an AI B-roll prompt against the 46-token anti-slop banlist")
+    p_lint = sub.add_parser("lint-prompt", help="Audit an AI B-roll prompt against presets/broll_lint_contract.json (8-60 words, text/brand/face/R200 rules)")
     p_lint.add_argument("prompt", help="English B-roll prompt string to validate")
 
     args = parser.parse_args(eff_argv)

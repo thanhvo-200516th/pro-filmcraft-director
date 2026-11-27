@@ -83,7 +83,7 @@ PFD = pro-filmcraft-director. "done v7.4" = có dữ liệu hoặc mã trong b�
 | Radial blur lớn dần theo scale (zoom-out 0.85x) | 7667598, 7666801 | done v7.4 (ƯỚC): `apply_scale_radial_blur` |
 | Giới hạn zoom theo đầu (safe-box) và luật C4 (nói liền >= 4 s có zoom) | luật skill | done v7.4: `clamp_scale_to_safe_box`, `c4_zoom_keys` |
 | color-wash nhiều màu 0.6 s, film-burn perf 5 f, light leak xoay 90, white flash 0.25 s, vertical roll, orange ghost 5 f, vacuum -32 dB 0.4 s | 7664969, 7667598, 7669054, 7672413, 7683763, 7669758 | done v7.4 (dữ liệu, chỉ `profile_scope: ["dviet"]`); thực thi và cap nằm ở `compile_and_verify.py` qua `presets/profile_overrides.json` của gói P1 |
-| Mastering to -10.7 .. -12.6 LUFS, peak tới +3 dBFS | 13 video | done v7.4, opt-in: `--audio-profile tiktok_loud` (P1), trần -0.5 dBTP; mặc định vẫn -14 LUFS / -1.5 dBTP |
+| Mastering to -10.7 .. -12.6 LUFS, peak tới +3 dBFS | 13 video | done v7.4, opt-in: `--audio-profile tiktok_loud` (P1), trần -1.0 dBTP (v7.9.1, trước đó -0.5); mặc định vẫn -14 LUFS / -1.5 dBTP |
 | Canvas 1080x1920 @30, 1440x1080 @24/30, 1332x720 @30 | 6 video | done v7.4 (dữ liệu + ghi chú scale safe-zone): `presets/canvas_presets.json`; renderer plate nhận width/height, chưa kiểm thử end-to-end trên canvas 4:3 |
 | Bố cục chòm sao (constellation) | 7664835 | một phần: tham số trong tokens + role `constellation` của `dviet_text.py` (chỉ đặt chữ); renderer plate: backlog |
 | Silhouette flicker (6 video) | 4 + 2 biến thể | backlog (cần clean plate + matte + lịch flicker theo frame; xem tài liệu 23) |

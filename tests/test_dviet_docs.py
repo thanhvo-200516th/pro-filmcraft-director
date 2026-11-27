@@ -182,8 +182,8 @@ def test_03_skill_md_links_and_pointers() -> None:
         assert f"references/{ref}" in readme, f"README.md must link reference {ref}"
     for tool in ("filmcraft_cli.py", "flicker_schedule.py", "duck_keyframes.py"):
         assert tool in text and tool in readme, f"{tool} must be documented in SKILL.md and README.md"
-    assert "`filmcraft-cli`" not in text.split("### Step 0")[1].split("### Step 1")[0], "Step 0 must describe the control-bridge shim, not filmcraft-cli"
-    assert "What the director may promise" in text and "Object Mask" in text and "Time Displacement" in text, "SKILL.md needs the A/B/C honesty table"
+    assert "`filmcraft-cli`" not in text.split("### 3.1. Preflight")[1].split("### 3.2.")[0], "Preflight (3.1) must describe the control-bridge shim, not filmcraft-cli"
+    assert re.search(r"^### 4\.3\. .*what the director may promise", text, re.M | re.I) and "Object Mask" in text and "Time Displacement" in text, "SKILL.md needs the A/B/C honesty table"
     print(f"[PASS] SKILL.md links resolve ({skipped} links to P1/P2 files skipped when missing) and CLIs are documented")
 
 
@@ -224,7 +224,11 @@ def test_05_presets_load_nfc_and_keys() -> None:
     cy = tok["caption_y_pct"]
     assert cy["talking"]["range"] == [52, 58] and cy["panel"]["value"] == 67 and cy["hero"]["value"] == 27
     assert 80 <= cy["bilingual_en"]["value"] <= 85
-    assert "tiktok_loud" in tok["audio"] and tok["audio"]["tiktok_loud"]["tp_cap_dbtp"] == -0.5
+    assert "tiktok_loud" in tok["audio"] and tok["audio"]["tiktok_loud"]["tp_cap_dbtp"] == -0.5  # historical key, kept (presets are additive)
+    tl_master = json.loads((PRESETS / "profile_overrides.json").read_text(encoding="utf-8"))["audio_profiles"]["tiktok_loud"]
+    assert tl_master["true_peak_dbtp"] == -1.0, "docs state tiktok_loud masters to -1.0 dBTP (SKILL.md 1.2, reference 23 d)"
+    if "tp_cap_dbtp_v791" in tok["audio"]["tiktok_loud"]:
+        assert tok["audio"]["tiktok_loud"]["tp_cap_dbtp_v791"] == tl_master["true_peak_dbtp"], "token cap must match the tiktok_loud profile"
     assert all(g.get("flag") in ("measured", "estimate") for g in tok["provenance"]["groups"].values())
     assert "Instrument Serif" in tok["font_roles"]["font_specimen"]["allow_banned_fonts"]
     assert tok["font_roles"]["script_accent"]["swash_hybrid"] is True
@@ -293,7 +297,7 @@ def test_06_existing_presets_unchanged() -> None:
 def test_07_reference_23_content() -> None:
     text = _read("references/23_dviet_profile_decisions_and_backlog.md")
     for needle in ("script_accent", "Instrument Serif", "De Fonte", "visual_archetypes_catalog.json:190", "font_specimen",
-                   "sandwiched", "tiktok_loud", "-0.5 dBTP", "--profile dviet",
+                   "sandwiched", "tiktok_loud", "-1.0 dBTP", "--profile dviet",
                    "silhouette flicker", "clean-plate", "planar tracking", "clone", "waveform", "constellation",
                    "pixel stretch", "RGB fringe", "sparkle", "keycap", "slit-scan"):
         assert needle.lower() in text.lower(), f"reference 23 misses {needle!r}"
@@ -481,7 +485,9 @@ def test_12_look_s_docs_and_policy() -> None:
     assert skill.count("Look S") >= 3 and "Look D" in skill, "SKILL.md must define Look S and Look D"
     front = skill.split("---", 2)[1]
     assert "Full-Head Studio Rounded Cards" in front and "Squircle PiP" in front, "frontmatter must keep the Full-Head Card / Squircle PiP emphasis"
-    for needle in ("Step 3b", "studio_recipe.py", "24_studio_look_recipe.md", "--master", "mp4-first", "md5", "--context",
+    assert re.search(r"^### 3\.5\. Look S recipe", skill, re.M), "SKILL.md must have the Look S recipe section 3.5"
+    assert re.search(r"^#### 3\.8\.1\. Rule A1", skill, re.M), "SKILL.md must state Rule A1 once, in section 3.8.1"
+    for needle in ("studio_recipe.py", "24_studio_look_recipe.md", "--master", "mp4-first", "md5", "--context",
                    "init_hair_safe_wall_reference", "clean_aroll_preserve_hair_crown", "pipe_encode_single_plate_fast",
                    "compose_master_mp4_via_ffmpeg", "skewed_3d_polaroid_trio", "frosted_glass_bento_steps", "isometric_3d_prompt_browser",
                    "kt11", "150-168%", "136%", "1.18x", "studio_14", "only a plain re-encode"):
@@ -500,7 +506,7 @@ def test_12_look_s_docs_and_policy() -> None:
     assert pal["accent_policy"] == "tokens" and set(pal["accent_policy_options"]) == {"tokens", "color_world"}
     assert pal["rule"].startswith("Look D only"), "palette.rule must be scoped to Look D"
     assert pal["default_accent"] == "yellow_bright" and pal["accents"]["yellow_bright"] == "#F1C711"
-    print("[PASS] Look S / Look D policy, Step 3b, reference 24, README highlights and the scoped accent rule")
+    print("[PASS] Look S / Look D policy, section 3.5, Rule A1 in 3.8.1, reference 24, README highlights and the scoped accent rule")
 
 
 if __name__ == "__main__":

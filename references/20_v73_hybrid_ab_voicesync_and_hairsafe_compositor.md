@@ -1,4 +1,4 @@
-# v7.3 Upgrade Reference — Hybrid `Option A × Option B`, 100% Voice Sync Guard & Hair-Crown-Safe Compositor
+# 20 — v7.3 Upgrade Reference: Hybrid `Option A × Option B`, 100% Voice Sync Guard & Hair-Crown-Safe Compositor
 
 Tài liệu kỹ thuật chính thức của bản nâng cấp **`pro-filmcraft-director` v7.3.0**, giải quyết triệt để 4 bài toán sản xuất thực chiến ở tốc độ Studio (`1080×1920 @ 60fps`):
 

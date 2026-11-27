@@ -1,10 +1,10 @@
-# 13. Giải Phẫu 19/19 Video `@__dviet`: Quy Luật Zoom-In / Zoom-Out Mượt Như Nhung (`C²` 60fps) & Nhịp Dựng Nhanh – Chậm Đối Xứng
+# 13 — Giải Phẫu 17 Video `@__dviet`: Quy Luật Zoom-In / Zoom-Out Mượt Như Nhung (`C²` 60fps) & Nhịp Dựng Nhanh – Chậm Đối Xứng
 
-> **Nguồn dữ liệu thực nghiệm:** Phân tích Optical-Flow (RANSAC Affine Inliers `scale(t), dx(t), dy(t)`) trên toàn bộ **19/19 video HD** của kênh `https://www.tiktok.com/@__dviet` (tổng thời lượng **`914.41s`**, **`272` shots**, **`253` điểm cắt**, **`113` đường cong Zoom toàn khung**), kết hợp Hội đồng 3 Agent (Optical-Flow Analyst × Senior Master Editor × 60fps Sub-Pixel Physics Engineer).
+> **Nguồn dữ liệu thực nghiệm:** Phân tích Optical-Flow (RANSAC Affine Inliers `scale(t), dx(t), dy(t)`) trên **17 video HD có file bằng chứng** của kênh (bản v7.1 ghi "19/19"; hai video `7665298781344189716` và `7666039448039099669` không có file trong `dviet_19/`, thư mục giữ tên cũ nhưng chứa 17 video, xem [`dviet_19/INDEX.md`](./dviet_19/INDEX.md)) `https://www.tiktok.com/@__dviet` (tổng thời lượng **`914.41s`**, **`272` shots**, **`253` điểm cắt**, **`113` đường cong Zoom toàn khung**), kết hợp Hội đồng 3 Agent (Optical-Flow Analyst × Senior Master Editor × 60fps Sub-Pixel Physics Engineer).
 
 ---
 
-## 1. Thống Kê Thực Nghiệm Từ Toàn Bộ 19 Video `@__dviet`
+## 1. Thống Kê Thực Nghiệm Từ Bộ Video `@__dviet` (số liệu lịch sử của lượt v7.1)
 
 | Chỉ số đo đạc (19 Video = `914.41s` / `272` Shots) | Giá trị thực tế của `@__dviet` | Sai lầm phổ biến làm video bị "gắt / giật" (V10–V13 cũ) | Quy chuẩn V14 Smooth Master (`60fps`) |
 | :--- | :--- | :--- | :--- |
@@ -38,6 +38,8 @@ Không bao giờ dùng chung một đường cong thời gian cho cả phóng v�
 - Khi camera đang giữ nhịp đọc (`drift` `+0.015/s` → `smear = 0.11px < 0.75px`): chạy đúng **1 phép biến đổi sắc nét**, không chồng blur giả để da mặt và chi tiết sản phẩm trong vắt `100%`. Khi đang lướt Zoom-In/Zoom-Out hoặc Whip Plate (`smear ≥ 0.75px`): tích phân đối xứng `3/5/7` điểm lấy mẫu Hann dọc theo quỹ đạo thực của màn trập `180°`.
 
 ### Luật 4 — Kiến Trúc 3 Mặt Phẳng Độc Lập (`LayeredFrameCompositor`) & Sub-Pixel `float32`
+
+Đây là số mặt phẳng **trong mã** (`scripts/dviet_smooth_camera_engine.py`, `LayeredFrameCompositor`: Plane 0 plate, Plane 1 midground, Plane 2 foreground UI). "4 lớp Z-depth" ở tài liệu 11 và 16 là cách xếp **track trên timeline**; lớp chữ "sau vai" của chúng chính là Plane 1 cộng cờ `z_plane: "behind_subject"` mà `compile_and_verify.py` đọc.
 ```
 [Plane 2 - Foreground Clean UI/Typography (V7/V8)]  <-- KHÔNG BAO GIỜ chịu ảnh hưởng của Plate Transition!
         ▲  Premultiplied float32 cv2.warpAffine (0.03px/frame smooth micro-float, R² = 0.9999995)
@@ -74,7 +76,7 @@ Không bao giờ dùng chung một đường cong thời gian cho cả phóng v�
 6. **`7664969137445276949` (`46.47s @ 60fps` — FLICKER Effect):** Mở bằng Post-Cut Velvet Settle-Out `0.783s` (`47f`, `-24.2%`, `R² = 1.000`), giữ nhịp trung vị `2.73s/beat`, và tung cú Asymmetric Velvet Zoom-In + Reframe `0.983s` (`59f`, `+67.4%`, đỉnh vận tốc tại `τ = 0.10` → **90% quãng đường là đuôi phanh nhung**!).
 
 ### 4.2. Quy Tắc Quyết Định `Smooth Velvet Zoom-Out` (`68` lần) vs `1-Frame Axial Cut-to-Wide` (`7` lần)
-Trên toàn bộ 19 video, `@__dviet` ưu tiên **Zoom-Out mượt gấp gần `10 lần` (`68 : 7`)** so với cắt giật về góc rộng:
+Trên bộ video của lượt đo v7.1, `@__dviet` ưu tiên **Zoom-Out mượt gấp gần `10 lần` (`68 : 7`)** so với cắt giật về góc rộng:
 - **Dùng `Smooth Velvet Zoom-Out` (`0.60s – 0.85s`, dài hơn Zoom-In `+28%..+33%`):**
   1. **Giữa một mạch nói liên tục không cắt hơi (`frac_in_shot = 0.24–0.62`):** Khi chuyển từ chi tiết vi mô ra bức tranh tổng quát hoặc mở lời mời thân mật mà giọng nói vẫn đang liền mạch.
   2. **Đầu cảnh mới / Hook / B-Roll (`Post-Cut Velvet Settle-Out`, `0.45s–0.75s`):** Vào cảnh ở `1.16x–1.20x` rồi thả nhẹ về `1.00x–1.03x` (`cubic-bezier(0.13, 0.20, 0.35, 0.95)`) để triệt tiêu độ gắt của nhát cắt.
@@ -94,7 +96,7 @@ Trên toàn bộ 19 video, `@__dviet` ưu tiên **Zoom-Out mượt gấp gần `
 
 ## 5. Triển Khai Trong Code (`pro-filmcraft-director`)
 
-- **Biểu đồ Atlas Đường Cong & Vận Tốc Thực Nghiệm (19 Video):** [`references/dviet_zoom_bezier_atlas.png`](./dviet_zoom_bezier_atlas.png)
+- **Biểu đồ Atlas Đường Cong & Vận Tốc Thực Nghiệm (lượt đo v7.1):** [`references/dviet_zoom_bezier_atlas.png`](./dviet_zoom_bezier_atlas.png)
 - **Engine vật lý camera & Sub-Pixel Compositor:** [`scripts/dviet_smooth_camera_engine.py`](../scripts/dviet_smooth_camera_engine.py)
   - `configure_worker_simd_threads(2)`: Khóa xung đột luồng OpenMP khi render song song 4 workers (tăng tốc `6.6x`, đạt `~81 FPS` tổng).
   - `SmoothCameraTrack`, `CameraKeyframe`, `render_camera_plate_60fps`: Nội suy `C²` + `180°` Shutter Blur.

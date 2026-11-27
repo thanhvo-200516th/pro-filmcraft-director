@@ -55,6 +55,7 @@ import math
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -84,6 +85,17 @@ VIDEO_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
 AUDIO_EXTS = {".wav", ".mp3", ".m4a", ".flac", ".aac", ".ogg", ".opus"}
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 RAW_MEDIA_EXTS = VIDEO_EXTS | AUDIO_EXTS
+DECODE_TIMEOUT_S = float(os.environ.get("PFD_DECODE_TIMEOUT_S") or 900.0)  # one ffmpeg 16 kHz decode; a hung decode must not hang the run
+
+
+class ProbeMediaError(RuntimeError):
+    """The input media cannot be probed or decoded (0-byte / truncated / corrupt file, no usable stream, decode timeout)."""
+
+
+def _cache_root() -> Path:
+    """v7.9.1: env PFD_CACHE_DIR, default ~/.cache/pro-filmcraft-director (shared with compile_and_verify.py)."""
+    env = os.environ.get("PFD_CACHE_DIR")
+    return Path(env).expanduser() if env else Path.home() / ".cache" / "pro-filmcraft-director"
 
 SKIP_DIR_NAMES = {
     ".git",
@@ -177,8 +189,8 @@ def detect_input_mode(input_path: Path) -> str:
 
 
 def backup_fcproj(fcproj_path: Path) -> Path:
-    """Create a timestamped backup of a `.fcproj` file in `~/.cache/opa-video-studio/backup/`."""
-    bkp_dir = Path.home() / ".cache" / "opa-video-studio" / "backup"
+    """Create a timestamped backup of a `.fcproj` file in `$PFD_CACHE_DIR/backup/` (default ~/.cache/pro-filmcraft-director)."""
+    bkp_dir = _cache_root() / "backup"
     bkp_dir.mkdir(parents=True, exist_ok=True)
     ts = time.strftime("%Y%m%d-%H%M%S")
     bkp_path = bkp_dir / f"{fcproj_path.stem}-{ts}.fcproj"
@@ -1575,6 +1587,8 @@ def probe_single_media(path: Path, base_dir: Path | None = None) -> tuple[str, d
         "channels": channels,
         "size_bytes": size_bytes,
     }
+    if proc.returncode != 0:
+        info["ffprobe_error"] = (proc.stderr or "").strip()[-300:] or f"ffprobe exit {proc.returncode}"
     return key, info
 
 
@@ -4479,10 +4493,18 @@ def render_bundle_contact_sheet(
 # ---------------------------------------------------------------------------
 
 
-def decode_16k_f32_pcm(audio_path: Path, max_dur_sec: float | None = None) -> np.ndarray:
-    """Decode any media file's audio stream into a 16kHz mono float32 numpy array in RAM."""
+def decode_16k_f32_pcm(audio_path: Path, max_dur_sec: float | None = None, timeout_s: float | None = None) -> np.ndarray:
+    """Decode any media file's audio stream into a 16kHz mono float32 numpy array in RAM (bounded by `DECODE_TIMEOUT_S`)."""
     cmd = ["ffmpeg", "-v", "error", "-i", str(audio_path), "-vn", "-ac", "1", "-ar", "16000", "-f", "f32le", "-"]
-    raw = subprocess.check_output(cmd)
+    limit = DECODE_TIMEOUT_S if timeout_s is None else float(timeout_s)
+    try:
+        proc = subprocess.run(cmd, capture_output=True, timeout=limit, check=False)
+    except subprocess.TimeoutExpired as exc:
+        raise ProbeMediaError(f"ffmpeg 16 kHz decode of {audio_path} timed out after {limit:g}s (raise env PFD_DECODE_TIMEOUT_S for very long files)") from exc
+    if proc.returncode != 0:
+        tail = proc.stderr.decode("utf-8", errors="replace").strip()[-300:]
+        raise ProbeMediaError(f"ffmpeg 16 kHz decode of {audio_path} failed (exit {proc.returncode}): {tail}")
+    raw = proc.stdout
     arr = np.frombuffer(raw, dtype=np.float32).copy()
     if max_dur_sec is not None:
         max_samples = int(round(max_dur_sec * 16000))
@@ -4549,10 +4571,54 @@ def acquire_lock(work_dir: Path, force: bool = False) -> Path:
                 f"another probe_and_align run (pid {owner}) holds the lock {lock}; wait for it or pass --force to override"
             )
         lock.unlink(missing_ok=True)
-    fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    try:
+        fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    except FileExistsError as exc:
+        raise ProbeLockError(
+            f"another probe_and_align run created the lock {lock} at the same moment; wait for it or pass --force to override"
+        ) from exc
     with os.fdopen(fd, "w", encoding="utf-8") as fh:
         json.dump({"pid": os.getpid(), "started": time.time(), "argv": sys.argv[1:]}, fh)
     return lock
+
+
+def _child_pids() -> list[int]:
+    """Members of this process group (when this run leads it) first, then every descendant (ffmpeg / ffprobe children)."""
+    me, rows = os.getpid(), []
+    if Path("/proc").is_dir():
+        for d in Path("/proc").iterdir():
+            if d.name.isdigit():
+                try:
+                    f = (d / "stat").read_text().rsplit(")", 1)[1].split()
+                    rows.append((int(d.name), int(f[1]), int(f[2])))
+                except (OSError, ValueError, IndexError):
+                    continue
+    else:
+        try:
+            out = subprocess.run(["ps", "-A", "-o", "pid=,ppid=,pgid="], capture_output=True, text=True, timeout=10).stdout
+            rows = [tuple(int(x) for x in ln.split()) for ln in out.splitlines() if len(ln.split()) == 3]
+        except (OSError, subprocess.SubprocessError, ValueError):
+            rows = []
+    group = [pid for pid, _, pgid in rows if pgid == me and pid != me] if os.getpgrp() == me else []
+    kids, desc, stack = {}, [], [me]
+    for pid, ppid, _ in rows:
+        kids.setdefault(ppid, []).append(pid)
+    while stack:
+        for c in kids.get(stack.pop(), []):
+            desc.append(c)
+            stack.append(c)
+    return group + [p for p in desc if p not in group]
+
+
+def _abort_run(code: int) -> None:
+    """--timeout: SIGKILL the process group / children first (no orphaned ffmpeg keeps writing), then exit `code`."""
+    if os.name == "posix":
+        for pid in _child_pids():
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except OSError:
+                pass
+    os._exit(code)
 
 
 def release_lock(lock: Path) -> None:
@@ -5028,7 +5094,22 @@ def probe_and_align(
         key, pinfo = probe_single_media(in_path, None)
         duration_sec = float(pinfo.get("dur") or 0.0)
         has_video = bool(pinfo.get("has_video"))
+        if pinfo.get("ffprobe_error"):
+            bad_reason = f"ffprobe failed: {pinfo['ffprobe_error']}"
+        elif in_path.suffix.lower() in VIDEO_EXTS and not has_video:
+            bad_reason = "no video stream"
+        elif not math.isfinite(duration_sec) or duration_sec <= 0.0:
+            bad_reason = f"duration {duration_sec:g}s <= 0"
+        else:
+            bad_reason = None
+        if bad_reason:
+            raise ProbeMediaError(
+                f"{in_path} ({pinfo.get('size_bytes', 0)} bytes) is not usable media: {bad_reason}; "
+                "re-export or re-download the file (0-byte / truncated / corrupt input)"
+            )
         has_audio = bool(pinfo.get("has_audio")) and duration_sec > 0.0
+        if not pinfo.get("has_audio"):
+            audit_warnings.append(f"no audio stream in {key}: ASR skipped, words_tl.json is written empty (0 words)")
         fps_num = float(pinfo.get("fps_num") or 30.0) if has_video else 30.0
         fps_grid = snap_fps_grid(fps_num)
 
@@ -5212,7 +5293,7 @@ def probe_and_align(
             script_text=script_info["full_text"],
         )
 
-        if words_tl:
+        if words_tl or not pinfo.get("has_audio"):  # v7.9.1: no audio stream -> the same document with 0 words
             words_tl_doc = build_words_tl_document(
                 words_tl,
                 pauses=raw_pause_inputs,
@@ -6058,7 +6139,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--backup",
         action="store_true",
-        help="Backup existing *.fcproj to ~/.cache/opa-video-studio/backup/<stem>-<timestamp>.fcproj.",
+        help="Backup existing *.fcproj to $PFD_CACHE_DIR/backup/<stem>-<timestamp>.fcproj (default ~/.cache/pro-filmcraft-director).",
     )
     parser.add_argument(
         "--whisper-model",
@@ -6127,7 +6208,7 @@ def main(argv: list[str] | None = None) -> int:
         def _on_timeout() -> None:
             print(f"probe_and_align: --timeout {args.timeout:g}s exceeded; aborting (media_probe.json, if written, is kept)", file=sys.stderr, flush=True)
             release_lock(lock)
-            os._exit(124)
+            _abort_run(124)
 
         watchdog = threading.Timer(float(args.timeout), _on_timeout)
         watchdog.daemon = True
@@ -6148,6 +6229,9 @@ def main(argv: list[str] | None = None) -> int:
             music_only=args.music_only,
             whisper_threads=args.whisper_threads,
         )
+    except ProbeMediaError as exc:
+        print(f"probe_and_align: {exc}", file=sys.stderr)
+        return 2
     finally:
         if watchdog is not None:
             watchdog.cancel()

@@ -1,6 +1,6 @@
-# 19 — `v7.1` `@__dviet` 19-Video Kinetic Typography Bible (`45,582` Native Frames, `Swash-Initial Hybrid`, `kt01..kt12` `60fps` Choreography & `Gate 3C` Anti-Template Proofs)
+# 19 — `v7.1` `@__dviet` Kinetic Typography Bible (17 Evidence Videos; the v7.1 Table Lists 19) (`45,582` Native Frames, `Swash-Initial Hybrid`, `kt01..kt12` `60fps` Choreography & `Gate 3C` Anti-Template Proofs)
 
-`pro-filmcraft-director v7.1` (**Universal Studio Director**) closes the final kinetic gap between human After Effects / CapCut PC mastery and automated Web-Cinema rendering. By auditing all **`45,582` native frames (`914.6s`, zero skipped frames) across 19/19 `@__dviet` master videos** alongside the `2,438`-frame post-mortem of `V17`, `v7.1` permanently abolishes static `mode="still"` Hero `.png` bricks in favor of **12 syllable-locked `60fps` animated `.mov` (`prores4444` / `qtrle` RGBA) kinetic templates (`kt01..kt12`)** governed by **`Gate 3C` Anti-Template Choreography Vetoes**.
+`pro-filmcraft-director v7.1` (**Universal Studio Director**) closes the final kinetic gap between human After Effects / CapCut PC mastery and automated Web-Cinema rendering. By auditing all **`45,582` native frames (`914.6s`, zero skipped frames) across the 19 `@__dviet` master videos of the v7.1 pass** (only 17 of them have evidence files in [`dviet_19/`](./dviet_19/INDEX.md); `#05` and `#06` below do not) alongside the `2,438`-frame post-mortem of `V17`, `v7.1` permanently abolishes static `mode="still"` Hero `.png` bricks in favor of **12 syllable-locked `60fps` animated `.mov` (`prores4444` / `qtrle` RGBA) kinetic templates (`kt01..kt12`)** governed by **`Gate 3C` Anti-Template Choreography Vetoes**.
 
 ---
 

@@ -1,4 +1,4 @@
-# Thư viện Mẫu & Quy trình 4 Trụ cột (`@haihoang_airaviec` Method trên 13 Video `@__dviet`)
+# 08 — Thư viện Mẫu & Quy trình 4 Trụ cột (`@haihoang_airaviec` Method trên 13 Video `@__dviet`)
 
 Tài liệu này đóng gói kết quả mổ xẻ **13 video `@__dviet`** theo đúng phương pháp luận 4 trụ cột từ video mẫu `@haihoang_airaviec` (`7707599674923896070`):
 1. **Speech-to-Visual Mapping** (Lời thoại → Thiết kế/Cảnh)

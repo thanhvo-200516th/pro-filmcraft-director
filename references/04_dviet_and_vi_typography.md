@@ -1,4 +1,4 @@
-# Quy chuẩn `@__dviet` & Typography Tiếng Việt 134/134 NFC
+# 04 — Quy chuẩn `@__dviet` & Typography Tiếng Việt 134/134 NFC
 
 ## 1. Hệ thống Màu Tối giản (`#FAFAFA` + 1 Màu Nhấn)
 - **Gallery Off-White (`#FAFAFA`):** Màu chữ chính & nền thẻ sáng (tránh `#FFFFFF` gắt toàn thẻ).

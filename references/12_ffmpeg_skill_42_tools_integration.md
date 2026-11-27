@@ -1,4 +1,4 @@
-# Tích Hợp `kajisho5/ffmpeg-skill` (`v4.5.3` — 42 FFmpeg Tools & MCP Server) Vào `pro-filmcraft-director`
+# 12 — Tích Hợp `kajisho5/ffmpeg-skill` (`v4.5.3` — 42 FFmpeg Tools & MCP Server) Vào `pro-filmcraft-director`
 
 Tài liệu này quy định kiến trúc kết hợp 2 tầng giữa:
 1. **`pro-filmcraft-director` (`THE CREATIVE BRAIN`):** Đạo diễn nhịp dựng 25 Micro-Beats (`Fast-Fast-Slow`), 35 Preset Typography `@vietanh.videoeditor`, 7 Choreography `@__dviet`, tách nền 2.5D Parallax (`rembg` + `cv2.inpaint`), 4-Plane Z-Depth Speaker Cutout Sandwich, và biên dịch project `.fcproj v17`.

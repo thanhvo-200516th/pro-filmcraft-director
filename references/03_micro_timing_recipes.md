@@ -1,4 +1,4 @@
-# Thông số Vi mô Từng Frame (`30fps` / `60fps`) & Quy luật Micro-Sync
+# 03 — Thông số Vi mô Từng Frame (`30fps` / `60fps`) & Quy luật Micro-Sync
 
 *(Quy đổi: `1 frame @ 30fps = 33.33ms`; khi dựng trên timeline `60fps`, nhân đôi số frame `× 2` để giữ nguyên mili-giây).*
 

@@ -15,6 +15,8 @@
     "caption_px": [26, 44],
     "whisper_g2_px": 26,
     "whisper_g2_max_px": 30,
+    "whisper_g2_px_floor_v791": 64,
+    "_doc_whisper_g2_v791": "v7.9.1: every overlay text obeys the 64 px floor (SKILL.md; = web_plate_builder.MIN_OVERLAY_FONT_PX). G2 subtitles (S10 / S11 / S12, whisper mode included) render at max(whisper_g2_px | requested size, whisper_g2_px_floor_v791); whisper_g2_px / whisper_g2_max_px / lead_px / caption_px above are the pre-v7.9.1 measurements, kept for the record. typography_composer.G2_TEXT_FLOOR_PX reads this key.",
     "scale_ratio": 2.6,
     "min_hero_lead_ratio": 2.6,
     "lowercase_hero_min_ratio_era2": 0.70,
@@ -1067,7 +1069,28 @@
         "7667598741888634132"
       ]
     },
-    "native_effect_presets_v74": {
+    "secondary_text_decorative_v791": {
+    "_doc": "v7.9.1: secondary-text presets (typography_composer S01..S18) whose default size is below the 64 px floor. They are DECORATIVE by design (never the reading line): each one is paired with a hero / subtitle that carries the words, so its size stays and the reason is recorded here. G2 subtitles (S10 / S11 / S12) are reading text: they are floored to 64 px and never listed. typography_composer.DECORATIVE_SECONDARY_V791 reads this block.",
+    "floor_px": 64,
+    "presets": {
+      "s01_accordion_rollout_sub": "G1 sub-line (40 px) under a >= 76 px hero that carries the sentence; an accent, not the reading line.",
+      "s02_boundary_pinch_sub": "G1 sub-line (40 px) paired with a hero; the tracking pinch is texture, the hero carries the words.",
+      "s03_stepup_underline_sub": "G1 dual-tone sub-line (42 px) under a hero; it restates the hero, never new information.",
+      "s04_baseline_rise_lead": "G1 lead-in (40 px) before a >= 76 px hero (kiss pair); the hero carries the sentence.",
+      "s05_feather_wipe_lead": "G1 feathered lead-in (40 px) before a hero; a texture beat, the hero carries the sentence.",
+      "s06_swivel_3d_sub": "G1 3D swivel tech sub-line (40 px) next to a hero; an accent on the hero, not the reading line.",
+      "s07_ghost_recede_stack": "G1 ghost stack: lead / sub lines (40 px) recede behind the 76 px hero, which is the reading line.",
+      "s08_poetic_scatter_lead": "G1 scattered lead-in (42 px) before a hero; tracking texture, the hero carries the sentence.",
+      "s09_overlap_script_sub": "G1 script sub-line (46 px) tucked under a 76 px hero; calligraphic accent, the hero carries the words.",
+      "s14_shoulder_callout": "G3 shoulder callout (46 px) beside the head while the spoken words run as G2 subtitles (>= 64 px).",
+      "s15_tilted_counter_cluster": "G3 tilted counter-cluster (38 / 54 px) beside the head; an accent over the G2 subtitles.",
+      "s16_bridge_anchor_swap": "G3 anchor + swapped keyword (48 px) beside the head; a keyword accent over the G2 subtitles.",
+      "s17_circular_arc_sub_wrap": "G3 arc wrap (38 px) around the head contour; decorative shape text, the G2 subtitles carry the words.",
+      "s18_typewriter_tech_tag": "G4 HUD micro-label (26-42 px, e.g. [ 60FPS ]); UI ornament, never the reading line.",
+      "s18_active_dim_step_pills": "G4 step pills (26-42 px) that label steps the hero / subtitles already say; UI ornament."
+    }
+  },
+  "native_effect_presets_v74": {
       "rgb_fringe_text_native": {
         "status": "experimental",
         "behaviour_unverified_in_app": true,

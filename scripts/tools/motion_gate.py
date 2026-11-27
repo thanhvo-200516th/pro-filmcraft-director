@@ -28,6 +28,10 @@ v7.9.0 (v4 review K1-K4, A1, V-FLASH):
 `video` is a file path or an in-memory sequence of BGR frames sampled at `fps` (used by the synthetic tests).
 `mask_rects` are NORMALISED (x0, y0, x1, y1) rectangles in 0..1 (PiP, text boxes) that are excluded from the diff.
 CLI: python3 motion_gate.py VIDEO [--mask x0,y0,x1,y1 ...] [--t0 0] [--t1 3.4]  -> JSON on stdout, exit 1 when not ok.
+     The default window 0-3.4 s is the whole hook (studio_recipe `hook_motion_floor`, 0-3.4 s); `--t0 2.03 --t1 3.38` gates only the
+     late-hook sub-window (glint at 2.03 s up to the 3.4 s white cut, where the v3 hook sat static). The single-frame metrics (`popout_edge_width_px`,
+     `face_laplacian_ratio`, `crown_edge_metrics`, `popout_inner_edge_dark_strip_px`, `card_dark_speck_count`, `hero_product_overlap_px`)
+     are library functions only (they need frames, ROIs or alpha crops from the caller), not CLI flags.
 """
 
 from __future__ import annotations
@@ -492,8 +496,9 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="v7.9.0 hook motion gate on a rendered preview (JSON on stdout, exit 1 when not ok)")
     ap.add_argument("video")
     ap.add_argument("--mask", action="append", type=_parse_mask, default=[], help="normalised x0,y0,x1,y1 to ignore (PiP / text box); repeatable")
-    ap.add_argument("--t0", type=float, default=0.0)
-    ap.add_argument("--t1", type=float, default=3.4)
+    ap.add_argument("--t0", type=float, default=0.0, help="window start in s (default 0: the whole 0-3.4 s hook)")
+    ap.add_argument("--t1", type=float, default=3.4, help="window end in s (default 3.4); use --t0 2.03 --t1 3.38 for the late-hook "
+                                                          "sub-window only")
     ap.add_argument("--fps", type=float, default=30.0)
     ap.add_argument("--flash", action="store_true", help="v7.9.0 photosensitivity gate over --t0..--t1 (whole video when --t1 < 0) at 60 fps")
     a = ap.parse_args(argv)

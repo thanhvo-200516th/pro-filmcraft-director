@@ -12,7 +12,7 @@ v7.4.0: `import os` crash fix (`--self-test` / `--self-test-v71` run clean); no 
   - `dviet_kiss_hero_pair` & `export_dviet_bevel_lockup_png`: Tight `-20%` negative-leading (`line_height ~ 0.80`,
     `hero_y - lead_y ~ 54px`) lowercase hero fusion + 2x-supersampled 3D extruded bevel lockup PNG exporter.
   - `s03_stepup_underline_sub`: Clean dual-tone / tracking-settle sub-line (`0` fake `'____'` ASCII underscores!).
-  - `s10` / `s12` Whisper Mode (`whisper_mode=True` by default when `style_profile="dviet"`, `26pt Regular y=1590`).
+  - `s10` / `s12` Whisper Mode (`whisper_mode=True` by default when `style_profile="dviet"`, `Regular y=1590`; v7.9.1: never below 64 px).
   - `aroll_camera(..., framing="center"|"left_third"|"right_third"|"closeup_high", eye_line_y=...)` (`0` black bars!)
     & `snap_subcut(..., mode="sync"|"vocal_jcut", j_lead_s=0.32)` bimodal J-Cut planner.
 """
@@ -50,6 +50,7 @@ _SENTENCE_END_PUNCT = ".?!…"
 _NUM_TOKEN_RE = re.compile(r"^[+-]?\d+(?:[.,]\d+)*(?:[%+xX]|[A-Za-zĐđ]{1,4})?$")
 _CAPS_FILE_TOKEN_RE = re.compile(r"^[A-ZÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴĐ0-9_]{2,}(?:\.[A-Za-z0-9]{1,8})+$")
 
+# v7.9.1: optional extra dirs; `$PFD_FONT_DIR` is searched first and fontconfig (fc-list) last (web_plate_builder.find_font_file)
 FONT_SEARCH_DIRS = [
     Path.home() / ".local/share/fonts/tnedit",
     Path.home() / ".local/share/fonts/Montserrat_Static",
@@ -1169,12 +1170,28 @@ def _resolve_typo_font_path(font: str, style: str) -> str:
         if fn not in candidates:
             candidates.append(fn)
 
+    wpb = _wpb()
     for fname in candidates:
-        for fdir in FONT_SEARCH_DIRS:
+        for fdir in (*wpb.env_font_dirs(), *FONT_SEARCH_DIRS):
             cand = fdir / fname
             if cand.is_file():
                 return str(cand)
-    raise FileNotFoundError(f"No font file found for font={font!r}, style={style!r}")
+    for fname in candidates:  # v7.9.1: fontconfig knows the file under another folder
+        hit = wpb.find_font_file(fname)
+        if hit is not None:
+            return str(hit)
+    raise FileNotFoundError(f"No font file found for font={font!r}, style={style!r} (tried {candidates} in $PFD_FONT_DIR, "
+                            f"{[str(d) for d in FONT_SEARCH_DIRS]} and fontconfig); install it or set PFD_FONT_DIR")
+
+
+def _wpb() -> Any:
+    """web_plate_builder (lazy): the shared font search and metadata strip helpers."""
+    try:
+        import web_plate_builder as mod
+    except ImportError:  # pragma: no cover
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import web_plate_builder as mod
+    return mod
 
 
 @lru_cache(maxsize=512)
@@ -1683,6 +1700,34 @@ def _core_text_clip(
 # ---------------------------------------------------------------------------
 WS_NAT_MARGIN_EM = 0.02  # [ĐO] PIL ink metrics vs the renderer: assume the resting gap this much tighter (same as web_plate_builder)
 TEXT_FLOOR_PX = 64       # = web_plate_builder.MIN_OVERLAY_FONT_PX: the word-spacing refit never shrinks a text below it
+
+# v7.9.1: G2 subtitles (S10 / S11 / S12, whisper mode included) obey the 64 px floor; secondary presets below it are decorative
+_TYPO_PRESETS = json.loads((Path(__file__).resolve().parents[2] / "presets" / "typography_hierarchy_presets.json").read_text(encoding="utf-8"))
+G2_TEXT_FLOOR_PX = float(_TYPO_PRESETS["scale_tiers_9_16"].get("whisper_g2_px_floor_v791", TEXT_FLOOR_PX))
+WHISPER_G2_PX = max(float(_TYPO_PRESETS["scale_tiers_9_16"]["whisper_g2_px"]), G2_TEXT_FLOOR_PX)
+DECORATIVE_SECONDARY_V791: dict[str, str] = dict(_TYPO_PRESETS.get("secondary_text_decorative_v791", {}).get("presets", {}))
+
+
+def _g2_chunk_end_at_floor(seg_ws: Sequence[Sequence[Any]], ptr: int, next_ptr: int, *, font: str, style: str, size: float,
+                           two_line: bool = False, slot_gap_em: float | None = None) -> int:
+    """v7.9.1: drop trailing words from a G2 chunk until it fits the safe width at the floored size (one line, or two balanced
+    lines), so the floor never makes fit_font_size shrink the subtitle below G2_TEXT_FLOOR_PX. Keeps at least one word.
+    `slot_gap_em` (S10 fixed slots): measure as S10 lays the row out, sum of per-word max(ink, advance) + max(space, gap em) gaps."""
+    budget = DEFAULT_MAX_TEXT_WIDTH_PX * HERO_ROW_FIT
+    while next_ptr - ptr > 1:
+        toks = [clean_display_text(str(w[0])) for w in seg_ws[ptr:next_ptr]]
+        if slot_gap_em is not None:
+            f_obj = _load_pil_font(font, style, int(round(size * 2.0)))
+            gap = max(float(f_obj.getlength(" ")), size * slot_gap_em)
+            width = sum(max(float(f_obj.getbbox(t)[2] - f_obj.getbbox(t)[0]), float(f_obj.getlength(t))) for t in toks)
+            width += gap * (len(toks) - 1)
+        else:
+            lines = split_phrase_2line(toks, font=font, style=style, size=size) if (two_line and len(toks) > 3) else (" ".join(toks),)
+            width = max(measure_text_ink_width(ln, font, style, size) for ln in lines)
+        if width <= budget + 1e-3:
+            break
+        next_ptr -= 1
+    return next_ptr
 
 
 def _motion_gate() -> Any:
@@ -3380,20 +3425,8 @@ def export_dviet_bevel_lockup_png(
 
     def _save_png(img: Image.Image, path: Path) -> None:
         img.save(path, format="PNG", optimize=True)
-        # Strip PNG metadata cleanly if local strip_metadata helper is installed
-        strip_mod_path = Path.home() / ".gemini/config/skills/strip-media-metadata/scripts"
-        if strip_mod_path.is_dir():
-            try:
-                if str(strip_mod_path) not in sys.path:
-                    sys.path.insert(0, str(strip_mod_path))
-                import strip_metadata as _sm  # type: ignore
-
-                raw_bytes = path.read_bytes()
-                if hasattr(_sm, "strip_png"):
-                    cleaned_bytes, _ = _sm.strip_png(raw_bytes, keep_icc=False)
-                    path.write_bytes(cleaned_bytes)
-            except Exception:
-                pass
+        # v7.9.1: shared helper (strip-media-metadata skill, else a PIL re-save; warns loudly when both fail)
+        _wpb().strip_media_metadata(path, keep_icc=False)
 
     rgba = _finish(hi_img)
     out_p = Path(out_path)
@@ -3644,11 +3677,15 @@ def conversational_captions_2line(
     one_frame = 1.0 / fps
     min_chunk_s = snap_time(R30_MIN_CHUNK_S, fps) - 1e-6
 
+    size_single = max(float(size_single), G2_TEXT_FLOOR_PX)  # v7.9.1: G2 reading text obeys the 64 px floor
+    size_pair = max(float(size_pair), G2_TEXT_FLOOR_PX)
     for seg_a, seg_b in segments:
         seg_ws = [w for w in words if seg_a - 0.01 <= w[1] < seg_b - 0.04]
         ptr = 0
         while ptr < len(seg_ws):
             next_ptr = _smart_chunk_end(seg_ws, ptr, max_words_per_group, pause_split_s)
+            f_fam0, f_sty0 = fonts[chunk_idx % len(fonts)]
+            next_ptr = _g2_chunk_end_at_floor(seg_ws, ptr, next_ptr, font=f_fam0, style=f_sty0, size=size_pair, two_line=True)
             grp = seg_ws[ptr:next_ptr]
             ptr = next_ptr
 
@@ -3730,7 +3767,7 @@ def minimal_single_line_captions(
     """
     Preset 12: Clean 1-line subtle captions (`v6.0` Whisper Mode Ready):
       - `whisper_mode` (defaults to `True` when `style_profile="dviet"`, `False` otherwise):
-        downscales captions to `size=26.0, style="Regular", y=1590.0` monochrome `#FAFAFA` / `#E8D98C`
+        switches captions to `style="Regular", y=1590.0` monochrome `#FAFAFA` / `#E8D98C` (v7.9.1: size floored to 64 px, was 26)
         (`0` loud `48px` Bold neon chest bar!).
       - Smart Compound/Lead/Trail Chunk Lookahead (`+1` word if gap `< 0.35s`, or `-1` step-back).
       - Ruling `R209` Safe-Bottom Auto-Flip when `pos[1] >= 1360.0` (`py - 18.0 -> py -> py - 3.0`).
@@ -3746,7 +3783,8 @@ def minimal_single_line_captions(
     px = float(pos[0])
     py = 1590.0 if (use_whisper and float(pos[1]) in (1440.0, 1428.0)) else float(pos[1])
     eff_style = "Regular" if (use_whisper and style == "Bold") else style
-    eff_size = 26.0 if (use_whisper and float(size) == 44.0) else float(size)
+    # v7.9.1: whisper no longer downscales below the floor: max(whisper_g2_px | size, whisper_g2_px_floor_v791) = 64 px
+    eff_size = max(WHISPER_G2_PX if (use_whisper and float(size) == 44.0) else float(size), G2_TEXT_FLOOR_PX)
     if use_whisper:
         eff_color = "#E8D98C" if str(color).strip().upper() == "#E8D98C" else "#FAFAFA"
         eff_glow: str | None = "none"
@@ -3766,6 +3804,7 @@ def minimal_single_line_captions(
         ptr = 0
         while ptr < len(seg_ws):
             next_ptr = _smart_chunk_end(seg_ws, ptr, max_words_per_group, pause_split_s)
+            next_ptr = _g2_chunk_end_at_floor(seg_ws, ptr, next_ptr, font=font, style=eff_style, size=eff_size)
             grp = seg_ws[ptr:next_ptr]
             ptr = next_ptr
 
@@ -4545,7 +4584,7 @@ def s10_word_synced_fixed_slot_captions(
     """
     G2 · S10 (Signature `Subtitle.tsx` Fixed-Slot Word Pop + `v6.0` Whisper Mode for `.fcproj`):
       - `whisper_mode` (defaults to `True` when `style_profile="dviet"`, `False` otherwise):
-        downscales to `size=26.0, style="Regular", y=1590.0` monochrome `#FAFAFA`/`#E8D98C`
+        switches to `style="Regular", y=1590.0` monochrome `#FAFAFA`/`#E8D98C` (v7.9.1: size floored to 64 px, was 26)
         (`0` loud `48px` Bold neon chest bar!).
       - Splits speech into short 3–5 word compound-safe lines (`text_vi.json`).
       - Pre-calculates exact horizontal X-center of each word/compound slot across the centered line.
@@ -4559,7 +4598,8 @@ def s10_word_synced_fixed_slot_captions(
     use_whisper = bool(whisper_mode) if whisper_mode is not None else is_dviet_profile
 
     eff_y = 1590.0 if (use_whisper and float(y) == 1410.0) else float(y)
-    eff_size = 26.0 if (use_whisper and float(size) == 48.0) else float(size)
+    # v7.9.1: whisper no longer downscales below the floor: max(whisper_g2_px | size, whisper_g2_px_floor_v791) = 64 px
+    eff_size = max(WHISPER_G2_PX if (use_whisper and float(size) == 48.0) else float(size), G2_TEXT_FLOOR_PX)
     eff_style = "Regular" if (use_whisper and style == "Bold") else style
 
     end_tl = float(total_dur) if total_dur is not None else (max(w[2] for w in words) + 0.35)
@@ -4600,6 +4640,7 @@ def s10_word_synced_fixed_slot_captions(
         ptr = 0
         while ptr < len(seg_ws):
             next_ptr = _smart_chunk_end(seg_ws, ptr, max_words_per_group, pause_split_s)
+            next_ptr = _g2_chunk_end_at_floor(seg_ws, ptr, next_ptr, font=font, style=eff_style, size=eff_size, slot_gap_em=0.28)
             grp = seg_ws[ptr:next_ptr]
             ptr = next_ptr
 
@@ -4814,7 +4855,7 @@ def s12_minimal_1line_quiet(
     """
     G2 · S12: Quiet 1-line compound-safe bottom captions (`R209` & `R30` compliant, `v6.0` Whisper Mode Ready):
       - `whisper_mode` (defaults to `True` when `style_profile="dviet"`, `False` otherwise):
-        downscales to `size=26.0, style="Regular", y=1590.0` monochrome `#FAFAFA`/`#E8D98C`!
+        switches to `style="Regular", y=1590.0` monochrome `#FAFAFA`/`#E8D98C` (v7.9.1: size floored to 64 px, was 26)
     """
     return minimal_single_line_captions(
         words_tl,

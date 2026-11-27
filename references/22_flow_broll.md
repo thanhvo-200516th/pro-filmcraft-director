@@ -64,7 +64,7 @@ Use the `flow_*` tools exclusively, in this order, whatever language the user wr
   [natural light] + [one smooth camera move].
 - Example: `A Vietnamese shop owner seen from behind rearranges neatly folded clothes on a wooden shelf, soft morning window light, slow push-in, shallow depth of field`.
 
-`check-prompts` supersedes `visual_blocks.lint_broll_prompt`'s 45-token rule as the ingest-level lint (that function is unchanged and still lints plate-level prompts).
+Since v7.9.1 there is one lint contract, `presets/broll_lint_contract.json`: `check-prompts` (ingest, with `anchor_quote`) and `visual_blocks.lint_broll_prompt` (plate-level prompts, no anchor check) both read its word range and rule lists; the old 46-token, 8-95-word rule of `lint_broll_prompt` is gone.
 The pain-keyword list that steers slot choice (rule E2) is `presets/pain_keywords.json`: a plain JSON array of NFC strings that the brain may edit per industry
 (or replace with `--pain-keywords`).
 

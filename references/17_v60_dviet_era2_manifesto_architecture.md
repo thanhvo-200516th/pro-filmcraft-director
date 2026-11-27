@@ -1,8 +1,10 @@
 # 17 — `v6.0` `@__dviet` Era-2 Manifesto Architecture (`7707` Forensics, Color-World Polarity, 4-Cut Grammar & `MAX_ZONES = 2`)
 
-`pro-filmcraft-director v6.0` codifies the **4-Agent Forensic Audit of `@__dviet` `7707653827016674580` (*MagentX Era-2 Manifesto*)** alongside the 19-video corpus (`7706`, `7693`, `7688`), introducing flagship archetype **`dviet_era2_7707_manifesto`** ([`visual_archetypes_catalog.json`](../presets/visual_archetypes_catalog.json)) and upgrading [`compile_and_verify.py`](../scripts/tools/compile_and_verify.py) to `v6.0`.
+> **Historical reference (v6.0).** Kept as design history; the current spec is [reference 21](./21_craft_json_minimal_spec.md) and the current process is [`SKILL.md`](../SKILL.md). Where this file disagrees with them, they win. Rule A1 and its Look S MP4 exception are stated once, in `SKILL.md` section 3.8.1.
 
-### Forensic Post-Mortem: The 4 Validator Anti-Patterns Fixed in `v6.0`
+`pro-filmcraft-director v6.0` codifies the **4-Agent Forensic Audit of `@__dviet` `7707653827016674580` (*MagentX Era-2 Manifesto*)** alongside the `@__dviet` corpus (17 evidence videos in [`dviet_19/`](./dviet_19/INDEX.md)) (`7706`, `7693`, `7688`), introducing flagship archetype **`dviet_era2_7707_manifesto`** ([`visual_archetypes_catalog.json`](../presets/visual_archetypes_catalog.json)) and upgrading [`compile_and_verify.py`](../scripts/tools/compile_and_verify.py) to `v6.0`.
+
+## Forensic Post-Mortem: The 4 Validator Anti-Patterns Fixed in `v6.0`
 | `v5.2` Validator Anti-Pattern | Why It Outlawed `@__dviet` `7707` Mastery | `v6.0` Compiler & Director Law |
 |---|---|---|
 | **1. `100%` `wgpu` Transition Mandate** (`edit_rules` C1) | Forced artificial wipes/flashes onto every V1 cut, creating `OVER_TRANSITIONED_SPAM` | **`4-Cut Grammar` (`dviet_4cut`):** `40%–75%` intentional `0f` Clean Hard Cuts; cap heavy `wgpu` transitions at `<= 45%` |
@@ -107,7 +109,7 @@ Every `v6.0` video commits to **one cohesive Color World** ([`typography_hierarc
 5. **Curated Subtext & Breathing:** `1–3` secondary groups (never forced `4/4`) + `>= 12%` zero-overlay breathing frames?
 6. **4-Cut Quota:** `40%–75%` clean `0`-frame hard cuts (`<= 45%` `wgpu` transitions; `0` `OVER_TRANSITIONED_SPAM`)?
 7. **Bimodal `C7` J-Cuts:** Vocal pre-leads cleanly in `[-850ms, -140ms]` (`0` sloppy chops in `[-130ms, -10ms]`)?
-8. **Music Stops & Restraint:** `1–2` `meta.bgm_stops` (`>= 0.50s` `-inf dB` vacuum), `<= 5` heavy whooshes/min, and `.fcproj` native handoff (Rule A1)?
+8. **Music Stops & Restraint:** `1–2` `meta.bgm_stops` (`>= 0.50s` `-inf dB` vacuum), `<= 5` heavy whooshes/min, and `.fcproj` native handoff (Rule A1; Look S delivers an MP4 master plus the `.fcproj` mirror, see `SKILL.md` section 3.8.1)?
 
 ---
 

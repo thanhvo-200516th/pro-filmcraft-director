@@ -59,7 +59,7 @@ Structure of V21 kept: full-screen product B-roll plus a PiP presenter. Times in
 |---|---|---|
 | 0 | Frame 0 is the real AI-made product macro, already moving. Background scale 1.22x -> 1.00x, ease-out over 500-600 ms. Voice onset <= 40 ms | no black or empty first frame |
 | 100 | Presenter PiP pops in, scale 0.92 -> 1.0 over 6 frames | |
-| 150 | First text (lead line, <= 200 ms, not counted into the hero tier): the first spoken clause, e.g. `TRÊN ĐÂY LÀ` (voiced 120-860 ms), font >= 64 px, glyph box >= 3.3 % of the frame height. First text may lead its word by -50..+250 ms | `text_voice_sync`, `text_min_size` |
+| 150 | First text (lead line, <= 200 ms, not counted into the hero tier): the first spoken clause, e.g. `TRÊN ĐÂY LÀ` (voiced 120-860 ms), font >= 64 px, glyph box >= 3.3 % of the frame height. First text is on screen 0-250 ms before its first word (`first_text_late`, default on, forbids any lag; the -50 ms slack of `first_text_lead_ms` applies only with `strict_first_text=False`) | `text_voice_sync`, `text_min_size` |
 | 700 | Hero lock-up in 2 tiers: the first keyword voiced in 0.3-1.5 s, 150-200 ms ahead of its word (`VIDEO` at 700 for the word at 860, `SẢN PHẨM` in Look S gold `#F5C451` at about 900); exits before the 1330 punch | hero box 12-18 % of the frame height (230-345 px, 15.3 % in the v3 plan [ĐO]), width 60-80 %; entrance blur-in or pop over 3-6 frames; **product-safe zone: the hero sits in the stage above the product and never over it** (`hero_safe_zone`) |
 | 1490-1500 | Next spoken clause (`BỌN MÌNH VỪA LÀM`, word at 1660), glyph box >= 4 % of H, exits at about 2300-2550 to hand over | spacing 550-790 ms from the previous text, inside the 500-900 gate |
 | 1330 | Punch / layout cut: zoom 1.0 -> 1.15-1.55x within <= 300 ms | whoosh peak within +/-12 ms of the cut |
@@ -112,11 +112,11 @@ Avoid `Combo_03_Tech_AI_Pattern_Interrupt` (too glitchy). `Combo_01_Editorial_Sl
 |---|---|---|
 | Audio dip at 3.2-3.4 s | >= 12 dB, target 17 dB | v2 4.6 dB, V21 7.4 dB [ĐO] |
 | First text | <= 200 ms | dviet median 200 ms [ĐO] |
-| Text matches voice | each text onset 0-400 ms before its first spoken word (comfort 100-250 ms; first text -50..+250 ms) | `text_voice_sync`, error |
+| Text matches voice | each text onset 0-400 ms before its first spoken word (comfort 100-250 ms; first text 0-250 ms before its word, see `first_text_late` below) | `text_voice_sync`, error |
 | Hero over the product | 0 px overlap | `hero_safe_zone` (plan), `hero_product_overlap_px` (rendered) |
 | Background motion | a bg reset in every 1.0 s of 0-3.4 s; no full-screen B-roll hold > 0.8 s without a micro-move | `hook_motion_floor`, `bg_static_hold`; rendered mean frame diff 2.03-3.38 s >= 2.0 against the dviet bar 1.9-2.4 |
 | Hero text | >= 12 % of the frame height (12-18 % recipe) | v2 7.0 %, V21 4.4 %, V19 4.2 % [ĐO]; dviet 10-21 % [ĐO] |
-| Loudness after ducking | -12 LUFS +/-0.5, true peak <= -1.0 dBTP | the hook gate; the master profile `studio_14` stays -14 LUFS |
+| Loudness after ducking | -12 LUFS +/-0.5, true peak <= -1.0 dBTP | **advisory, not enforced**: `check_hook` does not measure loudness and no compile gate reads `hook_0_5s.loudness`; the master profile `studio_14` stays -14 LUFS |
 | Visual check | a 0-5 s strip of the new build next to the best dviet hook (`7666801` or `7669054`) | by eye |
 | QA step | **read the words 0-3.5 s next to the text list** (every text must be a word being spoken, none before the voice says it) | by eye, then `check_hook(plan, words=words)` |
 
@@ -212,7 +212,7 @@ Maximum punch-in over 1.00 for one camera move (`camera_punch_caps` in the prese
 
 - **Speech density.** v2's words per second are fine; do not retime, cut pauses or speed up the voice. Speed stays 1.0x.
 - **Text density.** v2's text events per 5 s window (3-7) are in the range of V21 (4-7) and dviet (4.5-6) [ƯỚC]; adding more text raises the reset count only until the hook budget (max 5 events in 0-3 s) is hit. Use a zoom step, a flash or a cut for the missing resets first.
-- **Loudness.** Keep the master at the `studio_14` target and the hook gate above (-12 LUFS +/-0.5, true peak <= -1.0 dBTP after ducking). Raise weak SFX by level and layering, not by pushing the master.
+- **Loudness.** Keep the master at the `studio_14` target and treat the hook loudness above (-12 LUFS +/-0.5, true peak <= -1.0 dBTP after ducking) as an advisory target you measure by hand; no gate enforces it. Raise weak SFX by level and layering, not by pushing the master.
 - **The 10-15 s window and the V21 cut grid.** They are the strongest part of v2 and the reason it passes the pacing law there.
 - **Never change a claim's source.** AI B-roll stays illustrative (R200).
 

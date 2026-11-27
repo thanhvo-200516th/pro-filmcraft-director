@@ -1,6 +1,7 @@
 {
   "schema_version": "7.0.0",
   "purpose": "Universal Studio Director v7.0 — Quad-Mode Execution Policy (--tier fast | studio | full | auto), 10 Format Modes x 8 Industry Skins Routing Matrix, i5-12450H < 4.5GB RAM Governor (sequential_rvm_then_chrome_max2), Cranial & Zero-Face Macro Safe-Zones, Industry Hard Veto Guards, plus v6.0 1-Color-World Polarity Law, 4-Cut Grammar & Epistemic Provenance.",
+  "_doc_v791": "v7.9.1 truth note (values below are unchanged): compile_and_verify.py has no `studio` tier (its --tier choices are auto | fast | full). The studio tier's own cli_flags compile with `--tier full`, and a raw-video probe recommends `full`, so on the studio path the bgm_lra_offset_optimizer (16 kHz BGM steady-state offset selector) and the R35 post-AAC true-peak guard DO run; tiers.studio.skipped_heavy_gates only describes probe_and_align --tier studio, not the compile. Only `--tier fast` skips both at compile time (`--no-optimize-bgm-offset` skips the BGM optimizer alone).",
   "default_mode": "auto",
   "supported_cli_tiers": ["fast", "studio", "full", "auto"],
   "hardware_budget_governor": {

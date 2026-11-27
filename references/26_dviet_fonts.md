@@ -1,6 +1,6 @@
-# 26 - Font của @__dviet và chuỗi fallback
+# 26 — Font của @__dviet và chuỗi fallback
 
-Cập nhật 2026-11-25. Chi tiết nguồn / giấy phép / hash: `/home/vmiz/Thanh/Media/TNEDIT/01_Font/DViet_Fonts_Research/README.md`.
+Cập nhật 2026-11-25. Chi tiết nguồn / giấy phép / hash nằm trong ghi chú nghiên cứu font của máy dựng (thư mục `TNEDIT/01_Font/DViet_Fonts_Research/README.md` trong kho media riêng, không kèm repo).
 Font đã cài qua symlink `~/.local/share/fonts/TNEDIT_DViet` (fc-cache đã chạy).
 
 ## 1. Điều thật sự biết về font của kênh

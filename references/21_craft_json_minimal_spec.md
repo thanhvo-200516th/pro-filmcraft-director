@@ -1,14 +1,14 @@
 # 21 — `.craft.json` tối thiểu chạy được (v7.4.0)
 
 Spec nhỏ nhất đã **chạy thật** qua `compile_and_verify.py --tier fast` (Gate 1 → Gate 4: `clips=7`, `mismatches={}`) và qua `fc_build.validate`.
-Gồm: V1 (A-roll) + VOICE + SFX + BGM + 1 clip chữ. Các quy ước dưới đây **không có trong tài liệu gốc** của `fc_build.py` — thiếu một cái là lỗi khó hiểu.
+Gồm: V1 (A-roll) + VOICE + SFX + BGM + 1 clip chữ. Các quy ước dưới đây **không có trong tài liệu gốc** của `fc_build.py` (`scripts/vendor/ovs_core/scripts/apps/craft-handoff/tools/fc_build.py`) — thiếu một cái là lỗi khó hiểu.
 
 ## 1. Quy ước bắt buộc
 
 | # | Quy ước | Nếu sai |
 |---|---|---|
 | 1 | Có track VOICE ⇒ clip V1 chứa tiếng nhúng phải đặt `"audio": false` | `fc_build.py:351 KeyError: <clip id>` (`self.info[i]`, clip âm thanh liên kết của V1 không tra được) |
-| 2 | Track giọng tên có `giọng` / `voice` / `vo` / `a1` (vd `A1 · Giọng (VOICE)`) | `audio_levels.py` không phân loại được → dừng, báo tên clip |
+| 2 | Track giọng tên có `giọng` / `voice` / `vo` / `a1` (vd `A1 · Giọng (VOICE)`) | `scripts/vendor/ovs_core/scripts/audio_levels.py` không phân loại được → dừng, báo tên clip |
 | 3 | Track SFX tên có `SFX`; track nhạc nền tên có `nhạc` / `music` / `bgm` | bị xếp nhầm vai trò, sai mức độ to |
 | 4 | Track âm thanh chỉ nhận file **chỉ có tiếng** (`.wav`/`.mp3`…), không nhận `.mp4` | `SpecError: ... cannot go on track A1` ⇒ tách giọng ra `.wav` stereo 48 kHz trước |
 | 5 | Mọi `src` là **đường dẫn tuyệt đối** tới file có thật (trừ `AUTO:<từ khoá>` cho SFX) | `needs an absolute path` / `file not found` |

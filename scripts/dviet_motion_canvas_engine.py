@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-DVIET v6.0 Full-Screen Living Motion-Design Canvases & Polarity Flip Stage Engine
-=================================================================================
+DVIET Full-Screen Living Motion-Design Canvases & Polarity Flip Stage Engine (v6.0 design, packaged as v7.9.1)
+=============================================================================================================
 Replaces static flat PNG boxes and system emojis with 100% full-screen tactile, living
 Motion-Design Canvases inspired by `@__dviet` (`7707653827016674580`, `7688934517783989524`,
 `7693026626333871381`):
@@ -62,8 +62,10 @@ DEFAULT_W = 1080
 DEFAULT_H = 1920
 DEFAULT_FPS = 60
 
-STRIP_METADATA_SCRIPT = Path.home() / ".gemini/config/skills/strip-media-metadata/scripts/strip_metadata.py"
+TOOLS_DIR = Path(__file__).resolve().parent / "tools"
+FFMPEG_TIMEOUT_S = 300.0  # one-frame extraction / short encodes; never hangs forever
 
+# v7.9.1: optional extra dirs; `$PFD_FONT_DIR` is searched first and fontconfig (fc-list) last (web_plate_builder.find_font_file)
 FONT_DIRS = [
     Path.home() / ".local/share/fonts/tnedit",
     Path.home() / ".local/share/fonts/Montserrat_Static",
@@ -280,15 +282,30 @@ def resolve_theme_palette(theme: str = "emerald_cream_7707", polarity: str = "da
 # Font & Easing Utilities
 # =============================================================================
 
+def _wpb() -> Any:
+    """scripts/tools/web_plate_builder.py (lazy): the shared font search and metadata strip helpers."""
+    if str(TOOLS_DIR) not in sys.path:
+        sys.path.insert(0, str(TOOLS_DIR))
+    import web_plate_builder as mod
+
+    return mod
+
+
 @lru_cache(maxsize=64)
 def _resolve_font_path(role: str) -> str:
     candidates = FONT_CANDIDATES.get(role, FONT_CANDIDATES["be_bold"])
+    wpb = _wpb()
     for fname in candidates:
-        for fdir in FONT_DIRS:
+        for fdir in (*wpb.env_font_dirs(), *FONT_DIRS):
             cand = fdir / fname
             if cand.is_file():
                 return str(cand)
-    raise FileNotFoundError(f"Could not locate font for role={role!r}")
+    for fname in candidates:  # v7.9.1: fontconfig knows the file under another folder
+        hit = wpb.find_font_file(fname)
+        if hit is not None:
+            return str(hit)
+    raise FileNotFoundError(f"Could not locate font for role={role!r} (tried {candidates} in $PFD_FONT_DIR, "
+                            f"{[str(d) for d in FONT_DIRS]} and fontconfig); install it or set PFD_FONT_DIR")
 
 
 @lru_cache(maxsize=256)
@@ -853,14 +870,8 @@ def _resolve_ffmpeg() -> str:
 
 
 def strip_mp4_metadata(path: str | Path) -> None:
-    p = Path(path)
-    if p.is_file() and STRIP_METADATA_SCRIPT.is_file():
-        subprocess.run(
-            [sys.executable, str(STRIP_METADATA_SCRIPT), str(p)],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+    """v7.9.1: shared helper (strip-media-metadata skill, else `ffmpeg -map_metadata -1 -c copy`; warns loudly when both fail)."""
+    _wpb().strip_media_metadata(path, keep_icc=False)
 
 
 def encode_frames_to_mp4(
@@ -2382,7 +2393,7 @@ def _extract_middle_frame_png(mp4_path: Path, png_path: Path, t_sec: float = 0.7
         "1",
         str(png_path),
     ]
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True, timeout=FFMPEG_TIMEOUT_S)
 
 
 def run_self_test(out_dir: str | Path = "/tmp/test_v60_canvases", duration_sec: float = 1.5, fps: int = 30) -> dict[str, Any]:
@@ -2451,7 +2462,7 @@ def _cli(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(rep, ensure_ascii=False, indent=2))
         return 0
 
-    parser = argparse.ArgumentParser(description="DVIET v6.0 Full-Screen Living Motion-Design Canvas Engine")
+    parser = argparse.ArgumentParser(description="DVIET Full-Screen Living Motion-Design Canvas Engine (v7.9.1)")
     parser.add_argument("--list", action="store_true", help="Print JSON catalog of all 4 animated stage generators and themes")
     parser.add_argument("--stage", help="Stage name (`timeline_playhead_stage`, `concentric_lock_lab_stage`, `giant_numeral_3d_ui_stage`, `bento_kinetic_matrix_stage`)")
     parser.add_argument("--spec", default="{}", help="Inline JSON object or path to JSON spec file")

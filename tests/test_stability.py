@@ -393,7 +393,10 @@ def test_g_banners_match_module_versions() -> None:
 
 def test_h_vendor_integrity_and_paths() -> None:
     prov = (VENDOR_DIR / "PROVENANCE.md").read_text(encoding="utf-8")
-    assert "/home/vmiz/.claude/skills/opa-video-studio" in prov
+    # v7.9.1: the source is a snapshot label + version / date, never a personal path; rules.json carries the documented v7.9.1 patch
+    assert "opa-video-studio skill (snapshot)" in prov and re.search(r"\b\d+\.\d+\.\d+\b", prov) and "Copy date:" in prov
+    assert "/home/" not in prov, "PROVENANCE must not record a local path"
+    assert "patched in v7.9.1" in prov
     listed = re.findall(r"\|\s*`([^`]+)`\s*\|\s*([0-9a-f]{64})\s*\|", prov)
     assert len(listed) >= 14, f"PROVENANCE lists {len(listed)} files"
     for rel, digest in listed:

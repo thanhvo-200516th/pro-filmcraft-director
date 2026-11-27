@@ -1,8 +1,8 @@
-# 25. Độ to âm thanh cho TikTok và cách từng phần mềm dựng xử lý — bảng số khuyến nghị
+# 25 — Độ to âm thanh cho TikTok và cách từng phần mềm dựng xử lý — bảng số khuyến nghị
 
 Ngày nghiên cứu: 2026-11-25. Phạm vi: chỉ nghiên cứu và đề xuất số. Không dựng, không render, không sửa file nào khác của skill. Việc cần sửa ở file khác nằm ở mục 9.
 
-Cập nhật v7.5.0: bảng mục 7 đã được cài vào `presets/profile_overrides.json` và `audio_levels.py`; giá trị nào đo và giá trị nào suy ra xem mục 7.2, phần còn lại xem mục 9.
+Cập nhật v7.5.0: bảng mục 7 đã được cài vào `presets/profile_overrides.json` và `scripts/vendor/ovs_core/scripts/audio_levels.py`; giá trị nào đo và giá trị nào suy ra xem mục 7.2, phần còn lại xem mục 9.
 
 Quy ước độ tin cậy: **[CHÍNH THỨC]** = tài liệu của chính tổ chức ban hành (EBU, AES qua bản tóm tắt, Meta Engineering). **[ĐO]** = đo trực tiếp (số liệu 17 video @__dviet trong `dviet_19/INDEX.md`, hoặc thí nghiệm tổng hợp ở mục 4). **[BÊN THỨ BA]** = blog, hãng công cụ, diễn đàn; không có tài liệu gốc đi kèm. **[SUY LUẬN]** = tôi suy ra từ các mục trên, chưa kiểm bằng đo thật.
 
@@ -49,7 +49,7 @@ Ghi chú cho việc đọc các bài "-14 LUFS cho mọi nền tảng": phần l
 
 ## 4. Thí nghiệm: đỉnh true-peak sau khi mã hoá lại AAC [ĐO, tổng hợp]
 
-Mục đích: kiểm tra trần -0.5 dBTP của `tiktok_loud` có ý nghĩa gì sau khi nền tảng mã hoá lại.
+Mục đích: kiểm tra trần -0.5 dBTP (trần cũ của `tiktok_loud`; từ v7.9.1 là -1.0 dBTP) có ý nghĩa gì sau khi nền tảng mã hoá lại.
 
 Cách làm (thư mục tạm của phiên, không nằm trong skill, không có video): tín hiệu tổng hợp 3 s gồm "giọng" (hài âm 120 Hz có rung, bao biên độ 4 Hz, xì xào) trộn "nhạc" (nhiễu hồng + hợp âm), trộn nhạc -6.6 dB, giới hạn, rồi chỉnh gain để true-peak trước mã hoá lần lượt là -3.0, -2.0, -1.5, -1.0, -0.5 dBTP. Mã hoá `aac` của ffmpeg (bộ mã gốc của ffmpeg, **không phải** bộ mã của TikTok), giải mã lại, đo bằng ebur128 `peak=true`. Cột là mức thay đổi true-peak (dB) sau mã hoá, bản mix:
 
@@ -191,7 +191,7 @@ Còn lại (CHƯA làm):
 - Cổng LRA / đo sau AAC nằm trong `compile_and_verify.py` (không thuộc gói này): hạ LRA xuống thông tin (cảnh báo > 6) và thêm cổng đo thứ hai trên file mp4 xuất (chỉ cảnh báo nếu > 0 dBTP, mục 7 hàng 2) ở đó.
 - Dải cảnh báo true peak -1.0..-0.5 của `mix.wav` (hàng 2) chưa cài; hiện là một ngưỡng cứng -1.0 dBTP.
 - `presets/sfx_micro_sync_rules.json` (-14 LUFS ±1 / -1.5 dBTP, `bgm_ducked` -28..-24 dBFS) và `02_nle_premiere_filmcraft.md` §4 (-24..-28 dB) áp cho profile `platform`; cần ghi chú rõ để tránh nhầm với `tiktok_loud`.
-- `23_dviet_profile_decisions_and_backlog.md` mục (d) nên trỏ sang file này và đổi "trần -0.5 dBTP" thành "-1.0 dBTP".
+- `23_dviet_profile_decisions_and_backlog.md` mục (d) đã trỏ sang file này và đã đổi trần thành "-1.0 dBTP" (v7.9.1).
 - Mọi test mới nên dùng clip tổng hợp ≤ 3 s (`ffmpeg` `sine`, `anoisesrc`), không dùng media thật.
 
 ---
@@ -243,8 +243,8 @@ Tỉ lệ giọng/nền:
 - Torcoli và cộng sự về loudness difference lời bình/nền khi ducking (AES 2019; chỉ qua tóm tắt tìm kiếm): https://aes2.org/publications/elibrary-page/?id=20995
 
 Nguồn nội bộ:
-- `/home/vmiz/opa-software/pro-filmcraft-director/scripts/vendor/ovs_core/scripts/audio_levels.py` và `scripts/vendor/ovs_core/rules.json` (`params.audio`)
-- `/home/vmiz/opa-software/pro-filmcraft-director/presets/profile_overrides.json`, `presets/sfx_micro_sync_rules.json`
-- `/home/vmiz/opa-software/pro-filmcraft-director/scripts/tools/compile_and_verify.py` (vòng đo-chỉnh: dòng 8596, 8718)
-- `/home/vmiz/opa-software/pro-filmcraft-director/references/dviet_19/INDEX.md` và 17 file con
-- `/home/vmiz/opa-software/pro-filmcraft-director/references/02_nle_premiere_filmcraft.md`, `03_micro_timing_recipes.md`, `23_dviet_profile_decisions_and_backlog.md`
+- `scripts/vendor/ovs_core/scripts/audio_levels.py` và `scripts/vendor/ovs_core/rules.json` (`params.audio`)
+- `presets/profile_overrides.json`, `presets/sfx_micro_sync_rules.json`
+- `scripts/tools/compile_and_verify.py` (vòng đo-chỉnh của Gate 6: `build_effective_rules`, `_lufs_target_shift`, `measure_ebur128`, `measure_post_aac_true_peak_dbtp`)
+- `references/dviet_19/INDEX.md` và 17 file con
+- `references/02_nle_premiere_filmcraft.md`, `03_micro_timing_recipes.md`, `23_dviet_profile_decisions_and_backlog.md`

@@ -71,7 +71,7 @@ Mỗi dòng một JSON UTF-8, kết thúc `\n`. Không có handshake.
 Các client có sẵn (đừng viết lại):
 - `craftctl.Craft("filmcraft", workdir)`: tự bật X + app + cổng + token, `cmd()`, `rpc()`, `pipeline()`, `close()` (gửi `app.quit`, rồi `terminate`/`kill` chỉ tiến trình CON của nó).
 - `fc_export.export(project, out, fmt, lufs, crf)`: `file.open` + `export.quick wait:true`.
-- `fc_build_fast.py SPEC OUT.fcproj --report R --frames N`: build + tự xuất N khung PNG qua `file.exportFrame` (đã chạy: khung 640x360, độ lệch chuẩn xám 83,4, tức không rỗng).
+- `scripts/vendor/ovs_core/scripts/apps/craft-handoff/tools/fc_build_fast.py SPEC OUT.fcproj --report R --frames N`: build + tự xuất N khung PNG qua `file.exportFrame` (đã chạy: khung 640x360, độ lệch chuẩn xám 83,4, tức không rỗng).
 - `scripts/open_in_app.py` (của skill `opa-video-studio`, không nằm trong repo này): mở FilmCraft cho người xem, chọn clip; app chạy tiếp sau khi ngắt điều khiển.
 
 ## 3. Bằng chứng kết nối (đo thật)

@@ -1,249 +1,380 @@
 ---
 name: pro-filmcraft-director
 description: >-
-  Pure Agentic Video Director & FilmCraft (.fcproj) Architect (v7.9.0 Universal Studio Director on the v7.6.0 Look S base, Look S Studio default: the V21 hybrid recipe of Full-Head Studio Rounded Cards [A1], Architectural Squircle PiP Windows [A2] and Bottom-Flush Cutouts [B] with polarity paper, neon blackout, silk numeral stage and full-screen B-roll hook for talking-head product / brand / explainer video, delivered as a compositor MP4 master plus a .fcproj mirror; Look D @__dviet screen-strip tutorials only on explicit request. Orthogonal 10 Format Modes × 8 Industry Skins [80 canonical / 240+ hybrids], Single-Stream Plate + Native C/AVX2 FFmpeg Filtergraph Compositor [~35s Draft / ~90s 60fps Master], Full-Head Studio Rounded Cards, Architectural Squircle PiP Windows, Full-Width 0..1080 Border-Safe Neon Contours, 60fps Syllable- & Clause-Locked Web-Cinema Kinetic Typography .mov Plates [kt01..kt12], @__dviet layout templates [screen_strip / card_916 / profile_card], `dviet` profile with style tokens, zoom presets & scoped transitions, Swash-Initial Hybrid Vietnamese NFC, Gate 3C Anti-Template Choreography Vetoes, Dual-Rail 9:16 Cranial Lock, Quad-Tier fast/studio/full/auto) across Skincare, Dental CRI-100, Nail/Salon, Review/E-com, Course/EdTech, Personal Brand, Short Vlog, and B2B/SaaS/Real Estate.
-  Separates 100% bespoke Creative Director Judgment (35% Hero / 35% Whisper & Counterpoint / 30% Studio 3D Plates rhythm, Format × Skin HARD VETO Guards, Color-World Polarity + Semantic 4-Act Jewel on #FAFAFA, Sub-layer Feather=29 & 0px Hard Stroke, MAX_ZONES<=2, 4-Cut Grammar + Bimodal C7 Vocal J-Cuts, Silence Vacuums & 7 Organic Foley SFX, Epistemic Claim-Gate R200)
-  from 6 stateless physics-verified core tools (probe_and_align, web_plate_builder, fast_studio_compositor, visual_blocks, typography_composer, compile_and_verify) plus stateless helper CLIs (env_status, silence_cut, speed_media, sfx_auto, spec_from_plan, qa_sync, sfx_shift, broll_from_video, fc_export, dviet_text, filmcraft_cli, flicker_schedule, duck_keyframes).
-  v7.7.0 adds the hook-first-5s recipe, the pacing law (max hold, visual change per 5 s) and the pop-out card. v7.8.0 makes the hook text follow the voice, keeps the hero off the product, sets a background motion floor and gates the pop-out card sharpness. v7.9.0 is the audit-fix release for the v4 build (render-level and plate-text gates, QA coverage, housekeeping; see docs/TIEN_DO_SKILL.md).
-  Activate whenever the user wants to direct, edit, rebuild, or polish raw footage, multi-slice folders, or existing FilmCraft (.fcproj) timelines into studio-grade, non-template videos.
+  Use when the user wants to direct, edit, rebuild or polish talking-head footage (one raw video, a multi-slice folder or an existing FilmCraft .fcproj) into a studio-grade, non-template 9:16 video. v7.9.0 Universal Studio Director. Look S Studio is the default for product, brand and explainer video: Full-Head Studio Rounded Cards, Architectural Squircle PiP windows and Bottom-Flush cutouts with polarity paper, neon blackout, a silk numeral stage and a full-screen B-roll hook, delivered as a compositor MP4 master plus a .fcproj mirror. Look D (@__dviet screen-strip tutorials) only on explicit request. Covers 10 Format Modes x 8 Industry Skins, 60fps kinetic typography plates kt01..kt12, Vietnamese NFC typography, hook, pacing and text-legibility gates, and an 8-gate FilmCraft compiler. Six stateless core tools plus helper CLIs measure; the agent makes every creative decision.
 ---
 
-# Pro FilmCraft Director (`v7.9.0` on the `v7.6.0` Look S base — Universal Studio Director: `10×8` Matrix, `40×` Fast Single-Stream C/AVX2 Engine, Clean Full-Head Studio Cards, `60fps` `kt01..kt12` Kinetic Typography & `@__dviet` Fidelity)
+# Pro FilmCraft Director (`v7.9.0`) — Universal Studio Director
 
-Turn **1 Raw Video**, a **Multi-Slice Footage Folder**, or an **Existing `.fcproj`** into a **bespoke, studio-grade FilmCraft project (`.fcproj`)** across **3 Render Lanes (`Lane A` NLE Native + `Lane B` [`web_plate_builder.py`](./scripts/tools/web_plate_builder.py) `60fps` `HTML5/CSS3/SVG @2x` ProRes 4444 / `qtrle` RGBA `.mov` Kinetic Plates (`kt01..kt12`) + `Lane C` [`dviet_motion_canvas_engine.py`](./scripts/dviet_motion_canvas_engine.py) / HyperFrames / EffectCraft)**, **Orthogonal `10 Format Modes × 8 Industry Skins`** ([`format_modes_catalog.json`](./presets/format_modes_catalog.json)), **`Dual-Rail 9:16` + `Cranial Lock`** (`0%` face/hair overlap, `Sub-layer Feather = 29`, `0px` hard stroke), **`color_world_polarity` + `semantic_4act_jewel`** (`#FAFAFA` 4-Act chapter inks), **14 Native-Frame Micro-Bridges**, **`Swash-Initial Hybrid`** Vietnamese `NFC` ([text_vi.json](./data/text_vi.json)), and `-16 / -14 LUFS` mastering — **never static `mode="still"` Hero `.png` stamps, never `PIL/OpenCV` 3D plastic bevels, never `— ALL CAPS KICKER` or duplicate pill spam**.
+## 1. Overview
 
-**Two looks (`v7.6.0`):** **Look S (Studio)** is the default for product, brand and explainer talking-head video: the V19..V21 reference masters, Full-Head Cards / Squircle PiP / Bottom-Flush cutouts, chapter colour, `60fps`, `-14 LUFS`, an MP4 master plus a `.fcproj` mirror. **Look D** (the `@__dviet` channel: plain screen-strip tutorial, profile `dviet`, `tiktok_loud`) only on explicit request. Choose in Step 3; Look S scene recipe in Step 3b and [`24_studio_look_recipe.md`](./references/24_studio_look_recipe.md).
+### 1.1. Purpose, inputs and outputs
 
-**v7.9.0 — rules from the v4 review (render-level and plate-text gates).** Each row is a gate; an error blocks delivery until the cause is fixed (never loosen the limit).
+- **Purpose:** turn talking-head footage into a bespoke, studio-grade vertical video (`1080x1920`) and an editable FilmCraft project. The agent (the brain) makes every creative decision; the tools are stateless and only build, render and measure.
+- **Inputs:** **1 raw video**, a **multi-slice footage folder**, or an **existing `.fcproj`**; optional script, B-roll, SFX folder, `<workspace>/feedback_log.jsonl`.
+- **Outputs:** the `.fcproj` (always), `EDITOR-REPORT.md` with the gate verdicts, a `1440x2560` QA contact sheet, and for Look S the compositor MP4 master (section 3.8.1).
+- **Never:** static `mode="still"` hero `.png` stamps, `PIL/OpenCV` 3D plastic bevels, `— ALL CAPS KICKER` or duplicate pill spam (section 4.1).
+- **Release history** (what each of v7.4.0 .. v7.9.0 added): [`README.md`](./README.md) section 1 and [`docs/TIEN_DO_SKILL.md`](./docs/TIEN_DO_SKILL.md). This file states only the current rules.
 
-| Gate (v7.9.0) | Limit | Where |
+### 1.2. Look S and Look D (the one canonical statement)
+
+Choose the look first (section 3.4.1) and say it to the user.
+
+| | **Look S (Studio): the DEFAULT** | **Look D (`@__dviet` channel)** |
 |---|---|---|
-| Pop-out card clean edge | dark source side bands (letterbox / dark wall edge) are painted with the clean wall, small dark wall specks filled, the crown matte refined (guided filter + edge contrast): inner dark strip `<= 4 px`, `0` specks, crown jaggedness `<= 1.2 px`, crown rise `<= 4 px` | `render_popout_studio_card(clean_source_bands, despeckle_wall, crown_refine)` (all default on); `motion_gate.popout_inner_edge_dark_strip_px`, `card_dark_speck_count`, `crown_edge_metrics` |
-| Flash cap (`flash_luma_cap`, `flash_rate`) | a flash never lifts the frame mean luma above `220` (0..255); `<= 3` flashes in any 1 s (WCAG 2.3.1); a white cut is `opacity <= 70` ramped over 3 frames | plan: `check_hook` via `motion_gate.check_flash_plan`; render: `motion_gate.py --flash` (`check_flashes`) |
-| Text legibility incl. labels (`text_min_size`) | EVERY overlay text, card label and plate caption: CSS px x plate scale `>= 64 px` on the canvas, glyph `>= 3.3 %` of H; secondary plate text (pills, helpers, card labels) is drawn at `SECONDARY_TEXT_PX` 70 px (`66-74 px` after the plate scale, `secondary_text_px`); `decorative: true` only warns; an explicit illegible size (`enforce_min_text_px(forced=True)`) raises | `check_hook` (`labels`), `check_text_legibility`; `render_web_plates_batch` HARD-BLOCKS (`UndersizedTextError`): CSS audit (`audit_plate_text_px`) before Chrome, rendered sizes (engine `textSizes`, font x screen scale) after; `text_audit` on every plate |
-| Word gap (`word_gap_collision`) | adjacent-word gap `>= 0.25 em` on every visible frame of a blur-in / scale-in (blur sigma eats `2 sigma`, a per-word scale eats `(s - 1) x word width`); line-level blur-ins KEEP the blur and widen the word spacing with it (`motion_gate.entrance_word_spacing_em`), back to the resting spacing as the blur reaches 0 | `motion_gate.check_word_gaps`, `check_hook` (texts with `gap_px`); kt02/04/05/07/08/09/11 plates: `[data-ws-nat0]` guard every frame (engine `probe` mode measures the ink gap); FilmCraft: tracking keys (`typography_composer.apply_entrance_word_spacing`); presets carry `entrance_word_spacing`; the kt03 bloom is capped by default (`gap_safe_blur_px`, `gap_safe_word_scale`); the `per_word_stagger` preset carries `max_word_scale_pct: 100` |
-| Text coverage (`text_coverage`) | from the first text to `3.0 s` no stretch longer than `150 ms` without on-screen text | `check_hook` |
-| First text before its word (`first_text_late`) | the first text is on screen at or before its first spoken word; default ON (`check_hook(strict_first_text=True)`, `hook_text_from_words(strict=True)` puts the lead line `20 ms` before the word) | `check_hook(plan, words=words)` |
-| SFX block rows (Gate 7b) | a `qa_sync` row with `block: true` (sound > `0.1 s` before the picture) is never ĐẠT, is marked `block: true` in `sfx_shifts.json`, and the gate fails (exit 1) while any such row remains | `qa_sync.py` (`gate_pass`) |
+| Use for | product, brand and explainer talking-head video | plain screen-strip tutorials, **only on explicit request** ("làm giống kênh dviet") |
+| Reference | the V19..V21 masters, [`24_studio_look_recipe.md`](./references/24_studio_look_recipe.md) | [`references/dviet_19/INDEX.md`](./references/dviet_19/INDEX.md), [`23_dviet_profile_decisions_and_backlog.md`](./references/23_dviet_profile_decisions_and_backlog.md) |
+| Scenes | Full-Head Cards (A1), Squircle PiP (A2), Bottom-Flush cutouts (B), polarity paper, neon blackout, silk numeral stage, B-roll hook (section 3.5) | `screen_strip` / `card_916` / `profile_card` layouts |
+| Profile / colour | `default`; chapter colour wins (`accent_policy: color_world`) | `dviet`; one accent per video from the tokens (`accent_policy: tokens`, default `#F1C711`) |
+| Typography | `Swash-Initial Hybrid` | condensed sans (`Barlow Condensed`); swash only for role `script_accent` |
+| Audio profile | `studio_14` (`-14.0 LUFS`, `-1.2 dBTP`, ducking on, `bgm_stops` allowed, up to `72` SFX cues) | `tiktok_loud` (`-12 LUFS`, `-1.0 dBTP`, BGM `14 dB` under the voice; UNVALIDATED on real speech) |
+| Frame rate | `60fps` | `30` or `60fps` per canvas |
+| Deliverable | **MP4 master + `.fcproj` mirror** (the Rule A1 exception, section 3.8.1) | `.fcproj` (Rule A1) |
 
-**v7.8.0 — hook text follows the voice, product-safe hero, motion floor, crisp pop-out card.** Three defects of the v3 build (labelled `[ĐO]`; estimates `[ƯỚC]`) became rules. **D1:** the hero `3 BƯỚC` stood at `0.17 s` while the voice said `3` only at `3.48 s`, and it covered the bottle: the hook texts now come from the voice words (`studio_recipe.hook_text_from_words(words)`), the voice is never re-cut, the first text is a lead line that quotes the first clause (`<= 200 ms`), the keyword hero comes `150–200 ms` before its word, a numeral appears only when voiced, and the hero sits in the stage above the product. **D2:** the pop-out card was soft (edge `19–21 px`); new crisp defaults and gates in [`29_popout_card_premiere_to_filmcraft.md`](./references/29_popout_card_premiere_to_filmcraft.md) section 3.1a (the whole-frame Laplacian `430` is **not** a valid bar). **D3:** the background was static for `2.2–3.4 s`: every `1.0 s` of the hook needs a background reset, and a full-screen B-roll hold needs a micro-move. Basis: one user build plus 17 `@__dviet` samples of one channel; thresholds are `[ƯỚC]`.
+### 1.3. Architecture
 
-| Gate (v7.8.0) | Limit | Where |
+Three render lanes: **Lane A** NLE-native FilmCraft clips; **Lane B** [`web_plate_builder.py`](./scripts/tools/web_plate_builder.py) `60fps` HTML5/CSS3/SVG `@2x` plates (ProRes 4444 / `qtrle` RGBA `.mov`, `kt01..kt12`); **Lane C** [`dviet_motion_canvas_engine.py`](./scripts/dviet_motion_canvas_engine.py) full-screen motion canvases (HyperFrames / EffectCraft optional). Look S adds the single-stream plate compositor (`fast_studio_compositor.py`, numpy/OpenCV plates + one FFmpeg filtergraph; about `35 s` draft / `90 s` `60fps` master).
+
+#### 1.3.1. The brain (you)
+
+- Inspect `assets_contact_sheet.jpg`, read `words_tl.json` word by word, consult `feedback_log.jsonl` when present.
+- Pair **1 Format Mode (`F1..F10`) x 1 Industry Skin (`S1..S8`)** ([`format_modes_catalog.json`](./presets/format_modes_catalog.json)) + **1 Archetype** ([`visual_archetypes_catalog.json`](./presets/visual_archetypes_catalog.json)); 80 canonical cells, 240+ hybrids.
+- Choose the look, profile, chromatic policy, scene modes, typography beats, bridges and SFX; enforce the iron laws (4.1) and call the plan-level gate functions (4.2) yourself.
+- A tool result is a measurement, not a decision: when a gate fails, fix the cause (never loosen the limit) or tell the user.
+
+## 2. Requirements and resources
+
+### 2.1. Environment
+
+Check with `python3 ./scripts/env_status.py [--json] [--strict]` (section 3.1).
+
+| Item | Minimum | Required for |
 |---|---|---|
-| `text_voice_sync` (error) | text onset `0–400 ms` before its first spoken word (warn outside `100–250 ms`; first text `-50..+250 ms`; numeral only within `±400 ms` of its voice) | `check_hook(plan, words=words)`; `words=None` only warns |
-| `hero_safe_zone` (error) | hero box overlaps `product_bbox` (or the `stage` cap-top line `0.32 H`) by `0 px` | `check_hook`; rendered twin `hero_product_overlap_px` in `motion_gate.py` |
-| `text_min_size` (error) | no hook text below a `64 px` font or a `3.3 %` glyph box; hero tier box `12–18 %` of H per tier | `check_hook`; rendered twin `text_glyph_height_frac` |
-| `hook_motion_floor` (error) | a **background** reset (cut, flash, glint, card landing, zoom step `>= 4 %`) in every `1.0 s` of `0–3.4 s`; PiP pops and text do not count | `check_hook`, `hook_motion_floor()` |
-| `bg_static_hold` (error in the hook, warn after) | full-screen B-roll hold `> 0.8 s` (`> 1.2 s` elsewhere) without a push `>= 10 %/s`, a pan `>= 4 %` of the crop per second or a glint | `check_pacing`; remedy `plan_micro_moves(shots)` |
-| Rendered motion | masked frame diff mean `>= 2.0` in `2.03–3.38 s` (dviet B-roll-first bar `1.9–2.4`, **not** V21); no run `< 1.0` longer than `0.6 s` | `scripts/tools/motion_gate.py` `check_motion` |
-| Pop-out card | edge 10–90 % `<= 6 px`; face-ROI Laplacian `>= 1.8x` plain Lanczos; side bow `<= 12 px`; pop `7–11 %` of H | `motion_gate.py` `popout_edge_width_px`, `face_laplacian_ratio` |
+| Python venv | 3.10+, `~/.venvs/video-skills`, [`requirements.txt`](./requirements.txt) (pins `opencv-python-headless` 4.x) | every `.py` tool |
+| Node.js | `>= 22` (`NODE_BIN`) | `web_cinema_plate_engine.mjs` (Lane B plates) |
+| Chrome / Chromium | any headless build (`CHROME_BIN`) | Lane B plates |
+| FFmpeg + ffprobe | 6.1+ | ingest, render, loudness |
+| FilmCraft | `>= 0.13.0` (it ships `wgpu 0.20.1`) | compile (Gate 4) and export |
+| Xvfb (or Xephyr) | any | FilmCraft runs on a virtual display, never on `:0` |
+| Person matte | `u2netp` (`~/.rembg/models/u2netp/u2netp.onnx`, or `PFD_MATTE_MODEL` / `U2NETP_ONNX_PATH`); `birefnet-portrait` is the slow fallback (~30 s/frame) | cutouts, pop-out card, Cranial Lock sandwich |
+| Fonts | Be Vietnam Pro, Playfair Display (fallback chain in [`26_dviet_fonts.md`](./references/26_dviet_fonts.md)) | Vietnamese NFC text |
 
-When a hook text is retimed, regenerate the SFX list in the same pass; the QA step is to read the words of `0–3.5 s` next to the text list ([`28_hook_first_5s_and_pacing.md`](./references/28_hook_first_5s_and_pacing.md) sections 2 and 2.1).
+**RVM is not shipped.** The person matte this skill can make is `u2netp` / `birefnet-portrait`. Wherever a doc or a parameter says "RVM alpha" (`person_alpha_u8`), read "a person matte": the skill's own `u2netp` matte, or an RVM matte made by another tool. The skill's cache root (SFX acoustic cache, `.fcproj` backups) is `PFD_CACHE_DIR` (default `~/.cache/pro-filmcraft-director`); Look S segment plates are cached in the `--work` folder; the other environment variables are listed in [`README.md`](./README.md) section 3.
 
-**v7.7.0 — hook-first 5 s, pacing law, pop-out card.** A measured study of the 17 `@__dviet` hooks and of the v2 build against V19..V21 is encoded in two new references and in `studio_recipe.py`. Every number there is labelled `[ĐO]` (measured) or `[ƯỚC]` (estimate); the study is **one channel, 17 samples**, and SFX times cannot be separated from voice, so they are `[ƯỚC]`.
-- **Hook-first 5 s** ([`28_hook_first_5s_and_pacing.md`](./references/28_hook_first_5s_and_pacing.md)): hook recipe v3 on the V21 structure (full-screen product B-roll + PiP presenter): frame 0 already moving, voice onset `<= 40 ms`, first text `<= 200 ms` (v7.8.0, was `300`), hero lock-up `12–18 %` of the frame height (never over the product), `3–5` text events in `0–3 s`, a punch cut at `1330 ms` with the whoosh peak within `±12 ms`, a vacuum of `>= 12 dB` (target `17 dB`) at `3.2–3.4 s`, a white flash cut at `3.4 s`. SFX by file name are listed there (all `[ƯỚC]`). Data: `hook_0_5s` in [`studio_scene_recipe.json`](./presets/studio_scene_recipe.json); `studio_recipe.hook_template()`, `hook_text_from_words()` and `check_hook()`.
-- **Pacing law** (same reference): no hold `> 2.0 s` without a reset (a cut, zoom step, flash or new text), recipe cap `2.4 s` (error); `>= 3` resets in the `0–5 s` window and `>= 2` in every later `5 s` window; `>= 2` shots under `1 s` per `10 s` (advisory); dead holds target `<= 45 %`; the same B-roll source seconds never twice; per-layer punch-in caps (B cutout `+6 %`, A1 card `+12 %`, PiP inner `+8 %`, full-screen B-roll `+25 %`). Implement every fix as a scene split with its own `cam [a, b]`, visual only, speed `1.0x`. Do **not** change speech density, text density or loudness. `studio_recipe.check_pacing()` returns `hold_s` and `dead_hold_share` per window (the share is a plan-level proxy `[ƯỚC]`) and `check_source_reuse()` checks the sources.
-- **Pop-out card** ([`29_popout_card_premiere_to_filmcraft.md`](./references/29_popout_card_premiere_to_filmcraft.md)): the Premiere / CapCut recipe (head crown above a rounded light card) mapped to FilmCraft A / B / C; shipped as class **B** (two RGBA plates plus the master composite) through `render_popout_studio_card` in `fast_studio_compositor.py` (flag **Look S pop-out**; the default rounded card is unchanged). The spec still has **no `masks` key** (gap H5) and the RVM alpha leaves a grey fringe that a 2 px choke does not clear: read the warnings before promising it.
-- **Compile, wall cleaner, export:** the `studio_14` audio profile is now selectable (`compile_and_verify.py --audio-profile studio_14`); `clean_aroll_preserve_hair_crown` accepts an RVM person alpha (`person_alpha_u8`, default `None` keeps today's behaviour); `fc_export.py` polls for the export instead of a blind wait. See each tool's `--help` and docstring for the exact behaviour.
+### 2.2. Six stateless core tools
 
-**`@__dviet` truth source (`v7.5.0`):** the 17 measured videos are indexed in [`references/dviet_19/INDEX.md`](./references/dviet_19/INDEX.md) (table, recurring signatures with counts, gap table *observed → done / backlog*); explicit decisions with provenance and the ranked **BACKLOG of effects that are NOT implemented** live in [`23_dviet_profile_decisions_and_backlog.md`](./references/23_dviet_profile_decisions_and_backlog.md); runnable tokens live in [`dviet_style_tokens.json`](./presets/dviet_style_tokens.json). Numbers marked *estimate* there are not standards. **v7.5.0** adds four research references: [`30_filmcraft_control_bridge.md`](./references/30_filmcraft_control_bridge.md) (why there is no `filmcraft-cli`, the `filmcraft --control` protocol), [`25_loudness_tiktok_vs_nle.md`](./references/25_loudness_tiktok_vs_nle.md) (the `tiktok_loud` loudness table: measured vs derived values; TikTok publishes no loudness target), [`26_dviet_fonts.md`](./references/26_dviet_fonts.md) (font roles and fallback chain) and [`27_premiere_recipes_to_filmcraft.md`](./references/27_premiere_recipes_to_filmcraft.md) (Premiere recipes for the BACKLOG effects, classified A / B / C).
+1. [`probe_and_align.py`](./scripts/tools/probe_and_align.py) — ingest (`--tier fast|studio|full|auto`) -> `workspace_context.json`, `media_probe.json`, `words_tl.json`, `assets_contact_sheet.jpg` (+ `textnorm`, `20 ms` RMS pause onsets and Haar `eye_band` / `mouth_band` via [`haarcascade_frontalface_default.xml`](./data/haarcascade_frontalface_default.xml) in `full`). Flags: `--whisper-threads N` (or `PFD_WHISPER_THREADS`), `--timeout SECONDS`, `--force` (overrides the lock file of another or a crashed run in `--work`; it does **not** discard cached results), `--music-only` (no ASR). Rejects a 0-byte or corrupt video; always writes `words_tl.json` (empty plus a warning when there is no audio).
+2. [`web_plate_builder.py`](./scripts/tools/web_plate_builder.py) *(Lane B)* — headless Chrome `@2x`, `60fps` engine via [`web_cinema_plate_engine.mjs`](./scripts/web_cinema_plate_engine.mjs) (Node `>= 22`, no npm dependencies): `render_kinetic_typo_batch(...)` (`kt01..kt12` RGBA `.mov` synced to syllable onsets, `0 px` hard stroke), the 3D studio plates (`frosted_glass_bento_steps`, `skewed_3d_polaroid_trio`, `isometric_3d_prompt_browser`, `clinical_before_after_1_to_28`) and three layout templates with role-named slots (`screen_strip`, `card_916`, `profile_card`). `render_web_plates_batch` hard-blocks text under the legibility floor (4.2.3). A missing font falls back to Be Vietnam Pro / Playfair Display with a warning.
+3. [`dviet_motion_canvas_engine.py`](./scripts/dviet_motion_canvas_engine.py) *(Lane C)* and [`visual_blocks.py`](./scripts/tools/visual_blocks.py) — four full-screen `60fps` canvases (`timeline_playhead`, `concentric_lock_lab`, `giant_numeral_3d_ui`, `bento_kinetic_matrix`), ten RGBA visual primitives (see [reference 14](./references/14_anti_cookiecutter_visual_director_matrix.md)), `clean_broll_plate`, and `lint_broll_prompt` (the plate-level face of the one B-roll prompt contract of 3.8.3: same word range and rules, no `anchor_quote` check).
+4. [`typography_composer.py`](./scripts/tools/typography_composer.py) *(Lane A+B)* — `plan_dviet_kinetic_beat_schedule(...)` (`kt01..kt12` anti-monotony router, `35% Hero / 35% Whisper & Counterpoint / 30% Studio 3D Plates`, `Swash-Initial Hybrid`), `Dual-Rail 9:16` + `Cranial Lock`, `DVIET_COLOR_WORLDS` + `semantic_4act_jewel`, whisper `G2` (`S01..S18`, at least `64 px` on the canvas like every overlay text), and the bridge helpers. Companion [`dviet_text.py`](./scripts/tools/dviet_text.py) turns role-tagged events (`caption`, `keyword_sans`, `script_accent`, `number`, `header`, `cta`, `bilingual_sub`, `lockup_sub`, `lockup_hero`, `constellation`, `font_specimen`) into text tracks whose `y%`, size, entrance and font come from [`dviet_style_tokens.json`](./presets/dviet_style_tokens.json).
+5. [`compile_and_verify.py`](./scripts/tools/compile_and_verify.py) — stateless 8-gate compiler (catalogue in 5.1): `.craft.json` -> `.fcproj` + 16 QA frames + `EDITOR-REPORT.md`. Flags: `--tier auto|fast|full`, `--profile default|dviet`, `--audio-profile platform|studio_14|tiktok_loud` (default `platform` = `-16 LUFS`, `-1.5 dBTP`), `--auto-sfx-dir DIR` (resolves `src: "AUTO:<keyword>"` SFX clips, one MD5-unique file per clip; compile fails if `AUTO:` clips exist without it), `--words`, `--manifest`, `--context`, `--strict-rules`, `--hook-gates --preview MP4`. It never exports `.mp4` (3.8.1).
+6. [`fast_studio_compositor.py`](./scripts/tools/fast_studio_compositor.py) — the Look S compositor: `init_hair_safe_wall_reference`, `clean_aroll_preserve_hair_crown` (scale-space opening; keeps rounded hair crowns, optional `person_alpha_u8`), `render_full_head_studio_card` (A1), `render_squircle_pip_window` (A2), `render_bottom_flush_cutout` (B, full width `x = 0..1080`, bottom-locked, `1.5 px` jewel rim), `render_popout_studio_card`, `apply_fullwidth_neon_rim_blackout`, `verify_audio_voice_sync_guard` (rejects uncut or drifted voice takes), `pipe_encode_single_plate_fast`, `compose_master_mp4_via_ffmpeg`. Its CLI `--draft` / `--master` is **only a plain re-encode** (scale, crop, fps) of one input video, not a studio render; the studio render is `look_s_render.py` (3.5.3).
 
----
+### 2.3. Helper CLIs (stateless; the brain decides, the tool measures)
 
-## 1. Strict Architecture Contract: Brain vs. 6 Stateless Core Hands (`3-Lane Router`)
+| Tool | Does | Step |
+|---|---|---|
+| [`env_status.py`](./scripts/env_status.py) `[--json] [--strict]` | preflight of 2.1 | 3.1 |
+| [`silence_cut.py`](./scripts/tools/silence_cut.py) `plan\|apply`, [`speed_media.py`](./scripts/tools/speed_media.py) `plan\|apply\|check` | pre-ingest cuts and speed | 3.2 |
+| [`studio_recipe.py`](./scripts/tools/studio_recipe.py) | Look S scene planner + hook / pacing / legibility check functions (data: [`studio_scene_recipe.json`](./presets/studio_scene_recipe.json)) | 3.5, 4.2 |
+| [`look_s_render.py`](./scripts/tools/look_s_render.py) | renders Look S from `scenes.json` through the compositor | 3.5.3 |
+| [`motion_gate.py`](./scripts/tools/motion_gate.py) | measures a rendered MP4 (motion, flashes) + pop-out / text metric functions | 4.2, 5.2 |
+| [`dviet_text.py`](./scripts/tools/dviet_text.py) | role events -> text tracks | 3.6 |
+| [`spec_from_plan.py`](./scripts/tools/spec_from_plan.py) | plan -> compile-ready `.craft.json` ([reference 21](./references/21_craft_json_minimal_spec.md)) | 3.6 |
+| [`sfx_auto.py`](./scripts/tools/sfx_auto.py) `plan` | events -> SFX cues from [`sfx_catalog.json`](./presets/sfx_catalog.json) | 3.4.4 |
+| [`duck_keyframes.py`](./scripts/tools/duck_keyframes.py) | word spans -> 4-point BGM duck keys (`0.35 s` pre-roll, `0.25 s` ramp, `8 dB`, hold across gaps `< 1.5 s`, `0.7 s` release; optional vacuum `-32 dB` for `0.4 s`, at most one per `20 s`); `tiktok_loud` keeps `no_ducking: true` until wired into the compiler | 3.4.4 |
+| [`flicker_schedule.py`](./scripts/tools/flicker_schedule.py) | silhouette-flicker frames for the `flicker` opener (class A+B, 4.3) | 3.4.5 |
+| [`qa_sync.py`](./scripts/tools/qa_sync.py), [`sfx_shift.py`](./scripts/tools/sfx_shift.py) | Gate 7b: measure SFX vs picture on an exported MP4, shift once | 3.8.2 |
+| [`broll_from_video.py`](./scripts/tools/broll_from_video.py) `analyze\|check-prompts` | B-roll slot planner + the one prompt linter | 3.8.3 |
+| [`fc_export.py`](./scripts/tools/fc_export.py) `IN.fcproj OUT.mp4` | export (Rule A1 cases only); polls for the file | 3.8.1 |
+| [`filmcraft_cli.py`](./scripts/tools/filmcraft_cli.py) | drives a running FilmCraft through `filmcraft --control` on Xvfb; skips loudly, never fakes a render; the `filmcraft-cli` binary of old docs never existed ([`30_filmcraft_control_bridge.md`](./references/30_filmcraft_control_bridge.md)) | 3.7, 5.4 |
 
-* **BRAIN = You (The Agent — 100% Creative, Kinetic, Spatial, Chromatic & Domain-Safety Decisions):**
-  - **Permanently Ban `v6.0` & `V17` Static Anti-Patterns:** Never stamp Hero/Secondary display text as static `mode="still"` `.png` bricks (`STATIC_HERO_PNG_STAMP`), never spam `— ALL CAPS KICKER` (`0.0%` in `@__dviet`) or duplicate pill badges (`PILL_BADGE_OVERUSE`), never repeat the same layout silhouette or entrance `>2` beats (`LAYOUT_SILHOUETTE_MONOTONY` / `ENTRANCE_STYLE_MONOTONY`), never draw `PIL/OpenCV` 3D plastic bevels, never tint walls swamp-green (`Skin-Tone Guard`), never touch face/hair (`Cranial Lock`), and never stamp `S13` raw karaoke.
-  - Visually inspect `assets_contact_sheet.jpg`, read `words_tl.json` word-by-word, and consult optional `<workspace>/feedback_log.jsonl`.
-  - Pair **1 Format Mode (`F1..F10`) × 1 Industry Skin (`S1..S8`)** ([`format_modes_catalog.json`](./presets/format_modes_catalog.json)) + **1 Archetype** ([`visual_archetypes_catalog.json`](./presets/visual_archetypes_catalog.json)), enforce domain **`HARD VETO` Guards** + **`Gate 3C` Choreography Quotas**, and direct per [`18_v70_universal_studio_10x8_and_45582_microbridges.md`](./references/18_v70_universal_studio_10x8_and_45582_microbridges.md) & [`19_v71_dviet_19videos_kinetic_typography_bible.md`](./references/19_v71_dviet_19videos_kinetic_typography_bible.md).
-  - Choose the **look** first (Step 3): **Look S** (Studio, the default for talking-head product / brand / explainer video) or **Look D** (`@__dviet` channel, explicit request only). Then choose the **profile**: `default` (all industries, `-14 LUFS`, Look S) or `dviet` (channel look: caption `y` from tokens, scoped film-burn / flash / light-leak presets with caps, opt-in loud mastering). A skin `HARD VETO` (`warm_film_burn_veto` on `luxury_skincare`, `dental_clinic`, `beauty_spa`) always beats the profile.
-* **HANDS = 6 Stateless Core Tools (`./scripts/tools/` & `./scripts/`):**
-  1. [`./scripts/tools/probe_and_align.py`](./scripts/tools/probe_and_align.py) — Universal ingest (`--tier fast|studio|full|auto`) → `workspace_context.json`, `media_probe.json`, `words_tl.json`, `assets_contact_sheet.jpg` (+ `textnorm`, `20ms` RMS pause-onset & Haar `eye_band`/`mouth_band` via [haarcascade_frontalface_default.xml](./data/haarcascade_frontalface_default.xml) in `full`). Hardening flags: `--whisper-threads N` (or env `PFD_WHISPER_THREADS`), `--timeout SECONDS`, `--force` (re-run despite cached artifacts), `--music-only` (no speech: skip ASR for music-only input).
-  2. [`./scripts/tools/web_plate_builder.py`](./scripts/tools/web_plate_builder.py) *(Lane B)* — **Headless Chrome `HTML5/CSS3/SVG @2x DPR` `60fps` Engine** via [`web_cinema_plate_engine.mjs`](./scripts/web_cinema_plate_engine.mjs) (Node `>=22`, `0` npm dependencies) featuring `render_kinetic_typo_batch(...)` (**12 `@__dviet` Kinetic Typography Templates `kt01..kt12`** → `prores4444`/`qtrle` RGBA `.mov` synced to `words_tl.json` syllable onsets, `0px` hard stroke), animated 3D Studio Plates (`frosted_glass_bento_steps`, `skewed_3d_polaroid_trio`, `isometric_3d_prompt_browser`, `clinical_before_after_1_to_28`) and **3 `v7.4.0` layout templates with role-named slots**: `screen_strip` (1080×~600 strip on a 3×-zoomed, blurred, darkened A-roll plate, caption `y 67%`), `card_916` (white-border rounded 9:16 card + yellow label on spotlight grey) and `profile_card` (fake profile: avatar, handle, three counts, bio). A missing font falls back to Be Vietnam Pro / Playfair Display with a printed warning.
-  3. [`./scripts/dviet_motion_canvas_engine.py`](./scripts/dviet_motion_canvas_engine.py) *(Lane C)* & [`./scripts/tools/visual_blocks.py`](./scripts/tools/visual_blocks.py) — **4 Full-Screen 60fps Living Motion Canvases** (`timeline_playhead`, `concentric_lock_lab`, `giant_numeral_3d_ui`, `bento_kinetic_matrix`), `clean_broll_plate`, and 45-token `lint_broll_prompt`.
-  4. [`./scripts/tools/typography_composer.py`](./scripts/tools/typography_composer.py) *(Lane A+B)* — **`plan_dviet_kinetic_beat_schedule(...)`** (`kt01..kt12` anti-monotony router, `35% Hero / 35% Whisper & Counterpoint / 30% Studio 3D Plates` rhythm, `Swash-Initial Hybrid` `[0]` `ℒ/𝒩/𝒬/ℋ/ℳ` + `[1..n]` NFC italic), `Dual-Rail 9:16` + `Cranial Lock`, `DVIET_COLOR_WORLDS` + `semantic_4act_jewel`, `26pt` Whisper `G2` (`S01..S18`), and 14 Micro-Bridge helpers. Companion: [`./scripts/tools/dviet_text.py`](./scripts/tools/dviet_text.py) (`v7.4.0`) turns role-tagged events (`caption`, `keyword_sans`, `script_accent`, `number`, `header`, `cta`, `bilingual_sub`, `lockup_sub`, `lockup_hero`, `constellation`, plus `font_specimen`) into text tracks with `y%`, size, entrance and font read from [`dviet_style_tokens.json`](./presets/dviet_style_tokens.json): `dviet_text.py --events events.json --tokens presets/dviet_style_tokens.json --out tracks.json`.
-  5. [`./scripts/tools/compile_and_verify.py`](./scripts/tools/compile_and_verify.py) — Stateless Multi-Gate Compiler (`--tier fast|full|auto`; the `studio` tier compiles with `--tier full`): **`Gate 3C` Anti-Template Choreography Vetoes** (`STATIC_HERO_PNG_STAMP`, `LAYOUT_SILHOUETTE_MONOTONY`, `PILL_BADGE_OVERUSE`, `ENTRANCE_STYLE_MONOTONY`), `Sub-layer Feather = 29` RVM sandwich, `10×8` `HARD VETO` & `Cranial Lock` audit, `4-Cut Grammar` + Bimodal `C7` Vocal `J-Cut`, `meta.bgm_stops` `-inf dB` vacuum, `7 Organic Foley SFX` (`R217`), `-16/-14 LUFS` + `R35` TP, `R200` `claim_gate` → `.fcproj` + 16 QA frames. New flags: `--profile default|dviet` and `--audio-profile platform|tiktok_loud` (opt-in loud mastering, `-0.5 dBTP` cap). `src: "AUTO:<keyword>"` SFX clips are resolved against `--auto-sfx-dir DIR` (one MD5-unique file per clip; the compile fails if `AUTO:` clips exist without `--auto-sfx-dir`). **Rule A1:** the compiler never exports `.mp4` (Look S is the one declared exception, see Step 3b).
-  6. [`./scripts/tools/fast_studio_compositor.py`](./scripts/tools/fast_studio_compositor.py) — **Harmonious Hybrid `Option A × B`, Hair-Crown-Safe & Voice-Sync Guarded Fast Engine** (introduced in `v7.3`, unchanged in `v7.4.0`): `clean_aroll_preserve_hair_crown` (`Scale-Space Morphological Opening` erasing thin wall fixtures while preserving `100%` of rounded hair crowns up to `y=742` & dark sideburns), `render_full_head_studio_card` (`Option A1` unclipped studio cards + outer aura), `render_squircle_pip_window` (`Option A2` headroom-rich glass Squircle PiP), `render_bottom_flush_cutout` (`Option B` full-width `x=0..1080`, bottom-locked `y_bottom=1920` decontaminated cutout + `1.5px` jewel rim), `verify_audio_voice_sync_guard` (rejects uncut/drifted raw voice takes), `apply_fullwidth_neon_rim_blackout`, `pipe_encode_single_plate_fast` and the C/AVX2 `compose_master_mp4_via_ffmpeg`. The CLI `--draft` / `--master` is **only a plain re-encode** (scale, crop, fps) of an input video, **not a studio render**: the studio render is the Python call order of Step 3b.
-* **HELPER CLIs (stateless; the brain decides, the tool measures):**
-  - **Preflight:** [`./scripts/env_status.py`](./scripts/env_status.py) `[--json] [--strict]` — checks `node >=22`, Chrome, `ffmpeg`/`ffprobe`, the matte model, venv packages and fonts; run as **Step 0**.
-  - **Pre-ingest cuts (before `probe_and_align`):** [`silence_cut.py`](./scripts/tools/silence_cut.py) `plan|apply` and [`speed_media.py`](./scripts/tools/speed_media.py) `plan|apply|check`. Never run them after a spec exists: every timestamp would shift.
-  - **Spec & SFX:** [`spec_from_plan.py`](./scripts/tools/spec_from_plan.py) (plan → compile-ready `.craft.json`, see [`21_craft_json_minimal_spec.md`](./references/21_craft_json_minimal_spec.md)), [`sfx_auto.py`](./scripts/tools/sfx_auto.py) `plan` (events → SFX cues from [`sfx_catalog.json`](./presets/sfx_catalog.json)).
-  - **Sync QA (Gate 7b):** [`qa_sync.py`](./scripts/tools/qa_sync.py) measures SFX vs picture on an *already exported* mp4; [`sfx_shift.py`](./scripts/tools/sfx_shift.py) applies the shifts to a NEW spec. **Brain-triggered, shift once** (`meta.sfx_shifted_once`), never an automatic loop.
-  - **AI B-roll:** [`broll_from_video.py`](./scripts/tools/broll_from_video.py) `analyze|check-prompts` (slot planner + prompt lint; Google Flow workflow in [`22_flow_broll.md`](./references/22_flow_broll.md)). AI B-roll is never proof (`R200`).
-  - **Control bridge (v7.5.0):** `scripts/tools/filmcraft_cli.py` drives a running FilmCraft through `filmcraft --control` (needs the `filmcraft` binary + an X display; it skips loudly, never fakes a render). The `filmcraft-cli` binary the old docs mention never existed ([`30_filmcraft_control_bridge.md`](./references/30_filmcraft_control_bridge.md)). Fonts: the per-role fallback chain in the `presets/` fonts preset, see [`26_dviet_fonts.md`](./references/26_dviet_fonts.md).
-  - **Opener flicker (v7.5.0):** `scripts/tools/flicker_schedule.py` plans the silhouette-flicker frames and the `flicker` opener (A+B: a matte plate placed on the timeline; arbitrary-object masks and handheld tracking stay out of scope, see the promise table in section 3).
-  - **BGM ducking (v7.5.0):** [`duck_keyframes.py`](./scripts/tools/duck_keyframes.py) turns word spans into 4-point volume keyframes (`0.35 s` pre-roll, `0.25 s` down ramp, `8 dB` depth, hold across gaps `< 1.5 s`, `0.7 s` release; optional vacuum `-32 dB` for `0.4 s`, at most once per `20 s`). Pure function, no media; the `tiktok_loud` profile still sets `no_ducking: true` until the keyframes are wired into the compiler ([`25_loudness_tiktok_vs_nle.md`](./references/25_loudness_tiktok_vs_nle.md) section 7 row 7).
-  - **Scene planner (v7.6.0, Look S; hook and pacing validators added in v7.7.0, text-voice / safe-zone / motion-floor validators in v7.8.0):** [`studio_recipe.py`](./scripts/tools/studio_recipe.py) `--words words_tl.json --duration D --out scenes.json` lays the V21 pattern onto your transcript (mode per beat, polarity minimum, no adjacent same colour world, jewel hex per act; accepts the probe dict doc or a bare array). Stateless and small; the brain edits the result. Data: [`studio_scene_recipe.json`](./presets/studio_scene_recipe.json). v7.7.0: `hook_template()` / `check_hook(plan)` (hook recipe v3), `check_pacing(shots, resets, duration)` (max hold `2.4 s`, resets per `5 s`, `hold_s` / `dead_hold_share` per window) and `check_source_reuse(shots)` return structured findings (`rule`, `severity`, `t0`, `t1`, `value`, `limit`, `message`); [`28_hook_first_5s_and_pacing.md`](./references/28_hook_first_5s_and_pacing.md).
-  - **Rendered motion and sharpness gates (v7.8.0):** `scripts/tools/motion_gate.py VIDEO [--mask x0,y0,x1,y1] [--t0 0 --t1 3.4]` measures the rendered preview (`bg_diff_series`, `check_motion`, `popout_edge_width_px`, `face_laplacian_ratio`, `hero_product_overlap_px`, `text_glyph_height_frac`); the plan-level twins are in `studio_recipe.py`. Report the plan check and the measurement separately.
-  - **Export (Rule A1):** [`fc_export.py`](./scripts/tools/fc_export.py) `IN.fcproj OUT.mp4` — only when the user asks for an `.mp4` or in draft mode.
+### 2.4. CLI cheat-sheet (numbers match section 3; run `--help` before the first call)
 
-> **Quick CLI Reference (`--help` before first call):**
-> - **0. Preflight:** `python3 ./scripts/env_status.py [--json] [--strict]`
-> - **1. Pre-ingest (optional):** `python3 ./scripts/tools/silence_cut.py plan --input <a_roll.mp4>` · `python3 ./scripts/tools/speed_media.py plan --input <media>`
-> - **2. Ingest:** `python3 ./scripts/tools/probe_and_align.py --input <video_or_dir> --work <work_dir> --tier auto` (`--tier studio` for P0+P1)
-> - **3. Lane-B `60fps` Kinetic `.mov` (`kt01..kt12`), Studio Plates & layouts:** `python3 ./scripts/tools/web_plate_builder.py --help` · `--list`
-> - **4. Lane-C Motion Stages & Blocks:** `python3 ./scripts/dviet_motion_canvas_engine.py --help` · `python3 ./scripts/tools/visual_blocks.py --list`
-> - **5. Kinetic Schedule (`plan_dviet_kinetic_beat_schedule`), Bridges & `@__dviet` roles:** `python3 ./scripts/tools/typography_composer.py --help` · `python3 ./scripts/tools/dviet_text.py --help`
-> - **5b. Look S scene plan:** `python3 ./scripts/tools/studio_recipe.py --words <work_dir>/words_tl.json --duration <s> --out <work_dir>/scenes.json`
-> - **6. Compile & Verify:** `python3 ./scripts/tools/compile_and_verify.py --spec <project>.craft.json --out <project>.fcproj --work <work_dir> --words <work_dir>/words_tl.json --tier full [--profile dviet] [--audio-profile tiktok_loud] [--auto-sfx-dir <sfx_dir>]`
+- **3.1 Preflight:** `python3 ./scripts/env_status.py --strict`
+- **3.2 Pre-ingest (optional):** `python3 ./scripts/tools/silence_cut.py plan --input <a_roll.mp4> --fps 60` · `python3 ./scripts/tools/speed_media.py plan --input <media> --fps 60` (`--fps 60` for Look S; default `30`)
+- **3.3 Probe:** `python3 ./scripts/tools/probe_and_align.py --input <video_or_dir> --work <work> --tier auto` (`--tier studio` for P0+P1)
+- **3.5 Look S plan and render:** `python3 ./scripts/tools/studio_recipe.py --words <work>/words_tl.json --duration <s> --out <work>/scenes.json` then `python3 ./scripts/tools/look_s_render.py --scenes <work>/scenes.json --words <work>/words_tl.json --aroll <video> --work <work> --out <master.mp4> --master [--broll-dir DIR] [--dry-run]`
+- **3.6 Typography:** `python3 ./scripts/tools/web_plate_builder.py --help` · `--list` · `python3 ./scripts/tools/typography_composer.py --help` · `python3 ./scripts/tools/dviet_text.py --events events.json --tokens presets/dviet_style_tokens.json --out tracks.json` · `python3 ./scripts/dviet_motion_canvas_engine.py --help` · `python3 ./scripts/tools/visual_blocks.py --list`
+- **3.7 Compile (Look S):** `python3 ./scripts/tools/compile_and_verify.py --spec <p>.craft.json --out <p>.fcproj --work <work> --words <work>/words_tl.json --context <work>/workspace_context.json --tier full --audio-profile studio_14 --strict-rules --hook-gates --preview <master.mp4> [--auto-sfx-dir <sfx_dir>]`
+- **3.7 Compile (Look D):** same with `--profile dviet --audio-profile tiktok_loud` and without `--hook-gates`
+- **3.8 Hand-off:** `python3 ./scripts/tools/fc_export.py IN.fcproj OUT.mp4` · `python3 ./scripts/tools/qa_sync.py --video EXPORTED.mp4 --spec X.craft.json` · `python3 ./scripts/tools/broll_from_video.py analyze --transcript words_tl.json --out broll_plan.json`
 
----
+### 2.5. Execution tiers (`--tier fast | studio | full | auto`)
 
-## 2. Step-by-Step Agentic Director Runbook (`v7.9.0`)
+Timings and RAM come from [`execution_tiers.json`](./presets/execution_tiers.json) (`[ƯỚC]` on the reference i5-12450H host).
 
-### Adaptive Execution Tiers (`--tier fast | studio | full | auto`)
-| Tier | Target Time | CLI Flags (`Step 2` ingest & `Step 5` compile) | Active Physics & `v7.9.0` Studio QA Scope | Best For |
+| Tier | Time | RAM | Probe / compile flags | Adds |
 |---|---|---|---|---|
-| **`fast`** *(P0 Express)* | **~55–65s** | `probe_and_align --tier fast` · `compile_and_verify --tier fast` | `text_vi.json` (`1,200` `glue`), `Gate 3C` (`0` static Hero PNGs, silhouette/pill/entrance caps), `Dual-Rail Cranial Lock`, `color_world_polarity` / `semantic_4act_jewel`, `4-Cut Grammar` + Bimodal `C7` `J-Cut`, `MAX_ZONES<=2` + `CARD_TEXT_COLLISION=0`, `bgm_stops` vacuum, `7 Organic Foley` `R217`, `-16/-14 LUFS`, 16 QA frames | Daily commentary (`F1/S6`), short vlogs (`F6/S7`), essays/stories, rapid [`10×8` Option A/B/C](./templates/edit_plan_viewer.html) drafts |
-| **`studio`** *(P0+P1, `< 3.9 GB` RAM)* | **~55–68s** | `probe_and_align --tier studio` · `compile_and_verify --tier full` | All `fast` + industry `HARD VETO` guards ([industry_profiles.json](./presets/industry_profiles.json)), `16`-frame Haar Cranial dual-rail + Zero-Face macro safe-zones, `textnorm` + `20ms` RMS onset, Lane-B plates with `<= 2` Chrome workers (sequential RVM → Chrome); skips the `bgm_lra` optimizer and `R35` post-AAC peak guard ([execution_tiers.json](./presets/execution_tiers.json)) | Standard multi-industry reels, Lane-B web-plate videos (PAS/BAB E-com, Tactile Reviews, Course funnels, UI walkthroughs), Salon / Skincare / Personal Brand |
-| **`full`** *(P0+P1+P2 Studio Proof)* | **~72–95s** | `probe_and_align --tier full` · `compile_and_verify --tier full` | All `studio` + **Domain `HARD VETO` Guards (`CRI-100 Tooth Lock`, `Skin-Tone Guard`, `Hand Safe-Box`, `R200 Claim-Gate`)**, `60fps` `kt01..kt12` syllable-lock spoiler audit (`<=180ms`), `Sub-layer Feather=29`, Haar projected `facesafe`, `V8` liveness, `R35` post-AAC TP, `EDITOR-REPORT.md` | Flagship `10×8` deliverables, Dental `CRI-100` (`S2`), Skincare (`S1`), Nail/Salon (`S3`), Review/E-com (`S4`), Course (`S5`), B2B/SaaS/BĐS (`S8`), raw camera (`soucre quay`) |
-| **`auto`** *(default)* | by input | `--tier auto` | Routes to `fast`, `studio` or `full` from the Format × Skin matrix and the input quality | When unsure |
+| `fast` (P0) | `45–60 s` | `1.8 GB`, no Chrome | `probe --tier fast` · `compile --tier fast` | `text_vi.json` (`1199` glue pairs), Gate 3C, Dual-Rail Cranial Lock, colour-world polarity / 4-act jewel, 4-Cut Grammar + `C7` J-cut, `MAX_ZONES <= 2`, `bgm_stops`, `R217` SFX, closed-loop loudness, 16 QA frames; skips textnorm, RMS onsets, 24-frame Haar tracking, projected face-safe ink |
+| `studio` (P0+P1) | `55–68 s` | `3.9 GB`, `<= 2` Chrome workers | `probe --tier studio` · `compile --tier full` | industry `HARD VETO` guards ([`industry_profiles.json`](./presets/industry_profiles.json)), 16-frame Haar dual rail, macro safe zones, Lane B plates. Because it compiles with `--tier full`, the `bgm_lra` optimizer and the `R35` post-AAC true-peak guard **do run** (the JSON lists them as skipped; the compiler does not) |
+| `full` (P0+P1+P2) | `68–82 s` | `4.5 GB`, `<= 2` Chrome workers | `probe --tier full` · `compile --tier full` | domain vetoes (`CRI-100 Tooth Lock`, `Skin-Tone Guard`, `Hand Safe-Box`, `R200`), syllable-lock spoiler audit `<= 180 ms`, `Sub-layer Feather = 29`, projected face-safe, `V8` liveness, `R35`, Gate 3C codes raised to ERROR |
+| `auto` (default) | by input | | `--tier auto` | probe: a raw video -> `full`; a project bundle -> `fast` when cleanly pre-sliced, else `full`; **auto never picks `studio`**. Compile: `full` with `--strict-rules` or an active claim gate, else the context's `recommended_compile_tier`, else `fast` |
 
-### Step 0 — Preflight (`~2s`)
-Run [`./scripts/env_status.py`](./scripts/env_status.py) (`--json` for machines, `--strict` to exit `1` when a required item is missing). Required: `node >=22`, Chrome (headless), `ffmpeg`/`ffprobe`, the matte model, the `video-skills` venv packages. Optional items (fonts with a documented fallback, the control-bridge shim `scripts/tools/filmcraft_cli.py` over `filmcraft --control`, which needs the `filmcraft` binary + an X display and skips loudly otherwise; see [`30_filmcraft_control_bridge.md`](./references/30_filmcraft_control_bridge.md)) are reported but never fatal. `install.sh` runs it too.
+### 2.6. Presets and data (`./presets/`, `./data/`, `./templates/`)
 
-### Step 1 — Pre-Ingest Cuts, Only If Needed (`before` `probe_and_align`)
+- Matrix, vetoes, bridges: [`format_modes_catalog.json`](./presets/format_modes_catalog.json) (`F1..F10`, `S1..S8`, `profile_vetoes`, `native_frame_14_micro_bridges`) · [`visual_archetypes_catalog.json`](./presets/visual_archetypes_catalog.json) (8 archetypes, Lane B contract, Gate 3C, archetype bridges) · [`industry_profiles.json`](./presets/industry_profiles.json) · interactive viewer [`edit_plan_viewer.html`](./templates/edit_plan_viewer.html)
+- Tiers: [`execution_tiers.json`](./presets/execution_tiers.json)
+- Typography: [`typography_hierarchy_presets.json`](./presets/typography_hierarchy_presets.json) (`kt01..kt12`, Gate 3C quotas, `S01..S18`, caption-`y` keys) · [`dviet_style_tokens.json`](./presets/dviet_style_tokens.json) (Look D palette, font roles, tiers, caption `y`, lock-up, canvases, audio; `measured` / `estimate` flags) · [`text_vi.json`](./data/text_vi.json)
+- Canvas and safe zones: [`canvas_presets.json`](./presets/canvas_presets.json) (`1080x1920@60|30`, `1440x1080@24|30`, `1332x720@30`; only `1080x1920@60` verified end to end) · [`platform_safe_zones.json`](./presets/platform_safe_zones.json)
+- Motion: [`atomic_motion_library.json`](./presets/atomic_motion_library.json) (zoom presets, scoped `dviet` transitions with caps) · [`dviet_pattern_catalog.json`](./presets/dviet_pattern_catalog.json)
+- Look S: [`studio_scene_recipe.json`](./presets/studio_scene_recipe.json) (V21 grid, hook `0–5 s`, pacing, motion and text limits)
+- Audio and SFX: [`profile_overrides.json`](./presets/profile_overrides.json) (`platform`, `studio_14`, `tiktok_loud`) · [`sfx_catalog.json`](./presets/sfx_catalog.json) · [`sfx_micro_sync_rules.json`](./presets/sfx_micro_sync_rules.json) · [`pain_keywords.json`](./presets/pain_keywords.json)
+- B-roll: [`broll_lint_contract.json`](./presets/broll_lint_contract.json) (the single prompt-lint contract, 3.8.3)
+- Face cascade: [`haarcascade_frontalface_default.xml`](./data/haarcascade_frontalface_default.xml)
+
+### 2.7. Reference manuals (`./references/`, read on demand)
+
+- **Core:** [01 director & retention](./references/01_director_and_retention.md) · [02 Premiere ↔ FilmCraft tracks & keyframes](./references/02_nle_premiere_filmcraft.md) · [03 micro-timing recipes](./references/03_micro_timing_recipes.md) · [14 anti-cookie-cutter visual matrix](./references/14_anti_cookiecutter_visual_director_matrix.md) · [15 adaptive tiers & epistemic QA (historical v5.1)](./references/15_adaptive_tiers_and_epistemic_qa_v51.md)
+- **Look S:** [24 studio look recipe (V21 map, VFX-01..08, cut times, 4-act colours, audio)](./references/24_studio_look_recipe.md) · [20 hybrid A×B, voice-sync & hair-safe compositor](./references/20_v73_hybrid_ab_voicesync_and_hairsafe_compositor.md) · [28 hook-first 5 s & pacing law](./references/28_hook_first_5s_and_pacing.md) · [29 pop-out card → FilmCraft A/B/C](./references/29_popout_card_premiere_to_filmcraft.md) · [25 loudness TikTok vs NLE](./references/25_loudness_tiktok_vs_nle.md)
+- **Typography:** [04 `@__dviet` & Vietnamese NFC](./references/04_dviet_and_vi_typography.md) · [26 `@__dviet` fonts](./references/26_dviet_fonts.md) · [05 text-animation masterclass](./references/05_typography_masterclass.md) · [10 35 `@vietanh` text presets](./references/10_vietanh_35_text_animation_presets_premiere_filmcraft.md) · [09 blueprint 7706](./references/09_dviet_7706_typography_zoom_sfx_mastery.md) · [19 kinetic typography bible](./references/19_v71_dviet_19videos_kinetic_typography_bible.md) · [16 multicolour, `S01..S18`, seamless flow (historical v5.2)](./references/16_v52_multicolor_4group_subtext_and_seamless_flow.md)
+- **Motion:** [11 fluid rhythm & Z-depth sandwich (4 timeline layers = 3 compositor planes)](./references/11_talking_head_fluid_rhythm_and_signature_style.md) · [13 smooth zoom & pacing (17 videos)](./references/13_dviet_19_videos_smooth_zoom_and_pacing_mastery.md)
+- **Spec & pipeline:** [21 minimal `.craft.json` spec (current)](./references/21_craft_json_minimal_spec.md) · [22 Flow B-roll](./references/22_flow_broll.md) · [12 `ffmpeg-skill` integration](./references/12_ffmpeg_skill_42_tools_integration.md) · [30 FilmCraft control bridge](./references/30_filmcraft_control_bridge.md) · [27 Premiere recipes → FilmCraft A/B/C](./references/27_premiere_recipes_to_filmcraft.md) · [23 `dviet` decisions & BACKLOG](./references/23_dviet_profile_decisions_and_backlog.md)
+- **Evidence (read-only):** [06 frame-by-frame forensics](./references/06_dviet_frame_by_frame_forensics.md) · [07 dual-channel forensics](./references/07_xuanart_and_dual_channel_forensics.md) · [08 `@haihoang` pattern catalog](./references/08_haihoang_pattern_catalog_dviet.md) · [17 Era-2 manifesto (historical v6.0)](./references/17_v60_dviet_era2_manifesto_architecture.md) · [18 `10×8` matrix & micro-bridges (historical v7.0)](./references/18_v70_universal_studio_10x8_and_45582_microbridges.md) · [`references/dviet_19/INDEX.md`](./references/dviet_19/INDEX.md) (17 videos, 4.4)
+
+References 15–18 are historical; reference 21 and this file are the current spec.
+
+### 2.8. Scripts index (`./scripts/`)
+
+- **Core:** [`probe_and_align.py`](./scripts/tools/probe_and_align.py) · [`web_plate_builder.py`](./scripts/tools/web_plate_builder.py) · [`visual_blocks.py`](./scripts/tools/visual_blocks.py) · [`typography_composer.py`](./scripts/tools/typography_composer.py) · [`fast_studio_compositor.py`](./scripts/tools/fast_studio_compositor.py) · [`compile_and_verify.py`](./scripts/tools/compile_and_verify.py)
+- **Helpers:** the table in 2.3.
+- **Engines:** [`web_cinema_plate_engine.mjs`](./scripts/web_cinema_plate_engine.mjs) (Node, headless Chrome CDP pool) · [`dviet_motion_canvas_engine.py`](./scripts/dviet_motion_canvas_engine.py) · [`dviet_smooth_camera_engine.py`](./scripts/dviet_smooth_camera_engine.py) (zoom presets, `LayeredFrameCompositor` 3 planes) · [`dviet_7706_typography_choreography.py`](./scripts/dviet_7706_typography_choreography.py) · [`vietanh_35_typography_engine.py`](./scripts/vietanh_35_typography_engine.py) · [`ffskill_bridge.py`](./scripts/ffskill_bridge.py) (optional)
+- **Vendored:** `scripts/vendor/ovs_core/` (`edit_rules.py`, `spec_lint.py`, `audio_levels.py`, `audit_sfx.py`, `apps/craft-handoff/tools/fc_build.py`, `fc_build_fast.py`, `fc_export.py`, `craftctl.py`; provenance in [`PROVENANCE.md`](./scripts/vendor/ovs_core/PROVENANCE.md))
+
+## 3. Step-by-step process
+
+### 3.1. Preflight (`~2 s`)
+
+Run `env_status.py` (`--json` for machines, `--strict` exits `1` when a required item is missing). Required: `node >= 22`, headless Chrome, `ffmpeg` / `ffprobe` with the `libx264`, `prores_ks` and `qtrle` encoders, FilmCraft `>= 0.13.0` and Xvfb / Xephyr (both needed to compile), the venv packages (checked by import), the default whisper model in the Hugging Face cache (`HF_HOME`), the required fonts; a missing `u2netp` is reported as blocking for Look S cutouts. Optional items (fallback fonts, `ffmpeg-skill`) are reported, never fatal. `install.sh` runs it too. On a failure, follow 5.4.
+
+### 3.2. Pre-ingest cuts, only if needed (before the probe)
+
 1. `silence_cut.py plan --input <a_roll>` then `apply --input <a_roll> --out <cut.mp4>` (frame-snapped keep segments, constant frame rate).
-2. `speed_media.py plan --input <media>`, then `apply` (policy `1.10 → 1.05 → 1.0`, result must stay `>= 45 s`; `1.15x` / `1.25x` banned) and `check`.
-3. Feed the cut/sped media to Step 2 so `words_tl.json` is built on the final timeline.
+2. `speed_media.py plan --input <media>`, then `apply` (policy `1.10 -> 1.05 -> 1.0`, result `>= 45 s`; `1.15x` / `1.25x` banned) and `check`.
+3. Both default to a `30 fps` grid: **pass `--fps 60` for Look S**.
+4. Never run them after a spec exists (every timestamp would shift). Feed the result to 3.3 so `words_tl.json` is built on the final timeline.
 
-### Step 2 — Probe Footage & Inspect Visual Context (~15–22s)
-1. Run [`./scripts/tools/probe_and_align.py`](./scripts/tools/probe_and_align.py) (`--tier fast|studio|full|auto` per [execution_tiers.json](./presets/execution_tiers.json); `--whisper-threads`, `--timeout`, `--force`, `--music-only` as needed).
-2. Call `read_file` on `assets_contact_sheet.jpg` (inspect headroom above hair crown, chest/hand zone, skin tone & wall luma) and read `workspace_context.json`, `media_probe.json`, and `words_tl.json`.
+### 3.3. Probe footage and inspect the visual context (`~15–22 s`)
 
-### Step 3 — Choose the Look, Then Lock the Orthogonal `10×8` Cell, Profile, Render Lanes & Chromatic Policy (Director Brain)
-0. **Choose the look (decide first, say it to the user).**
-   - **Look S (Studio): the DEFAULT** for product, brand and explainer talking-head video: the V19..V21 reference masters ([`24_studio_look_recipe.md`](./references/24_studio_look_recipe.md)). Profile `default`; chromatic policy `color_world_polarity` **or** `semantic_4act_jewel`, and the **chapter colour beats the one-accent rule**; master gear `--master` (`1080x1920 @ 60fps`; there is no `--fps` flag); audio profile `studio_14` (`-14.0 LUFS`, `-1.2 dBTP`, ducking on, `bgm_stops` allowed, up to `72` SFX cues in [`profile_overrides.json`](./presets/profile_overrides.json)); deliverable = a **compositor MP4 master plus the `.fcproj` mirror** (Step 3b, Step 6). Typography: the `Swash-Initial Hybrid`.
-   - **Look D (`@__dviet` channel):** plain screen-strip tutorial, profile `dviet`, `tiktok_loud`, one accent per video from the tokens, condensed sans. **Only on explicit request** ("làm giống kênh dviet", a screen-strip tutorial). Its `tiktok_loud` numbers are UNVALIDATED on real speech.
-   - Iron Law 6 versus the dviet typography: the swash hybrid is Look S; the condensed sans (`Barlow Condensed`) is Look D ([reference 23](./references/23_dviet_profile_decisions_and_backlog.md), decision a).
-1. Select **`Format Mode (F1..F10)` × `Industry Skin (S1..S8)`** ([`format_modes_catalog.json`](./presets/format_modes_catalog.json) & [`18_v70_universal_studio_10x8_and_45582_microbridges.md`](./references/18_v70_universal_studio_10x8_and_45582_microbridges.md)) + Primary Archetype ([`visual_archetypes_catalog.json`](./presets/visual_archetypes_catalog.json)); optionally present interactive [`edit_plan_viewer.html`](./templates/edit_plan_viewer.html). Choose the profile (`default` for Look S | `dviet` for Look D) and, for `dviet`, the canvas from [`canvas_presets.json`](./presets/canvas_presets.json) (`1080×1920@60` default; `@30`, `1440×1080@24|30`, `1332×720@30` are data only, not verified end to end).
-2. **Enforce `v7.9.0` Dual-Rail, Chromatic, Micro-Bridge & Safety Laws:**
-   - **Domain `HARD VETO` Guards:** Enforce `CRI-100 Tooth Lock` (`S2` Dental: pure `D65`, `0` yellow LUT on enamel), `Skin-Tone Guard` (`S1..S7`: `0` swamp-green wall tint), `Hand Safe-Box` (`S3/S4`: `0` overlays on nails/held product), and `R200 Claim-Gate` (`S1/S2/S4/S5/S8`).
-   - **`Dual-Rail 9:16` + `Cranial Lock` (`0%` Face/Hair Contact):** Place typography/plates strictly in **`Upper Editorial Stage`** (`Y ∈ [220, 520]`, above crown) or **`Chest Tactile Rail`** (`Y ∈ [960, 1340]`, sandwiched behind RVM hands with **`Sub-layer Feather = 29`**, `0px` hard stroke) + whisper `G2` (`Y >= 1360`); keep `MAX_ZONES <= 2` and `>= 12%` (`>= 20–30%` emotional/vlog) clean breathing frames. A text clip *under* an RVM person layer counts as sandwiched, not overlap ([reference 23](./references/23_dviet_profile_decisions_and_backlog.md), decision c).
-   - **Dual Chromatic Policy:** Choose **`color_world_polarity`** (`1` Primary Signature Hue `55–100%` + `<=45%` Pain Hue + `#EEF4EA`/`#FAFAFA` flips) **OR** **`semantic_4act_jewel`** (`4` chapter jewel inks `#059669` / `#2563EB` / `#E11D48` / `#D97706` on `#FAFAFA` with `<=1` jewel hue per beat — `0` rainbow soup). Look S: the chapter colour wins (`accent_policy: color_world`). Look D (`dviet`): one accent per video from the token palette (default yellow `#F1C711`, `accent_policy: tokens`).
-   - **14 Native-Frame Micro-Bridges & 7 Organic Foley SFX:** Bridge `4-Cut Grammar` (`40–75%` `0f` cuts + `[-850..-140ms]` vocal `J-Cuts`) with `player3_air_cushion_20f`, `rack_focus_13f`, `persistent_text_bridge_11f`, `exposure_bloom_3f`, `optical_flow_morph_6f`, `mirror_tile_whip_3d_ui_19f`, `halation_decay_4_28f`, `meta.bgm_stops` (`>=0.50s` `-inf dB` → `140+ BPM` drop), and `7 Organic Foley SFX` (`<= 5` heavy whooshes/min). Plan SFX with `sfx_auto.py plan`, or write `AUTO:<keyword>` clips (`spec_from_plan.py --auto-sfx KEYWORD`) and compile with `--auto-sfx-dir`.
-3. **`@__dviet` zoom (profile `dviet`, [`dviet_smooth_camera_engine.py`](./scripts/dviet_smooth_camera_engine.py)):** presets `punch_220_q25`, `push_130_long` (`16 s`), `step_zoom_13_8_9`, `jc_reset_push_4_10`, `dolly_out_12_16` (all *estimates* rounded to tiers; defaults unchanged), scale-driven radial blur (`apply_scale_radial_blur`, stronger on zoom-out `0.85x`), a safe-box clamp (head top stays inside the frame; source `>= 1080p`) and **Rule C4**: a spoken run `>= 4 s` gets zoom keys (`c4_zoom_keys`). `python3 ./scripts/dviet_smooth_camera_engine.py --self-test` measures the scale curve on a 5 s synthetic clip (`cv2.estimateAffinePartial2D`, no face detection).
-4. **Scoped transitions (`profile_scope: ["dviet"]`, [`atomic_motion_library.json`](./presets/atomic_motion_library.json)):** `color_wash_multi_0p6s`, `film_burn_perf_5f`, `light_leak_overlay`, `white_flash_0p25s`, `vertical_roll_slide`, `orange_ghost_pre_cut_5f`, `vacuum_32db_0p4s`, each with `max_duration` and `caps`. Scoping is documented in `profile_vetoes` of [`format_modes_catalog.json`](./presets/format_modes_catalog.json); enforcement is `compile_and_verify.py --profile dviet`.
+1. Run `probe_and_align.py` with the tier of 2.5 (`--whisper-threads`, `--timeout`, `--music-only` as needed; `--force` only to override a stale lock file).
+2. Open `assets_contact_sheet.jpg` with your image-viewing tool and look at the headroom above the hair crown, the chest / hand zone, skin tone and wall luma; read `workspace_context.json`, `media_probe.json` and `words_tl.json`. An empty `words_tl.json` with a warning means no audio: stop and ask before planning text.
 
-### Step 3b — Studio Scene Stage (Look S, Director Brain + `fast_studio_compositor.py`)
-Look S is built scene by scene. Draft the scene matrix with `studio_recipe.py` (Quick CLI 5b), then edit it: the tool lays out the V21 pattern, the brain decides. The V21 12-scene map, the cut times, VFX-01..08 and the audio structure are in [`24_studio_look_recipe.md`](./references/24_studio_look_recipe.md).
-1. **Scene matrix + per-scene choice** (one row per beat of `words_tl.json`; render function in brackets):
+### 3.4. Choose the look and lock the `10×8` cell (brain)
 
-   | Mode | Scene | Use for |
-   |---|---|---|
-   | **A1** | Full-Head Studio Card (`render_full_head_studio_card`) | text beats, claims, kinetic `kt` plate on a card |
-   | **A2** | Squircle PiP (`render_squircle_pip_window`) | B-roll, product, lens / macro, UI plate (presenter shrinks to the PiP) |
-   | **B** | Bottom-Flush Cutout (`render_bottom_flush_cutout`) | depth beats, polaroid trio, CTA, dark silk |
-   | **P** | Polarity paper: A1 on `#FAFAFA` | light scene, chapter ink on paper |
-   | **N** | Neon blackout (`apply_fullwidth_neon_rim_blackout`) | tension beat ("the problem is...") |
-   | **S** | Silk numeral stage (B cutout on dark silk + giant glowing numeral) | steps 1 / 2 / 3 |
-   | **H** | Hook: full-screen B-roll with the presenter in a PiP | the first beat |
-2. **Call order** (Python, per frame or per segment): `init_hair_safe_wall_reference` once on a low-head frame -> `clean_aroll_preserve_hair_crown` per frame -> the scene's `render_full_head_studio_card` / `render_squircle_pip_window` / `render_bottom_flush_cutout` / `apply_fullwidth_neon_rim_blackout` -> `pipe_encode_single_plate_fast` (one plate MP4 per segment, cached) -> `compose_master_mp4_via_ffmpeg` with the `kt` `.mov` plates and the `OVL` flash clips as overlays. **The compositor CLI (`--draft` / `--master`) is only a re-encode**, it renders no studio plates.
-3. **Scene type -> template:**
+#### 3.4.1. Choose the look
 
-   | Scene type | Template |
-   |---|---|
-   | hero B-roll hook | `H` + PiP |
-   | polaroid trio | `skewed_3d_polaroid_trio` |
-   | steps 1 / 2 / 3 | numeral plate + `A1` or `B` |
-   | bento | `frosted_glass_bento_steps` |
-   | prompt | `isometric_3d_prompt_browser` |
-   | lens or macro | `A2` PiP |
-   | arc text around the head | `kt11` |
-4. **Look S rules (v7.7.0: first 5 s and rhythm in item 7):** at least **2 light `#FAFAFA` polarity scenes (about `14%` of the duration)**; **plain full-frame A-roll `<= 25%`**; **no two adjacent beats in the same colour world**; B-roll is **full-screen and clean** with a PiP presenter, **never covering the face**, and its content must match the meaning of the beat; **md5-dedup the downloaded Flow assets** (the same clip must not appear twice).
-5. **Framing and source:** masters with the compositor gear `--master` (`1080x1920 @ 60fps`; draft gear `--draft` = `540x960 @ 30`; there is no `--fps` flag). A `720p` source: **pre-upscale inside the card** (resize the A-roll once to the card size in the compositor) and **do not use FilmCraft scale `150-168%`** (it softens and bloats the head). Framing from the V14 look the user liked: face low at `y ~ 62%`, headroom `105-115 px`; the **Left-Third `136%` crop is rejected** unless the source is `>= 1080p` and the head scale stays `<= 1.18x`. For the cranial audit pass `compile_and_verify.py --context workspace_context.json` (`subject_framing.face_bbox_norm`, `cranial_zone`) so Gate 3B knows where the head is when the V1 clip carries no face box.
-6. **Rule A1 exception (declared):** Look S is **mp4-first**: the deliverable is the compositor MP4 master (`1080x1920 @ 60fps`, `-14 LUFS`, `-sn`, no metadata) **and** the `.fcproj` as a parallel mirror compiled from the same plan (editable timeline). Rule A1 (`.fcproj` first, `.mp4` only on request) stays the law for Look D and for every other run.
-7. **Hook and pacing (v7.7.0; text-voice, safe zone and motion floor v7.8.0):** build the first `3.4 s` from the hook template (`studio_recipe.hook_template()`) and the voice words (`hook_text_from_words(words)`: the text follows the voice, never the other way, and the voice is never re-cut), put the hero in the stage above the product, give every `1.0 s` a background reset, then split long scenes so no hold exceeds `2.4 s` and every `5 s` window has its resets ([`28_hook_first_5s_and_pacing.md`](./references/28_hook_first_5s_and_pacing.md)). Run `check_hook(plan, words=words)` and `check_pacing` on the plan (read the words of `0–3.5 s` next to the text list; when a text is retimed, regenerate the SFX), then **measure the rendered file** (audio dip at `3.2–3.4 s`, first text, hero height, hero over product `0 px`, masked frame diff `>= 2.0` in `2.03–3.38 s` via `motion_gate.py`, frames in motion per `5 s`); report plan checks and measurements separately, with `[ĐO]` / `[ƯỚC]` labels. Never reuse B-roll source seconds. Keep speech density, text density and loudness as they are.
-8. **Pop-out card (v7.7.0, optional light-card scene; crisp defaults v7.8.0):** `render_popout_studio_card` (flag **Look S pop-out**), class **B**, crown `y >= 130 px`, headline clear of the crown, RVM fringe fixed first, edge `<= 6 px` and face-ROI Laplacian `>= 1.8x` plain Lanczos (not the whole-frame `430`) ([`29_popout_card_premiere_to_filmcraft.md`](./references/29_popout_card_premiere_to_filmcraft.md)).
+Apply 1.2: Look S unless the user explicitly asks for the `@__dviet` look. Iron law 6 versus the `dviet` typography: the swash hybrid is Look S, the condensed sans is Look D ([reference 23](./references/23_dviet_profile_decisions_and_backlog.md), decision a).
 
-### Step 4 — Typography & Web-Cinema Execution (`kt01..kt12` `60fps` `.mov` + `.craft.json`)
-1. **Schedule Bespoke Kinetic Beats:** Call `typography_composer.plan_dviet_kinetic_beat_schedule(...)` ([`./scripts/tools/typography_composer.py`](./scripts/tools/typography_composer.py)) against `words_tl.json` to map spoken syllable onsets (`Δf = 8..16f @ 60fps`), enforce the **`35% Hero / 35% Whisper & Counterpoint / 30% Studio 3D Plates`** dynamic contrast rhythm, apply **`Swash-Initial Hybrid`** (`[0]` ASCII swash `ℒ, 𝒩, 𝒬, ℋ, ℳ` + `[1..n]` NFC-safe italic), and guarantee **`0` `— ALL CAPS KICKER` spam**, **`0` duplicate pills** (`<=30%` pill share), and **`<=2` consecutive identical silhouettes/entrances** (`>=4` distinct templates when `>=8` beats).
-2. **Place `@__dviet` role text:** use `dviet_text.py` (roles above) so caption `y` follows the layout (`talking 52–58%`, `panel 67%`, `hero 27%`, bilingual EN line `80–85%` yellow italic), lock-ups are two-tier, and the swash hybrid is kept only for `script_accent`.
-3. **Batch-Render `60fps` `.mov` Kinetic Typography & 3D Plates:** Render all Hero/Secondary kinetic beats via `web_plate_builder.render_kinetic_typo_batch(...)` (`kt01..kt12` @ `60fps` `prores4444` / `qtrle` RGBA `.mov` — **never `mode="still"` `.png` stamps!**) alongside animated 3D Studio Plates and the `screen_strip` / `card_916` / `profile_card` layouts ([`./scripts/tools/web_plate_builder.py`](./scripts/tools/web_plate_builder.py)) and/or **Lane C** [`./scripts/dviet_motion_canvas_engine.py`](./scripts/dviet_motion_canvas_engine.py).
-4. **Assemble `<project>.craft.json`:** Wire `60fps` `.mov` kinetic overlays and compact single-stem bridges (`kt06`, zero unspoken `0.5s–4.8s` spoilers, zero bridge-plate collisions) with `meta.format_mode`, `meta.industry_skin`, `meta.active_safety_guards`, `sub_layer_feather_px: 29`, and unclipped SFX tails (or start from `spec_from_plan.py`).
+#### 3.4.2. Format x Skin, profile and canvas
 
-### Step 5 — Compile & Verify (`Gate 3C` + `HARD VETO` + Visual QA, ~55–95s)
-1. Run [`./scripts/tools/compile_and_verify.py`](./scripts/tools/compile_and_verify.py) `--tier fast|full` (`--words work/words_tl.json`, `--profile default|dviet`, `--audio-profile platform|tiktok_loud`, `--auto-sfx-dir` when the spec has `AUTO:` clips).
-2. Inspect `EDITOR-REPORT.md` and call `read_file` on `qa_contact_sheet.jpg` (`1440×2560`): verify **`0` `Gate 3C` vetoes** (`STATIC_HERO_PNG_STAMP`, `LAYOUT_SILHOUETTE_MONOTONY`, `PILL_BADGE_OVERUSE`, `ENTRANCE_STYLE_MONOTONY`), **`0` `CRANIAL_LOCK` / `HARD VETO` / `CARD_TEXT_COLLISION` / `RAINBOW_HUE_SOUP`** defects, repair surgically if needed.
+Select `F1..F10` x `S1..S8` ([`format_modes_catalog.json`](./presets/format_modes_catalog.json), [reference 18](./references/18_v70_universal_studio_10x8_and_45582_microbridges.md)) and the primary archetype; optionally show [`edit_plan_viewer.html`](./templates/edit_plan_viewer.html). Profile `default` (Look S) or `dviet` (Look D). For `dviet`, take the canvas from [`canvas_presets.json`](./presets/canvas_presets.json) (`1080x1920@60` default; the others are data only). A skin `HARD VETO` (`warm_film_burn_veto` on `luxury_skincare`, `dental_clinic`, `beauty_spa`) always beats the profile.
 
-### Step 6 — Hand Off (`Rule A1`) & Optional Gate 7b
-1. **Rule A1** (Look D and every non-Look-S run): deliver the editable `.fcproj`. **Look S** is the declared exception (Step 3b): deliver the compositor MP4 master **and** the `.fcproj` mirror. Export an `.mp4` **only when the user asks or in draft mode**, via `python3 ./scripts/tools/fc_export.py IN.fcproj OUT.mp4` (needs FilmCraft + a virtual display; `-sn` on requested exports).
-2. **Gate 7b (brain-triggered, shift once):** on an already exported mp4, `qa_sync.py --video EXPORTED.mp4 --spec X.craft.json` → `sfx_shifts.json`; if the brain agrees, `sfx_shift.py --spec X.craft.json --shifts sfx_shifts.json --out NEW.craft.json` **once**, recompile, measure again, decide the rest by hand. No automatic loop.
-3. **B-roll:** `broll_from_video.py analyze --transcript words_tl.json --out broll_plan.json`, write the English prompts, then `check-prompts`; Flow workflow in [`22_flow_broll.md`](./references/22_flow_broll.md).
+#### 3.4.3. Safety, Dual-Rail and chromatic policy
 
----
+- **Domain `HARD VETO` guards:** `CRI-100 Tooth Lock` (`S2`: pure `D65`, no yellow LUT on enamel), `Skin-Tone Guard` (`S1..S7`: no swamp-green wall tint), `Hand Safe-Box` (`S3/S4`: no overlay on nails or the held product), `R200 Claim-Gate` (`S1/S2/S4/S5/S8`).
+- **Dual-Rail `9:16` + Cranial Lock (`0 %` face / hair contact):** text and plates go in the **Upper Editorial Stage** (`Y 220–520`, above the crown) or the **Chest Tactile Rail** (`Y 960–1340`, behind the person matte with `Sub-layer Feather = 29`, `0 px` hard stroke) plus whisper `G2` at `Y >= 1360`; `MAX_ZONES <= 2`; `>= 12 %` clean breathing frames (`20–30 %` emotional / vlog). Text *under* the person layer counts as sandwiched, not overlap (reference 23, decision c).
+- **Chromatic policy:** `color_world_polarity` (one signature hue `55–100 %` + `<= 45 %` pain hue + `#EEF4EA` / `#FAFAFA` flips) **or** `semantic_4act_jewel` (`#059669` / `#2563EB` / `#E11D48` / `#D97706` on `#FAFAFA`, `<= 1` jewel hue per beat). Look S: chapter colour wins; Look D: one token accent.
 
-## 3. 6 Non-Negotiable Iron Laws (`v7.9.0` Immutable Physics & Ethics)
+#### 3.4.4. Micro-bridges and SFX
 
-1. **`60fps` Syllable-Locked Kinetic Typography (`kt01..kt12` `.mov`) + `Cranial Lock` (`Feather = 29`, `0px` Stroke):** Always schedule via `plan_dviet_kinetic_beat_schedule` and render via `render_kinetic_typo_batch` (`60fps` `prores4444`/`qtrle` RGBA `.mov` synced to `words_tl.json` onsets `Δf = 8..16f`). **Never** stamp static `mode="still"` Hero `.png` bricks (`STATIC_HERO_PNG_STAMP`), `PIL/OpenCV` 3D bevels, `— ALL CAPS KICKER` spam, duplicate pills, or `>2` consecutive identical silhouettes/entrances; enforce `35% Hero / 35% Whisper & Counterpoint / 30% Studio 3D Plates`, `0%` face/hair contact, `MAX_ZONES <= 2`, and `CARD_TEXT_COLLISION = 0`. The `4-Cut Grammar` stays a hard law in every profile.
-2. **Domain `HARD VETO` Circuit Breakers (`S1..S8`) & `R200` Epistemic Gate:** Never tint dental enamel yellow (`CRI-100`), never poison skin with swamp-green wall LUTs (`Skin-Tone Guard`), never occlude Nail/Product showcase zones (`Hand Safe-Box`), never fake empirical ROI/clinical proof with AI B-roll (`R200`), and never let profile `dviet` unlock film-burn / light-leak on a skin with `warm_film_burn_veto`.
-3. **Chromatic Integrity (`color_world_polarity` OR `semantic_4act_jewel`):** Commit to `1` Color World + Polarity Flips OR chapter-scoped `4-Act Jewel` inks on `#FAFAFA` (`<= 1` jewel hue per beat; `0` intra-sentence neon rainbow soup; `0` default `S13` karaoke).
-4. **14 Micro-Bridges, Bimodal `C7` (`[-850..-140ms]`) & Zero `f=0` Freeze:** Never chop syllables in `[-130ms, -10ms]`, launch post-cut clips with `ds/dt != 0` (`player3_air_cushion_20f`), keep whisper `G2` at `Y >= 1360` (`R209`), and set `shutter_override: true` (`180°–300°`) on whips/morphs.
-5. **Rule A1 (`.fcproj` Native Handoff), `-sn` & FilmCraft `0.20.1` GPU Guard:** Deliver editable `.fcproj`; export `.mp4` only when the user asks or in draft mode (Look S: MP4 master first plus the `.fcproj` mirror, Step 3b), via `scripts/tools/fc_export.py` (`-sn` on requested `.mp4` exports); whenever `opacity.blend != 0`, disable `drop_shadow` to prevent CPU fallback.
-6. **100% Safe Vietnamese NFC, `Swash-Initial Hybrid` & Compound Glue (`R55`/`R30`):** Enforce Unicode `NFC`, `Swash-Initial Hybrid` (`[0]` pure ASCII swash `ℒ/𝒩/𝒬/ℋ/ℳ` + `[1..n]` NFC-safe italic body; Look S = the swash hybrid, Look D / `dviet` = condensed sans and the swash only for role `script_accent`), `padding_top >= 0.28–0.30em` on `0.78` kiss line-height, [text_vi.json](./data/text_vi.json) `1,200`-pair compound splits, `>= 3f` last-word hold (`R30`), and ban broken-glyph fonts (`Anton`, `Bebas Neue`, `Instrument Serif`, `Great Vibes`) — `Instrument Serif` / `De Fonte` are allowed only for role `font_specimen` under profile `dviet`.
+- **14 native-frame micro-bridges** (`native_frame_14_micro_bridges` in [`format_modes_catalog.json`](./presets/format_modes_catalog.json), each format lists its recommended six): `clean_0f_hard_cut`, `true_vocal_jcut_prelead` (`-850..-140 ms`), `acoustic_lcut_room_tail`, `concentric_geometric_match_cut`, `polarity_canvas_snap_1f`, `c2_velocity_push_handoff`, `whip_pan_directional_330`, `whip_zoom_optical_bridge`, `rvm_foreground_wipe_pass`, `split_diopter_50_50_slide`, `flash_halation_2f_pop`, `iris_mask_expand_stage`, `bgm_vacuum_drop_reentry`, `tactile_asmr_foley_pivot`.
+- **Archetype bridges** (frame-count recipes in [`visual_archetypes_catalog.json`](./presets/visual_archetypes_catalog.json)): `player3_air_cushion_20f`, `rack_focus_13f`, `persistent_text_bridge_11f`, `exposure_bloom_3f`, `optical_flow_morph_6f`, `mirror_tile_whip_3d_ui_19f`, `halation_decay_4_28f`.
+- **4-Cut Grammar:** `40–75 %` clean `0f` cuts, vocal J-cuts `-850..-140 ms`, `meta.bgm_stops` (`>= 0.50 s` at `-inf dB`), `<= 5` heavy whooshes per minute, 7 organic foley SFX (`R217`).
+- Plan SFX with `sfx_auto.py plan`, or write `AUTO:<keyword>` clips (`spec_from_plan.py --auto-sfx KEYWORD`) and compile with `--auto-sfx-dir`. BGM ducks with `duck_keyframes.py`; a vacuum dip at most once per `20 s`.
 
+#### 3.4.5. Look D zoom and scoped transitions
 
-### What the director may promise (honesty table, v7.5.0)
+- **Zoom** ([`dviet_smooth_camera_engine.py`](./scripts/dviet_smooth_camera_engine.py)): `punch_220_q25`, `push_130_long` (`16 s`), `step_zoom_13_8_9`, `jc_reset_push_4_10`, `dolly_out_12_16` (estimates rounded to tiers), scale-driven radial blur (`apply_scale_radial_blur`), a head-top safe-box clamp (source `>= 1080p`) and **Rule C4** (a spoken run `>= 4 s` gets zoom keys, `c4_zoom_keys`). `--self-test` measures the scale curve on a 5 s synthetic clip.
+- **Transitions** (`profile_scope: ["dviet"]`, [`atomic_motion_library.json`](./presets/atomic_motion_library.json)): `color_wash_multi_0p6s`, `film_burn_perf_5f`, `light_leak_overlay`, `white_flash_0p25s`, `vertical_roll_slide`, `orange_ghost_pre_cut_5f`, `vacuum_32db_0p4s`, each with `max_duration` and `caps`. Flash presets obey the photosensitivity caps of 4.2.1. Enforcement: `compile_and_verify.py --profile dviet`.
+- **Opener flicker:** `flicker_schedule.py` plans the silhouette-flicker frames (a matte plate on the timeline; arbitrary-object masks and handheld tracking are out of scope, 4.3).
+
+### 3.5. Look S recipe (brain + compositor)
+
+Look S is built scene by scene. The V21 12-scene map, cut times, VFX-01..08 and the audio structure are in [`24_studio_look_recipe.md`](./references/24_studio_look_recipe.md).
+
+#### 3.5.1. Scene matrix
+
+Draft it with `studio_recipe.py --words words_tl.json --duration D --out scenes.json` (lays the V21 pattern on the transcript: mode per beat, polarity minimum, no adjacent same colour world, jewel hex per act; accepts the probe doc or a bare array of `[word, t0, t1]` / whisper `{word, start, end}`; exits `2` on an empty transcript or a `--duration` that ends before the last word), then edit it. One row per beat:
+
+| Mode | Scene | Use for |
+|---|---|---|
+| **A1** | Full-Head Studio Card (`render_full_head_studio_card`) | text beats, claims, kinetic `kt` plate on a card |
+| **A2** | Squircle PiP (`render_squircle_pip_window`) | B-roll, product, lens / macro, UI plate (presenter shrinks to the PiP) |
+| **B** | Bottom-Flush Cutout (`render_bottom_flush_cutout`) | depth beats, polaroid trio, CTA, dark silk |
+| **P** | Polarity paper: A1 on `#FAFAFA` | light scene, chapter ink on paper |
+| **N** | Neon blackout (`apply_fullwidth_neon_rim_blackout`) | tension beat ("the problem is...") |
+| **S** | Silk numeral stage (B cutout on dark silk + giant glowing numeral) | steps 1 / 2 / 3 |
+| **H** | Hook: full-screen B-roll with the presenter in a PiP | the first beat |
+
+#### 3.5.2. Scene type -> template
+
+| Scene type | Template |
+|---|---|
+| hero B-roll hook | `H` + PiP |
+| polaroid trio | `skewed_3d_polaroid_trio` |
+| steps 1 / 2 / 3 | numeral plate + `A1` or `B` |
+| bento | `frosted_glass_bento_steps` |
+| prompt | `isometric_3d_prompt_browser` |
+| lens or macro | `A2` PiP |
+| arc text around the head | `kt11` |
+
+#### 3.5.3. Render with `look_s_render.py`
+
+`look_s_render.py --scenes scenes.json --words words_tl.json --aroll <video> --work <dir> --out <master.mp4> [--draft|--master] [--broll-dir DIR] [--dry-run]` renders the edited `scenes.json`; you do not write your own driver. `--dry-run` validates every input and prints the per-scene plan; `--draft` (default) is `540x960 @ 30`, `--master` is `1080x1920 @ 60fps`. Optional: `--alpha-npy` (a person matte cache, else the matte model), `--audio`, `--overlays` (the `kt` `.mov` plates and screen VFX as JSON), `--clean-wall`, `--jobs`, `--no-voice-guard`. Exit codes: `0` ok, `2` invalid input, `3` voice guard rejected, `4` render / compose failure; a JSON summary goes to stdout. A scene with `popout: true` on a `P` paper card renders the pop-out card. Underneath it runs the compositor call order: `init_hair_safe_wall_reference` once on a low-head frame -> `clean_aroll_preserve_hair_crown` per frame -> the scene's `render_full_head_studio_card` / `render_squircle_pip_window` / `render_bottom_flush_cutout` / `apply_fullwidth_neon_rim_blackout` -> `pipe_encode_single_plate_fast` (one cached plate MP4 per segment) -> `compose_master_mp4_via_ffmpeg` with the `kt` `.mov` plates and the flash clips as overlays. The compositor's own CLI renders no studio plates (2.2 item 6).
+
+#### 3.5.4. Look S rules
+
+At least **2 light `#FAFAFA` polarity scenes (about `14 %` of the duration)**; **plain full-frame A-roll `<= 25 %`**; **no two adjacent beats in the same colour world**; B-roll is **full-screen and clean** with a PiP presenter, **never covering the face**, and matches the meaning of the beat; **md5-dedup the downloaded Flow assets** (the same clip never twice).
+
+#### 3.5.5. Framing and source
+
+Master gear `--master` (`1080x1920 @ 60fps`). A `720p` source: **pre-upscale inside the card** (resize the A-roll once to the card size) and **do not use FilmCraft scale `150-168%`** (it softens and bloats the head). Framing from the V14 look: face low at `y ~ 62 %`, headroom `105-115 px`; the **Left-Third `136%` crop is rejected** unless the source is `>= 1080p` and the head scale stays `<= 1.18x`. For the cranial audit pass `compile_and_verify.py --context workspace_context.json` (`subject_framing.face_bbox_norm`, `cranial_zone`) so Gate 3B knows where the head is when the V1 clip carries no face box.
+
+#### 3.5.6. Hook and pacing
+
+Build the first `3.4 s` from `studio_recipe.hook_template()` and the voice words (`hook_text_from_words(words)`: the text follows the voice, the voice is never re-cut), put the hero in the stage above the product, give every `1.0 s` a background reset, then split long scenes so no hold exceeds `2.4 s`. Implement every pacing fix as a scene split with its own `cam [a, b]`, visual only, speed `1.0x`; keep speech density, text density and loudness. When a text is retimed, regenerate the SFX in the same pass. Run the plan gates of 4.2.1 and 4.2.2, then measure the render (5.2); report plan checks and measurements separately, labelled `[ĐO]` (measured) / `[ƯỚC]` (estimate). Details: [`28_hook_first_5s_and_pacing.md`](./references/28_hook_first_5s_and_pacing.md).
+
+#### 3.5.7. Pop-out card (optional light-card scene)
+
+`render_popout_studio_card` (flag **Look S pop-out**, `PFD_LOOK_S_POPOUT`), class **B** (two RGBA plates + the master composite): crown `y >= 130 px`, headline clear of the crown, the matte fringe fixed first; limits in 4.2.3. The spec has no `masks` key (gap H5). Recipe: [`29_popout_card_premiere_to_filmcraft.md`](./references/29_popout_card_premiere_to_filmcraft.md).
+
+#### 3.5.8. Deliverables
+
+Look S is **mp4-first**: the `look_s_render.py --master` MP4 plus the `.fcproj` mirror compiled from the same plan (3.7). The rule is stated in 3.8.1.
+
+### 3.6. Typography and web-cinema plates
+
+1. **Schedule beats:** `typography_composer.plan_dviet_kinetic_beat_schedule(...)` against `words_tl.json` (onsets `Δf = 8..16f @ 60fps`), `35 / 35 / 30` rhythm, `Swash-Initial Hybrid` (`[0]` ASCII swash `ℒ, 𝒩, 𝒬, ℋ, ℳ` + `[1..n]` NFC italic), no `— ALL CAPS KICKER`, no duplicate pills (`<= 30 %` pill share), `<= 2` consecutive identical silhouettes / entrances, `>= 4` distinct templates when `>= 8` beats.
+2. **Role text (Look D):** `dviet_text.py`: caption `y` by layout (`talking 52–58 %`, `panel 67 %`, `hero 27 %`, bilingual EN line `80–85 %` yellow italic), two-tier lock-ups, swash only for `script_accent`.
+3. **Render plates:** `web_plate_builder.render_kinetic_typo_batch(...)` (`kt01..kt12`, `60fps` RGBA `.mov`, never `mode="still"` `.png`), the 3D studio plates, the layout templates, and / or Lane C canvases. Every text obeys the `64 px` floor (4.2.3).
+4. **Assemble `<project>.craft.json`** (or start from `spec_from_plan.py`, [reference 21](./references/21_craft_json_minimal_spec.md)): `.mov` overlays, single-stem bridges (`kt06`, no unspoken `0.5–4.8 s` spoilers, no bridge-plate collisions), `meta.format_mode`, `meta.industry_skin`, `meta.active_safety_guards`, `sub_layer_feather_px: 29`, unclipped SFX tails.
+
+### 3.7. Compile and verify (`~55–95 s`)
+
+1. Run `compile_and_verify.py` (commands in 2.4). **Look S must pass `--audio-profile studio_14`**; without it the default `platform` masters to `-16 LUFS`. Look D: `--profile dviet --audio-profile tiktok_loud`.
+2. Pass `--words` (or `--manifest`): without them Gate 3 reports **SKIPPED**, not PASS. If `edit_rules.py` crashes, Gate 3 FAILS.
+3. Pass `--strict-rules` for delivery: without it, `edit_rules` errors (`LỖI`) and Cranial / CRI-100 findings stay **WARN** and the verdict is `DONE_WITH_CONCERNS`. Pass `--hook-gates --preview <master.mp4>` (Look S): without it the rendered hook motion is not measured at compile time; with it a motion failure is a concern in the report.
+4. Read `EDITOR-REPORT.md` and open `qa_contact_sheet.jpg` (`1440x2560`) with your image-viewing tool: `0` Gate 3C vetoes (`STATIC_HERO_PNG_STAMP`, `LAYOUT_SILHOUETTE_MONOTONY`, `PILL_BADGE_OVERUSE`, `ENTRANCE_STYLE_MONOTONY`), `0` `CRANIAL_LOCK` / `HARD VETO` / `CARD_TEXT_COLLISION` / `RAINBOW_HUE_SOUP`. Repair surgically and recompile; gate meanings in 5.1.
+
+### 3.8. Hand-off
+
+#### 3.8.1. Rule A1
+
+**Rule A1:** deliver the editable `.fcproj`; export an `.mp4` only when the user asks or in draft mode, via `python3 ./scripts/tools/fc_export.py IN.fcproj OUT.mp4` (FilmCraft + Xvfb; `-sn`, no metadata). **Look S exception (the only one):** deliver the `look_s_render.py` MP4 master (`1080x1920 @ 60fps`, `-14 LUFS`, `-sn`, no metadata) **and** the `.fcproj` mirror compiled from the same plan. Look D and every other run follow Rule A1. A failed gate means no delivery (5.4).
+
+#### 3.8.2. Gate 7b (brain-triggered, shift once)
+
+On an already exported MP4: `qa_sync.py --video EXPORTED.mp4 --spec X.craft.json` -> `sfx_shifts.json`. If you agree, `sfx_shift.py --spec X.craft.json --shifts sfx_shifts.json --out NEW.craft.json` **once** (`meta.sfx_shifted_once`), recompile, measure again, decide the rest by hand. No automatic loop. Blocking rows: 5.3.
+
+#### 3.8.3. B-roll
+
+`broll_from_video.py analyze --transcript words_tl.json --out broll_plan.json`, write the English prompts, then `check-prompts`. There is one prompt lint contract, [`broll_lint_contract.json`](./presets/broll_lint_contract.json), the source of truth for both `broll_from_video.py check-prompts` (ingest) and `visual_blocks.lint_broll_prompt` (plates, no anchor check) (English, `8–60` words, an `anchor_quote` that appears in the slot text; rules `NOT_ENGLISH`, `WORDS`, `EMPTY`, `ANCHOR_MISSING`, `ANCHOR_NOT_IN_TEXT`, `TEXT_IN_IMAGE`, `BRAND`, `FACE`, `R200`). AI B-roll is never proof (`R200`). Google Flow workflow: [`22_flow_broll.md`](./references/22_flow_broll.md).
+
+## 4. Rules and guardrails
+
+### 4.1. Iron laws
+
+1. **Syllable-locked `60fps` kinetic typography + Cranial Lock:** schedule with `plan_dviet_kinetic_beat_schedule`, render with `render_kinetic_typo_batch`. Never static `mode="still"` hero `.png` (`STATIC_HERO_PNG_STAMP`), `PIL/OpenCV` 3D bevels, `— ALL CAPS KICKER`, duplicate pills, or `> 2` consecutive identical silhouettes / entrances; keep `35 / 35 / 30`, `0 %` face / hair contact, `MAX_ZONES <= 2`, `CARD_TEXT_COLLISION = 0`. The 4-Cut Grammar is a hard law in every profile. Never stamp `S13` raw karaoke.
+2. **Domain `HARD VETO` circuit breakers and `R200`:** never tint enamel yellow (`CRI-100`), never swamp-green walls on skin (`Skin-Tone Guard`), never occlude nails / product (`Hand Safe-Box`), never fake proof with AI B-roll (`R200`), never let profile `dviet` unlock film-burn / light-leak on a skin with `warm_film_burn_veto`.
+3. **Chromatic integrity:** one colour world + polarity flips **or** the 4-act jewel inks on `#FAFAFA` (`<= 1` jewel hue per beat, no rainbow soup, no default `S13` karaoke).
+4. **Micro-bridges, bimodal `C7`, no `f = 0` freeze:** never chop syllables in `[-130, -10] ms`, launch post-cut clips with `ds/dt != 0` (`player3_air_cushion_20f`), whisper `G2` at `Y >= 1360` (`R209`), `shutter_override: true` (`180–300°`) on whips and morphs.
+5. **Rule A1 and the wgpu guard:** hand-off per 3.8.1; whenever `opacity.blend != 0`, disable `drop_shadow` (FilmCraft `0.13.0`'s `wgpu 0.20.1` falls back to CPU otherwise).
+6. **Vietnamese NFC, `Swash-Initial Hybrid`, compound glue (`R55` / `R30`):** Unicode NFC; swash hybrid for Look S, condensed sans for Look D (swash only for `script_accent`); `padding_top >= 0.28–0.30 em` on `0.78` line-height; the `1199` glue pairs of [`text_vi.json`](./data/text_vi.json); `>= 3f` last-word hold (`R30`); banned fonts `Anton`, `Bebas Neue`, `Instrument Serif`, `Great Vibes` (`Instrument Serif` / `De Fonte` only for role `font_specimen` under profile `dviet`).
+
+### 4.2. Gates and where each is enforced
+
+An error blocks delivery until the cause is fixed; never loosen a limit. **Enforced by** says who stops the run:
+
+- **compile** = `compile_and_verify.py` gate (FAIL stops the build);
+- **library** = a function the brain must call on the plan and act on (nothing calls it for you);
+- **qa_sync** = `qa_sync.py` exits `1`;
+- **motion_gate CLI** = `motion_gate.py` exits `1` (also via `compile --hook-gates`, where it becomes a report concern);
+- **plate block** = `web_plate_builder.render_web_plates_batch` raises and renders nothing.
+
+Basis: one user build plus 17 `@__dviet` samples of one channel; thresholds are `[ƯỚC]` unless marked `[ĐO]` ([reference 28](./references/28_hook_first_5s_and_pacing.md)).
+
+#### 4.2.1. Hook (`0–3.4 s`)
+
+| Gate | Limit | Enforced by |
+|---|---|---|
+| `first_text` | first text at `<= 200 ms` | library: `studio_recipe.check_hook(plan, words=words)` |
+| `first_text_late` (the one first-text rule, default on) | the first text is on screen at or before its first spoken word and leads it by `<= 250 ms` (`first_text_lead_ms` upper bound; its `-50 ms` lower bound applies only with `strict_first_text=False`); `hook_text_from_words` places the lead line `20 ms` before the word | library: `check_hook` |
+| `text_voice_sync` | every later text `0–400 ms` before its first spoken word (warn outside `100–250 ms`); a numeral only within `±400 ms` of its voice; `words=None` only warns | library: `check_hook` |
+| `hero_safe_zone` | hero box overlaps `product_bbox` (or the stage cap-top line `0.32 H`) by `0 px`; hero tier box `12–18 %` of H | library: `check_hook`; rendered twin `motion_gate.hero_product_overlap_px` |
+| `text_coverage` | from the first text to `3.0 s` no stretch `> 150 ms` without text | library: `check_hook` |
+| `hook_motion_floor` | a **background** reset (cut, flash, glint, card landing, zoom step `>= 4 %`) in every `1.0 s` of `0–3.4 s`; PiP pops and text do not count | library: `check_hook`, `hook_motion_floor()` |
+| `flash_luma_cap`, `flash_rate` | a flash never lifts the frame mean luma above `220` (0..255); `<= 3` flashes in any 1 s (WCAG 2.3.1); a white cut is `opacity <= 70`, ramped over 3 frames; the `dviet` flash presets carry the same caps | library: `check_hook` -> `motion_gate.check_flash_plan`; render: motion_gate CLI `--flash` |
+| Rendered motion | masked frame-diff mean `>= 2.0` and no run `< 1.0` longer than `0.6 s`, over the `motion_gate.py` default window `--t0 0 --t1 3.4` sampled at `--fps 30` (the `@__dviet` B-roll-first bar is `1.9–2.4`, not V21) | motion_gate CLI (`check_motion`); `compile --hook-gates --preview` |
+| Hook loudness | `-12 LUFS ±0.5`, `<= -1.0 dBTP` after ducking (`hook_0_5s.loudness` in `studio_scene_recipe.json`) | **advisory, not enforced**: no gate reads it; the master stays `studio_14` |
+
+#### 4.2.2. Pacing
+
+| Gate | Limit | Enforced by |
+|---|---|---|
+| max hold | no hold `> 2.0 s` without a reset (cut, zoom step, flash, new text); recipe cap `2.4 s` (error) | library: `studio_recipe.check_pacing(shots, resets, duration)` (`hold_s`, `dead_hold_share` per window) |
+| resets per window | `>= 3` resets in `0–5 s`, `>= 2` in every later `5 s`; `>= 2` shots under `1 s` per `10 s` (advisory); dead holds `<= 45 %` (plan proxy `[ƯỚC]`) | library: `check_pacing` |
+| `bg_static_hold` | full-screen B-roll hold `> 0.8 s` in the hook (`> 1.2 s` elsewhere, warn) needs a push `>= 10 %/s`, a pan `>= 4 %` of the crop per second or a glint | library: `check_pacing`; remedy `plan_micro_moves(shots)` |
+| source reuse | the same B-roll source seconds never twice | library: `check_source_reuse(shots)` |
+| punch-in caps | B cutout `+6 %`, A1 card `+12 %`, PiP inner `+8 %`, full-screen B-roll `+25 %` | brain (reference 28) |
+
+#### 4.2.3. Pop-out card and text
+
+| Gate | Limit | Enforced by |
+|---|---|---|
+| `text_min_size` / legibility | EVERY overlay text, card label, plate caption and whisper `G2` line: CSS px x plate scale `>= 64 px` on the canvas, glyph `>= 3.3 %` of H; secondary plate text at `SECONDARY_TEXT_PX` `70 px`; `decorative: true` only warns; `enforce_min_text_px(forced=True)` with an illegible size raises | plate block (`UndersizedTextError`: CSS audit before Chrome, rendered sizes after); library: `check_hook` (`labels`), `check_text_legibility`; rendered twin `motion_gate.text_glyph_height_frac` |
+| `word_gap_collision` | adjacent-word gap `>= 0.25 em` on every visible frame of a blur-in / scale-in; line-level blur-ins widen word spacing with the blur (`entrance_word_spacing_em`) | library: `motion_gate.check_word_gaps`, `check_hook`; kt02/04/05/07/08/09/11 plates guard `[data-ws-nat0]` every frame; FilmCraft tracking keys via `typography_composer.apply_entrance_word_spacing` |
+| pop-out sharpness | edge 10–90 % `<= 6 px` `[ĐO]`; face-ROI Laplacian `>= 1.8x` plain Lanczos (not the whole-frame `430`); side bow `<= 12 px`; pop `7–11 %` of H | library: `motion_gate.popout_edge_width_px`, `face_laplacian_ratio` |
+| pop-out clean edge | inner dark strip `<= 4 px`, `0` wall specks, crown jaggedness `<= 1.2 px`, crown rise `<= 4 px` | defaults of `render_popout_studio_card(clean_source_bands, despeckle_wall, crown_refine)`; library: `motion_gate.popout_inner_edge_dark_strip_px`, `card_dark_speck_count`, `crown_edge_metrics` |
+| SFX block rows (Gate 7b) | a row with sound `> 0.1 s` before the picture is `block: true`, never ĐẠT | qa_sync (5.3) |
+
+### 4.3. Promise classes A / B / C (what the director may promise) and backlog
 
 Classification of [`27_premiere_recipes_to_filmcraft.md`](./references/27_premiere_recipes_to_filmcraft.md); the ranked list of what is NOT implemented is in [`23_dviet_profile_decisions_and_backlog.md`](./references/23_dviet_profile_decisions_and_backlog.md). Promise only what the class allows.
 
 | Class | Meaning | May promise | Examples |
 |---|---|---|---|
-| **A** native | Built on the FilmCraft timeline from clips, effects, motion, opacity, blend, transitions, text clips | Yes, in the spec | RGB fringe, vertical flip, warp, sticker sparkle (given a PNG), static wall text via `corner_pin`, raw card layouts |
-| **B** pre-rendered plate | Needs a plate / asset with alpha made by the skill's tools (ffmpeg, OpenCV, `web_plate_builder.py`, `u2netp` / RVM matte) then placed as a clip | Yes, as a plate; say it is pre-rendered and approximate | Silhouette flicker, vanish, clone with a static camera, slit-scan approximation |
-| **C** not feasible | Needs a model or tool the skill does not have | **No**; say so, offer the B approximation | Arbitrary Object Mask quality (`u2netp` is salient-object only, RVM is people only), occlusion-aware planar tracking (Mocha-class), true 3D keycap lighting, native Time Displacement |
+| **A** native | built on the FilmCraft timeline from clips, effects, motion, opacity, blend, transitions, text clips | yes, in the spec | RGB fringe, vertical flip, warp, sticker sparkle (given a PNG), static wall text via `corner_pin`, raw card layouts |
+| **B** pre-rendered plate | needs a plate / asset with alpha made by the skill's tools (ffmpeg, OpenCV, `web_plate_builder.py`, the `u2netp` person matte), then placed as a clip | yes, as a plate; say it is pre-rendered and approximate | silhouette flicker, vanish, clone with a static camera, slit-scan approximation, the pop-out card |
+| **C** not feasible | needs a model or tool the skill does not have | **no**; say so, offer the B approximation | arbitrary Object Mask quality (`u2netp` is salient-object only; no RVM shipped), occlusion-aware planar tracking (Mocha-class), true 3D keycap lighting, native Time Displacement |
 
-**BACKLOG (do not promise yet):** waveform SFX tile, keycap tile, NLE-timeline tile, and wall-pasted text on a **handheld** shot (needs the tracker, H4 in reference 27). Loudness: `tiktok_loud` numbers are labelled measured vs derived in [`25_loudness_tiktok_vs_nle.md`](./references/25_loudness_tiktok_vs_nle.md); never quote an official TikTok normalization figure, none is published.
+**BACKLOG (do not promise yet):** waveform SFX tile, keycap tile, NLE-timeline tile, wall-pasted text on a **handheld** shot (needs the tracker, H4 in reference 27), the spec `masks` key (H5). Loudness: `tiktok_loud` numbers are labelled measured vs derived in [`25_loudness_tiktok_vs_nle.md`](./references/25_loudness_tiktok_vs_nle.md); never quote an official TikTok normalization figure, none is published.
 
----
+### 4.4. `@__dviet` evidence rules
 
-## 4. Progressive Disclosure Reference Index (Read On-Demand)
+- The truth source is **17 measured videos**, indexed in [`references/dviet_19/INDEX.md`](./references/dviet_19/INDEX.md) (table, recurring signatures with counts, gap table *observed -> done / backlog*). The folder keeps its old name `dviet_19` but holds 17 videos; older references that say "19" counted two videos without evidence files.
+- Decisions with provenance and the ranked BACKLOG: [reference 23](./references/23_dviet_profile_decisions_and_backlog.md); runnable tokens: [`dviet_style_tokens.json`](./presets/dviet_style_tokens.json).
+- Numbers flagged *estimate* / `[ƯỚC]` are not standards. It is one channel: never present a `@__dviet` number as a platform rule. The per-video files are read-only evidence.
 
-### Presets, Catalogs, Lexicons & Interactive `10×8` Viewer (`./presets/`, `./data/` & `./templates/`)
-- **`10 Format Modes × 8 Industry Skins` Orthogonal Matrix, `HARD VETO` Rules & `profile_vetoes`:** [format_modes_catalog.json](./presets/format_modes_catalog.json)
-- **8 Director Archetypes, `60fps` Lane-B Kinetic `.mov` Contract & `Gate 3C` Vetoes:** [visual_archetypes_catalog.json](./presets/visual_archetypes_catalog.json)
-- **Quad-Tier Policy (`fast`/`studio`/`full`/`auto`), Routing & Provenance:** [execution_tiers.json](./presets/execution_tiers.json) | **Interactive `10×8` & 3-Lane Viewer:** [edit_plan_viewer.html](./templates/edit_plan_viewer.html)
-- **`kt01..kt12` Kinetic Templates, `45,582`-Frame Laws, `Gate 3C` Quotas, `S01..S18` & `v7.4.0` caption-`y` / script-accent / inline-caps keys:** [typography_hierarchy_presets.json](./presets/typography_hierarchy_presets.json)
-- **`@__dviet` single token file (palette accents, font roles, tiers, caption `y` by layout, lock-up, constellation, canvases, audio incl. `tiktok_loud`; provenance with `measured`/`estimate` flags):** [dviet_style_tokens.json](./presets/dviet_style_tokens.json) | **Canvases (`1080×1920@60|30`, `1440×1080@24|30`, `1332×720@30`) with safe-zone scaling notes:** [canvas_presets.json](./presets/canvas_presets.json) | **Unchanged 9:16 / 16:9 / 4:5 safe zones:** [platform_safe_zones.json](./presets/platform_safe_zones.json)
-- **Atomic Motion Library (zoom presets, scoped `dviet` transitions):** [atomic_motion_library.json](./presets/atomic_motion_library.json) | **Pattern catalog (incl. screen strip, 9:16 card, profile card):** [dviet_pattern_catalog.json](./presets/dviet_pattern_catalog.json)
-- **Look S scene recipe (V21 grid, templates, polarity, audio structure):** [studio_scene_recipe.json](./presets/studio_scene_recipe.json)
-- **Vietnamese Lexicon, Face Cascade & Supporting Presets:** [text_vi.json](./data/text_vi.json) | [haarcascade_frontalface_default.xml](./data/haarcascade_frontalface_default.xml) | [industry_profiles.json](./presets/industry_profiles.json) | [sfx_micro_sync_rules.json](./presets/sfx_micro_sync_rules.json) | [sfx_catalog.json](./presets/sfx_catalog.json) | [profile_overrides.json](./presets/profile_overrides.json) | [pain_keywords.json](./presets/pain_keywords.json)
+## 5. QA and error handling
 
-### Deep-Dive Director Manuals (`./references/`)
-1. **Editorial Judgment, Rule of Six & Retention:** [01_director_and_retention.md](./references/01_director_and_retention.md)
-2. **Premiere Pro ↔ FilmCraft Track & Keyframe Mapping:** [02_nle_premiere_filmcraft.md](./references/02_nle_premiere_filmcraft.md)
-3. **30/60fps Micro-Timing & Frame-Offset Recipes:** [03_micro_timing_recipes.md](./references/03_micro_timing_recipes.md)
-4. **`@__dviet` Signature Aesthetics & Vietnamese NFC Rules:** [04_dviet_and_vi_typography.md](./references/04_dviet_and_vi_typography.md)
-5. **12 Text Animation Techniques Masterclass:** [05_typography_masterclass.md](./references/05_typography_masterclass.md)
-6. **4-Layer Frame-by-Frame `@__dviet` Forensics:** [06_dviet_frame_by_frame_forensics.md](./references/06_dviet_frame_by_frame_forensics.md)
-7. **Dual-Channel Forensics (`@__dviet` vs `@xuanart.visual`):** [07_xuanart_and_dual_channel_forensics.md](./references/07_xuanart_and_dual_channel_forensics.md)
-8. **`@haihoang_airaviec` 4-Pillar Pattern Extraction:** [08_haihoang_pattern_catalog_dviet.md](./references/08_haihoang_pattern_catalog_dviet.md)
-9. **Blueprint `7706`: 7 Entrances, Asymmetric Zoom, 2.5D & 53-SFX Matrix:** [09_dviet_7706_typography_zoom_sfx_mastery.md](./references/09_dviet_7706_typography_zoom_sfx_mastery.md)
-10. **35 `@vietanh.videoeditor` Text Presets (Premiere ↔ FilmCraft):** [10_vietanh_35_text_animation_presets_premiere_filmcraft.md](./references/10_vietanh_35_text_animation_presets_premiere_filmcraft.md)
-11. **60fps Fluid Rhythm, Shark-Fin Whip Bridge & 4-Plane Z-Depth:** [11_talking_head_fluid_rhythm_and_signature_style.md](./references/11_talking_head_fluid_rhythm_and_signature_style.md)
-12. **`ffmpeg-skill` 42-Tool Smart-Cut & Silence Integration:** [12_ffmpeg_skill_42_tools_integration.md](./references/12_ffmpeg_skill_42_tools_integration.md)
-13. **19/19 `@__dviet` Videos: `C²` Smooth Zoom & Fast-Slow Pacing Mastery:** [13_dviet_19_videos_smooth_zoom_and_pacing_mastery.md](./references/13_dviet_19_videos_smooth_zoom_and_pacing_mastery.md)
-14. **Anti-Cookie-Cutter Beat Semantics → Visual Director Matrix:** [14_anti_cookiecutter_visual_director_matrix.md](./references/14_anti_cookiecutter_visual_director_matrix.md)
-15. **Adaptive Tiers (`fast`/`full`), Epistemic `R200` & QA Physics (`v5.1`):** [15_adaptive_tiers_and_epistemic_qa_v51.md](./references/15_adaptive_tiers_and_epistemic_qa_v51.md)
-16. **4-Plane Z-Depth, `S01..S18` Subtext Catalog & Seamless Flow (`v5.2`):** [16_v52_multicolor_4group_subtext_and_seamless_flow.md](./references/16_v52_multicolor_4group_subtext_and_seamless_flow.md)
-17. **Era-2 Manifesto (`7707`), Color-World Polarity, 4-Cut Grammar & `MAX_ZONES=2` (`v6.0`):** [17_v60_dviet_era2_manifesto_architecture.md](./references/17_v60_dviet_era2_manifesto_architecture.md)
-18. **Universal Studio Director (`v7.0`): `10×8` Orthogonal Matrix, 3-Lane Web-Cinema `@2x` Plates & `45,582`-Frame Micro-Bridges:** [18_v70_universal_studio_10x8_and_45582_microbridges.md](./references/18_v70_universal_studio_10x8_and_45582_microbridges.md)
-19. **19/19 `@__dviet` Kinetic Typography Bible: `45,582`-Frame Stagger Math, `Swash-Initial Hybrid`, `kt01..kt12` & `Gate 3C`:** [19_v71_dviet_19videos_kinetic_typography_bible.md](./references/19_v71_dviet_19videos_kinetic_typography_bible.md)
-20. **Hybrid `Option A × B`, Voice-Sync Guard & Hair-Safe Compositor (`v7.3`):** [20_v73_hybrid_ab_voicesync_and_hairsafe_compositor.md](./references/20_v73_hybrid_ab_voicesync_and_hairsafe_compositor.md)
-21. **Minimal `.craft.json` Spec Conventions (`spec_from_plan.py`, `AUTO:` SFX):** [21_craft_json_minimal_spec.md](./references/21_craft_json_minimal_spec.md)
-22. **Google Flow B-Roll Workflow (`broll_from_video.py`, brain-side `flow_*` steps):** [22_flow_broll.md](./references/22_flow_broll.md)
-23. **`@__dviet` Profile Decisions with Provenance & Ranked BACKLOG (what is NOT implemented):** [23_dviet_profile_decisions_and_backlog.md](./references/23_dviet_profile_decisions_and_backlog.md)
-24. **Look S Studio Recipe (V21 12-scene map, VFX-01..08 timestamps, cut times, 4-act jewel colours, audio structure, links to the analysis docs):** [24_studio_look_recipe.md](./references/24_studio_look_recipe.md) (read it with `20` and `23`)
-25. **Loudness for TikTok vs NLE (`tiktok_loud` table: measured vs derived, ducking, SFX tiers, post-AAC overshoot):** [25_loudness_tiktok_vs_nle.md](./references/25_loudness_tiktok_vs_nle.md)
-26. **`@__dviet` Fonts (roles, fallback chain, Vietnamese coverage):** [26_dviet_fonts.md](./references/26_dviet_fonts.md)
-27. **Premiere Recipes for the BACKLOG Effects → FilmCraft (classes A / B / C, shared infrastructure, effort):** [27_premiere_recipes_to_filmcraft.md](./references/27_premiere_recipes_to_filmcraft.md)
-28. **Hook-First 5 s and the Pacing Law (`v7.7.0`, text-voice / safe-zone / motion floor `v7.8.0`: 17-hook table, hook recipe v3, SFX by file name, gap list vs V19..V21 and v2, max hold / resets per 5 s / dead holds, punch-in caps, what NOT to change):** [28_hook_first_5s_and_pacing.md](./references/28_hook_first_5s_and_pacing.md)
-29. **Pop-Out Card: Premiere / CapCut Recipe → FilmCraft A / B / C (`v7.7.0`, crisp defaults, upscale ladder and gates `v7.8.0`, `render_popout_studio_card`, parameter table, `masks` gap H5, RVM fringe):** [29_popout_card_premiere_to_filmcraft.md](./references/29_popout_card_premiere_to_filmcraft.md)
-30. **FilmCraft Control Bridge (`filmcraft --control`, why `filmcraft-cli` does not exist, `filmcraft_cli.py` design):** [30_filmcraft_control_bridge.md](./references/30_filmcraft_control_bridge.md)
-- **17-Video `@__dviet` Index (table, recurring signatures with counts, gap table):** [references/dviet_19/INDEX.md](./references/dviet_19/INDEX.md) — per-video files `references/dviet_19/<id>.md` are read-only evidence.
+### 5.1. Gate catalogue
 
-### 6 Stateless Core Tools, Helper CLIs & Supporting Engines (`./scripts/`)
-- **Core Atomic Tools:** [`probe_and_align.py`](./scripts/tools/probe_and_align.py) | [`web_plate_builder.py`](./scripts/tools/web_plate_builder.py) | [`visual_blocks.py`](./scripts/tools/visual_blocks.py) | [`typography_composer.py`](./scripts/tools/typography_composer.py) | [`fast_studio_compositor.py`](./scripts/tools/fast_studio_compositor.py) | [`compile_and_verify.py`](./scripts/tools/compile_and_verify.py)
-- **Helper CLIs:** [`env_status.py`](./scripts/env_status.py) | [`dviet_text.py`](./scripts/tools/dviet_text.py) | [`silence_cut.py`](./scripts/tools/silence_cut.py) | [`speed_media.py`](./scripts/tools/speed_media.py) | [`sfx_auto.py`](./scripts/tools/sfx_auto.py) | [`spec_from_plan.py`](./scripts/tools/spec_from_plan.py) | [`qa_sync.py`](./scripts/tools/qa_sync.py) | [`sfx_shift.py`](./scripts/tools/sfx_shift.py) | [`broll_from_video.py`](./scripts/tools/broll_from_video.py) | [`fc_export.py`](./scripts/tools/fc_export.py) | [`studio_recipe.py`](./scripts/tools/studio_recipe.py)
-- **Web-Cinema Engine (Node `>=22`, Headless Chrome CDP pool):** [`web_cinema_plate_engine.mjs`](./scripts/web_cinema_plate_engine.mjs)
-- **Motion Stages, Camera & Preset Engines:** [`dviet_motion_canvas_engine.py`](./scripts/dviet_motion_canvas_engine.py) | [`dviet_smooth_camera_engine.py`](./scripts/dviet_smooth_camera_engine.py) | [`dviet_7706_typography_choreography.py`](./scripts/dviet_7706_typography_choreography.py) | [`vietanh_35_typography_engine.py`](./scripts/vietanh_35_typography_engine.py) | [`ffskill_bridge.py`](./scripts/ffskill_bridge.py)
+| Gate | What | Fails the build (verdict `REJECTED`) when |
+|---|---|---|
+| 1 Mechanical sanitizer | `bgm_stops`, `lag_ms`, micro-fades, MD5 dedup, `AUTO:` SFX resolution | `AUTO:` clips exist without `--auto-sfx-dir` |
+| 2 Spec lint | vendored `spec_lint.py` | any hard lint item |
+| 3 Editorial rules | vendored `edit_rules.py` + 4-Cut / `C7` adjudicator; Gate 3B Cranial Lock, colour / density; Gate 3C anti-template vetoes; CRI-100 | `edit_rules` crashes; a Gate 3C veto, a Cranial or CRI-100 audit `FAIL`; with `--strict-rules` also any `LỖI` and any Cranial / CRI-100 violation. **SKIPPED** (not PASS) without `--words` / `--manifest` |
+| 4 FilmCraft compile | `fc_build` parity, keyframes, `AdjustmentLayer` micro-bridges, 1-frame render smoke | the build fails or mismatches, or media is offline. Without FilmCraft or X the smoke is reported SKIPPED, never PASS |
+| 5 Post-FX + contact sheet | 16 QA frames, pixel / face-room audit | QA frames or `mix.wav` missing, blank frames |
+| 6 Loudness | closed-loop EBU R128 to the `--audio-profile` target, `R35` post-AAC true peak (tier `full`) | integrated loudness off target by `> 0.55 LU`, or true peak (also after AAC) above the ceiling |
+| 7 SFX integrity | vendored `audit_sfx.py`, `R217` `match_at` NCC sync | the audit fails, a take repeats, an SFX file is missing |
+| 8 Epistemic verdict | `R200` `claim_gate`, tri-state verdict | any earlier gate raised (`REJECTED`); open concerns give `DONE_WITH_CONCERNS`, a clean run `VERIFIED` |
+
+The plan-level gates of 4.2 are not in this list: call them yourself.
+
+### 5.2. Rendered gates (`motion_gate.py`)
+
+`python3 ./scripts/tools/motion_gate.py VIDEO [--mask x0,y0,x1,y1] [--t0 0 --t1 3.4] [--fps 30] [--flash]` prints JSON and exits `1` when not ok. Without `--flash` it runs `check_motion` (4.2.1); with `--flash` it checks flashes over `--t0..--t1` (the whole video when `--t1` is negative) at 60 fps. The default window is the whole hook; `--t0 2.03 --t1 3.38` gates only the late-hook sub-window. Mask the PiP and text boxes so only the background is measured. The single-frame metrics (`popout_edge_width_px`, `face_laplacian_ratio`, `hero_product_overlap_px`, `text_glyph_height_frac`, `popout_inner_edge_dark_strip_px`, `card_dark_speck_count`, `crown_edge_metrics`, `check_word_gaps`) are library functions; the plan-level twins live in `studio_recipe.py`. Report the plan check and the measurement separately.
+
+### 5.3. Sync QA (Gate 7b)
+
+`qa_sync.py` measures SFX against the picture on an *already exported* MP4 and writes `sfx_shifts.json`. A row with `block: true` (sound `> 0.1 s` before the picture) is never ĐẠT and keeps the gate failing (exit `1`) while it remains; `sfx_shift.py` applies the shifts once to a NEW spec (3.8.2).
+
+### 5.4. Error handling and escalation
+
+- **Preflight:** `env_status.py --strict` exits `1` when a required item is missing; fix it (the `remedy` field says how) before ingest. Do not start a compile without FilmCraft `>= 0.13.0` and Xvfb.
+- **A failed gate means no delivery.** Read the gate's `Fix:` line in `EDITOR-REPORT.md`, repair the cause in the plan or spec, recompile and re-measure. Never loosen a limit, never deliver a `REJECTED` or unverified build, and say plainly what is still `DONE_WITH_CONCERNS`.
+- **Chrome / Node fails** (Lane B): check `CHROME_BIN` / `NODE_BIN`, lower the worker count, keep the person-matte pass and Chrome sequential (execution_tiers `sequential_rvm_then_chrome_max2`); an `UndersizedTextError` is a design error: enlarge the text, do not force it.
+- **FilmCraft fails:** `filmcraft_cli.py` and the Gate 4 smoke skip loudly (`SMOKE SKIPPED`, exit `2` with `skipped: true`) and never fake a render; never use the user's display `:0`. Start Xvfb (or set `CRAFT_DISPLAY`), check `filmcraft --version`, rerun. Without FilmCraft you may hand off the spec and the Look S MP4, stating that the `.fcproj` was not verified.
+- **ffmpeg fails:** check `ffmpeg -version` (6.1+) and the input (`probe_and_align` rejects 0-byte / corrupt video); a loudness miss in Gate 6 is fixed by levels in the mix, never by raising the master.
+- **Escalate to the user** when the footage cannot meet a veto (face too close to the frame edge, no audio, a claim without proof) instead of working around it.

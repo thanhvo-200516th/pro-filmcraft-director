@@ -55,14 +55,9 @@ import flicker_schedule as fs  # noqa: E402
 FFMPEG = shutil.which("ffmpeg") or "ffmpeg"
 RATES = [(60, 1), (24, 1), (25, 1), (30, 1), (30000, 1001)]
 W, H = 360, 640
-DEFAULT_COMMANDS = [
-    SKILL_ROOT / "scripts" / "vendor" / "ovs_core" / "references" / "filmcraft-commands.json",
-    SKILL_ROOT.parent / "video-agent-server" / "skills" / "craft-handoff" / "references" / "filmcraft-commands.json",
-]
-DEFAULT_DUMP = [
-    SKILL_ROOT / "scripts" / "vendor" / "ovs_core" / "references" / "kb-master-video-edit.md",
-    SKILL_ROOT.parent / "video-agent-server" / "skills" / "opa-video-studio" / "references" / "kb-master-video-edit.md",
-]
+# v7.9.1: only paths inside this skill (no sibling-repo fallback); absent -> the check prints [SKIP] with the reason
+DEFAULT_COMMANDS = [SKILL_ROOT / "scripts" / "vendor" / "ovs_core" / "references" / "filmcraft-commands.json"]
+DEFAULT_DUMP = [SKILL_ROOT / "scripts" / "vendor" / "ovs_core" / "references" / "kb-master-video-edit.md"]
 BUILDER_COMMANDS = ("effects.apply", "effects.setParam", "effects.setKeyframe", "effects.setInterpolation")
 NATIVE_PRESETS = {
     "typography_hierarchy_presets.json": ("native_effect_presets_v74", ["rgb_fringe_text_native"]),
@@ -229,10 +224,12 @@ def test_01_effect_ids_commands_and_labels() -> None:
     if dump is not None:
         assert "rgb_split" in dump and dump["rgb_split"]["mode"] == ["Linear", "Radial"], "effects.list dump not parsed"
     else:
-        print("[SKIP] effects.list dump not found (set PFD_EFFECTS_DUMP): parameter names are checked against references/27 only")
+        print(f"[SKIP] effects.list dump not found (not vendored at {DEFAULT_DUMP[0].relative_to(SKILL_ROOT)}; set PFD_EFFECTS_DUMP): "
+              "parameter names are checked against references/27 only")
     cmd_path = _find("PFD_FILMCRAFT_COMMANDS", DEFAULT_COMMANDS)
     if cmd_path is None:
-        print("[SKIP] filmcraft-commands.json not found (set PFD_FILMCRAFT_COMMANDS)")
+        print(f"[SKIP] filmcraft-commands.json not found (not vendored at {DEFAULT_COMMANDS[0].relative_to(SKILL_ROOT)}; "
+              "set PFD_FILMCRAFT_COMMANDS): builder command ids are not checked")
     else:
         ids = {c["id"] for c in json.loads(cmd_path.read_text(encoding="utf-8"))}
         missing = [c for c in BUILDER_COMMANDS if c not in ids]

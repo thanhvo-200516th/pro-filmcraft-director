@@ -31,9 +31,9 @@ Quy ước: **[ĐO]** = đo trực tiếp; **[ƯỚC]** = ước lượng. Mọi
 - Provenance: 7693026626333871381 ("talking head VIDEO" bị đầu che), 7706183278461570356 (chữ sau chân người, sau vai), `presets/dviet_pattern_catalog.json` mục `dviet_text_behind_subject`, và `atomic_motion_library.json` mục `text_behind_subject` (đã tồn tại, `occlusion_target_pct [30, 50]`).
 - Phạm vi: đây là **quy tắc ghi nhận**; việc đếm chồng lấn theo thứ tự lớp do `compile_and_verify.py` đảm nhiệm (không thuộc P3, không sửa ở đây).
 
-### (d) Mastering to là profile opt-in, trần -0.5 dBTP
+### (d) Mastering to là profile opt-in, trần -1.0 dBTP
 
-- Quyết định: loudness `tiktok_loud` (khoảng -10.7 .. -12.6 LUFS, peak tới +3 dBFS ở nguồn) là **tuỳ chọn**, bật bằng `compile_and_verify.py --audio-profile tiktok_loud` (gói P1). Trần true-peak khi bật: **-0.5 dBTP** (không noi theo +3 dBFS của nguồn: đó là clip). Mặc định giữ `platform` (-14 LUFS, -1.5 dBTP).
+- Quyết định: loudness `tiktok_loud` (khoảng -10.7 .. -12.6 LUFS, peak tới +3 dBFS ở nguồn) là **tuỳ chọn**, bật bằng `compile_and_verify.py --audio-profile tiktok_loud` (gói P1). Trần true-peak khi bật: **-1.0 dBTP** (v7.9.1; trước đó -0.5 dBTP, đổi theo phép đo sau AAC ở [tài liệu 25](./25_loudness_tiktok_vs_nle.md) mục 4; không noi theo +3 dBFS của nguồn: đó là clip), mục tiêu `-12 LUFS`, nhạc nền dưới giọng `14 dB`. Mặc định giữ `platform` (-14 LUFS, -1.5 dBTP).
 - Provenance: 13 trong 17 video nằm trong -10.7 .. -12.6 LUFS, 10 video có peak > 0 dBFS, cao nhất +3.0 dBFS (7670574911680777492); ngoại lệ nhỏ: 7664835388476755220 (-20.1) và 7707653827016674580 (-16.7) [ĐO ebur128].
 - Phạm vi look (v7.6.0): `tiktok_loud` là mastering của **Look D** và các con số của nó **chưa kiểm** trên giọng thật; Look S dùng profile `studio_14` (`-14.0 LUFS / -1.2 dBTP`), xem [`24_studio_look_recipe.md`](./24_studio_look_recipe.md).
 - Token: `audio.tiktok_loud` chỉ là **tham chiếu** (`lufs_range`, `tp_cap_dbtp`, `enforced_by: P1`).

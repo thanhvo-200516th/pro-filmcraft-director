@@ -1,4 +1,4 @@
-# Masterclass Typography, Text Animation & Text Entrance (`Premiere Pro ↔ AE ↔ FilmCraft v17`)
+# 05 — Masterclass Typography, Text Animation & Text Entrance (`Premiere Pro ↔ AE ↔ FilmCraft v17`)
 
 Tài liệu tổng hợp từ **16 video hướng dẫn thực chiến trên YouTube** (Premiere Pro & After Effects), bóc tách `@__dviet`, và bộ **12 công thức toán học từng frame (`@30fps` / `@60fps`)** bảo vệ tuyệt đối **134/134 dấu tiếng Việt NFC**.
 
@@ -73,5 +73,5 @@ Tài liệu tổng hợp từ **16 video hướng dẫn thực chiến trên You
 ---
 
 ## 4. Bản đồ Kho Tài nguyên Local (`TNEDIT` & `animation_dna_catalog.json`)
-- **20 Animation DNA Cards** (`DVIET-01..10` & `MIN-01..10`) trong `dviet-filmcraft-director/presets/animation_dna_catalog.json`.
+- **20 Animation DNA Cards** (`DVIET-01..10` & `MIN-01..10`) từng nằm ở `dviet-filmcraft-director/presets/animation_dna_catalog.json` của skill cũ; file này **không** có trong repo, các khuôn tương ứng hiện là `presets/typography_hierarchy_presets.json` và `presets/visual_archetypes_catalog.json`.
 - **TNEDIT Assets:** `16` file `.mogrt` BĐS (`03_TRANSITIONS_PRESETS/Premiere_MOGRT/`), `3` FilmBurn/LightLeak `.mp4` (`05_Hieu_Ung_Chuyen_Canh/Overlay_Video/`), `CO - S1/S2.mov`, và `12` Icon 3D Alpha `60fps` `.mov` (`07_Assets/3D_Icons_Overlays/animated_overlays/`).

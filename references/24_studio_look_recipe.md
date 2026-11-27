@@ -48,7 +48,7 @@ Ba cảnh sáng (S03, S06, S12A) ≈ `8.7 s` ≈ `21 %` thời lượng [ĐO t�
 
 ## 3. Màu 4 hồi (`semantic_4act_jewel`)
 
-Nguồn: bảng "Bảng Màu Ngọc Quý 4 Hồi" trong tài liệu phân tích `dviet_19videos_complete_forensics_and_roundtable.md` (chữ trắng `#FAFAFA` + đúng một màu nhấn của hồi).
+Nguồn: bảng "Bảng Màu Ngọc Quý 4 Hồi" trong tài liệu phân tích `dviet_19videos_complete_forensics_and_roundtable.md` (chữ trắng `#FAFAFA` + đúng một màu nhấn của hồi). Lưu ý: tài liệu phân tích này (và hai walkthrough V19 / V21 nêu ở mục cuối) **không** kèm trong repo; bảng dưới đây là bản chép duy nhất trong skill.
 
 | Hồi | Khoảng | Màu nhấn trên nền tối | Mực trên giấy `#FAFAFA` |
 |---|---|---|---|

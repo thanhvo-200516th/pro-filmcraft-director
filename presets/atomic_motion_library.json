@@ -316,6 +316,12 @@
         "min_gap_s": 6.0,
         "forbidden_with": ["CRI100"]
       },
+      "caps_v791": {
+        "_doc": "v7.9.1 photosensitivity cap (motion_gate FLASH_LUMA_CAP / MAX_FLASHES_PER_S, WCAG 2.3.1). Supersedes the 'near pure white' peak above: the white layer is screen-blended at <= max_white_opacity_pct so the frame mean luma (0..255) stays <= max_mean_luma; at most max_flashes_per_s flashes in any 1 s. per_video / min_gap_s / forbidden_with of `caps` still apply.",
+        "max_mean_luma": 220,
+        "max_white_opacity_pct": 70,
+        "max_flashes_per_s": 3
+      },
       "source_videos": ["7669758857471741204", "7672413018575146261"],
       "sfx_cue": null
     },
@@ -370,6 +376,10 @@
         "per_video": 2,
         "min_gap_s": 15.0,
         "forbidden_with": []
+      },
+      "caps_v791": {
+        "_doc": "v7.9.1: min_gap_s overrides caps.min_gap_s (15 s was stale): one vacuum per 20 s, = duck_keyframes.DuckParams.vacuum_min_interval_sec and references/25_loudness_tiktok_vs_nle.md row 12 (<= 1 per 20 s).",
+        "min_gap_s": 20.0
       },
       "source_videos": ["7672413018575146261"],
       "sfx_cue": null

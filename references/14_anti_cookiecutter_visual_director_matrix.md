@@ -18,6 +18,8 @@
 
 ## 2. Beat Semantics → Bespoke Treatment Matrix
 
+The ten stateless RGBA primitives of `scripts/tools/visual_blocks.py` named below (`versus_split_card`, `flowchart_pipeline`, `metric_kpi_hero`, `code_terminal_window`, `strike_myth_banner`, `quote_editorial_note`, `checklist_audit_card`, `polaroid_callout`, `floating_pill_badge`, `clean_alpha_prop`) are shown side by side in [`visual_primitives_10_showcase.jpg`](./visual_primitives_10_showcase.jpg).
+
 Read `words_tl.json` sentence-by-sentence, classify the **Beat Intent**, and compose across 4 orthogonal axes (Visual + Camera + Typography + Audio):
 
 | Beat Semantics / Sentence Intent | Primary Visual Treatment (`visual_blocks.py` / NLE) | Camera Choreography (`typography_composer.py`) | Typography Choreography (`V7`/`V8` NFC) | Micro-Audio Cue (`A3`/`A4`) |

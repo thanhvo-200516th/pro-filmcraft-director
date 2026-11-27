@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Universal Studio Director v7.1 — Web-Cinema Parallel RGBA & Alpha MOV Engine
+ * Universal Studio Director v7.9.1 — Web-Cinema Parallel RGBA & Alpha MOV Engine
  * ============================================================================
  * Zero-dependency Node.js v22+ renderer driving Chrome Headless via native
  * `globalThis.WebSocket` CDP (`Emulation.setDefaultBackgroundColorOverride`
@@ -29,27 +29,42 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const CHROME_CANDIDATES = [
-  process.env.CHROME_BIN,
-  path.join(os.homedir(), ".local/bin/google-chrome"),
-  "/usr/bin/google-chrome",
-  "/usr/bin/google-chrome-stable",
-  "/usr/bin/chromium",
-  "/usr/bin/chromium-browser",
-].filter(Boolean);
+// v7.9.1: same lookup as env_status (which also accepts PATH): CHROME_BIN, ~/.local/bin, every PATH dir, then fixed installs.
+const CHROME_PATH_NAMES = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome"];
+
+function chromeCandidates() {
+  const onPath = String(process.env.PATH || "")
+    .split(path.delimiter)
+    .filter(Boolean)
+    .flatMap((dir) => CHROME_PATH_NAMES.map((name) => path.join(dir, name)));
+  return [
+    process.env.CHROME_BIN,
+    path.join(os.homedir(), ".local/bin/google-chrome"),
+    ...onPath,
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/opt/google/chrome/chrome",
+    "/opt/google/chrome/google-chrome",
+    "/snap/bin/chromium",
+  ].filter(Boolean);
+}
 
 function resolveChromeBinary() {
-  for (const candidate of CHROME_CANDIDATES) {
+  const candidates = chromeCandidates();
+  for (const candidate of candidates) {
     try {
-      if (fs.existsSync(candidate)) {
+      fs.accessSync(candidate, fs.constants.X_OK);
+      if (fs.statSync(candidate).isFile()) {
         return candidate;
       }
     } catch {
-      // ignore
+      // not there / not executable
     }
   }
   throw new Error(
-    `Chrome binary not found. Checked: ${CHROME_CANDIDATES.join(", ")}`
+    `Chrome binary not found (set CHROME_BIN or put google-chrome / chromium on PATH). Checked: ${[...new Set(candidates)].join(", ")}`
   );
 }
 
@@ -166,6 +181,13 @@ function parseCliArgs(argv) {
       case "--timeout-ms":
         args.timeoutMs = Number.parseInt(next(), 10);
         break;
+      case "--batch-deadline-ms":
+        args.batchDeadlineMs = Number.parseInt(next(), 10);
+        break;
+      case "--print-chrome":
+        console.log(resolveChromeBinary());
+        process.exit(0);
+        break;
       case "--quiet":
         args.quiet = true;
         break;
@@ -197,7 +219,10 @@ Options:
   --frame-idx <int>                     Optional frame index for still snapshot
   --alpha-codec <prores4444|qtrle>      Alpha video codec for .mov (default: prores4444)
   --concurrency <1..4>                  Parallel CDP tabs in --batch-json mode (default: 4)
-  --batch-json <file>                   JSON array (or {jobs, concurrency}) sharing one Chrome session
+  --batch-json <file>                   JSON array (or {jobs, concurrency}) sharing one Chrome session; a failed job is
+                                        reported as {ok: false, error} in results, the other jobs still render
+  --batch-deadline-ms <ms>              Whole-run deadline: kill Chrome and exit non-zero when exceeded (0 = none)
+  --print-chrome                        Print the resolved Chrome binary and exit
   --quiet                               Suppress progress logs
 `);
 }
@@ -1282,14 +1307,21 @@ async function main() {
   };
 
   const session = await launchHeadlessChrome(args.timeoutMs);
+  if (args.batchDeadlineMs > 0) {
+    // v7.9.1: the whole run is bounded; SIGTERM runs the Chrome process-group teardown registered at launch
+    setTimeout(() => {
+      console.error(`[web-cinema-engine] FATAL: batch deadline of ${args.batchDeadlineMs} ms exceeded`);
+      process.kill(process.pid, "SIGTERM");
+    }, args.batchDeadlineMs).unref();
+  }
   try {
     const results = new Array(jobs.length);
     let nextIdx = 0;
-    let firstError = null;
+    let failed = 0;
 
+    // v7.9.1: one failed job no longer discards the batch: it is reported as {ok: false, error} and the others still render
     const runWorker = async () => {
       while (true) {
-        if (firstError) return;
         const idx = nextIdx++;
         if (idx >= jobs.length) return;
         try {
@@ -1299,18 +1331,25 @@ async function main() {
             sharedDefaults
           );
         } catch (err) {
-          if (!firstError) {
-            firstError = err;
+          failed += 1;
+          results[idx] = {
+            ok: false,
+            index: idx,
+            out: jobs[idx].out,
+            error: String(err?.message || err),
+          };
+          if (!args.batchJson) {
+            throw err;
           }
-          return;
         }
       }
     };
 
     const workers = Array.from({ length: workerCount }, () => runWorker());
-    await Promise.allSettled(workers);
-    if (firstError) {
-      throw firstError;
+    const settled = await Promise.allSettled(workers);
+    const rejected = settled.find((r) => r.status === "rejected");
+    if (rejected) {
+      throw rejected.reason;
     }
 
     const totalElapsedMs = Date.now() - batchStartedAt;
@@ -1318,7 +1357,7 @@ async function main() {
     await new Promise((resolve) => process.stdout.write(
       `${JSON.stringify(
         args.batchJson
-          ? { ok: true, concurrency: workerCount, totalElapsedMs, results }
+          ? { ok: failed === 0, failed, concurrency: workerCount, totalElapsedMs, results }
           : results[0]
       )}\n`,
       resolve

@@ -1,9 +1,11 @@
 # 16 — `v5.2` Multi-Color 6-Hue System, 4-Group Secondary Typography (`S01..S18`) & Seamless Cross-Boundary Flow
 
+> **Historical reference (v5.2).** Kept as design history; the current spec is [reference 21](./21_craft_json_minimal_spec.md) and the current process is [`SKILL.md`](../SKILL.md). Where this file disagrees with them, they win. Rule A1 and its Look S MP4 exception are stated once, in `SKILL.md` section 3.8.1.
+
 `pro-filmcraft-director v5.2` codifies the forensic lessons from the **`V14` flagship Z-depth build** into the new **`dviet_vietanh_zdepth_master`** archetype ([`visual_archetypes_catalog.json`](../presets/visual_archetypes_catalog.json)) and upgrades all 7 archetypes across color contrast, sub-text choreography, and cross-cut velocity continuity.
 
-### Forensic Post-Mortem: What `V14` Proved vs. What `v5.2` Solves
-* **Preserved `V14` Core (`4-Plane Z-Depth Sandwich`):**
+## Forensic Post-Mortem: What `V14` Proved vs. What `v5.2` Solves
+* **Preserved `V14` Core (`4-Layer Z-Depth Timeline Sandwich`; the code compositor has 3 planes, see [reference 13, Law 4](./13_dviet_19_videos_smooth_zoom_and_pacing_mastery.md)):**
   1. **Plane 1 (`V1`) — Living Studio Bokeh (`<= 28%` Luma):** Graded dark studio/bokeh plate clamped near `28%` luminance so skin tones and foreground accents separate cleanly without muddy crushed blacks.
   2. **Plane 2 (`V2–V3`) — `2.5D` Parallax Midground:** Hero display keywords, `clean_alpha_prop`, or structured cards tucked behind the speaker (`30–50%` torso/shoulder occlusion, `0%` `eye_band` collision).
   3. **Plane 3 (`V4–V5`) — Rim-Lit Speaker Cutout:** RVM / Clean Alpha foreground subject anchored to continuous `C²` eye-line camera motion.
@@ -42,8 +44,8 @@ Every Hero display word, visual block accent, and inline highlight draws from **
   - `"[cyan:luồng tự động] [gold:3 bước]"` (dual-semantic contrast beat)
 * **Linguistic & GPU Guardrails:**
   - Cap at **max `2` hues per phrase** (`1` semantic hue + `#FAFAFA` white, or `2` contrasting semantic hues on `versus` beats).
-  - Normalize to Unicode `NFC` first and obey `data/text_vi.json` (`1,200` `glue` pairs) so color tags never split a bisyllabic compound word across two lines.
-  - Whenever parent `opacity.blend != 0`, set `drop_shadow: false` across all spans (`FilmCraft 0.20.1` `wgpu` guard).
+  - Normalize to Unicode `NFC` first and obey `data/text_vi.json` (`1199` `glue` pairs) so color tags never split a bisyllabic compound word across two lines.
+  - Whenever parent `opacity.blend != 0`, set `drop_shadow: false` across all spans (`wgpu 0.20.1` guard inside FilmCraft `0.13.0`).
 
 ---
 

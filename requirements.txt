@@ -1,13 +1,16 @@
 # pro-filmcraft-director v7.9.0 — Python packages (install into ~/.venvs/video-skills)
-# Non-pip requirements (checked by scripts/env_status.py):
+# Non-pip requirements (REQUIRED; checked by scripts/env_status.py):
+#   FilmCraft >= 0.13.0   ~/.local/bin/filmcraft (or $CRAFT_BIN_DIR); compile gates 4/5 drive it via the vendored craftctl
+#   Xvfb (or Xephyr)      X server craftctl starts FilmCraft on ($CRAFT_DISPLAY, default :93); apt install xvfb
 #   node >= 22            web_cinema_plate_engine.mjs (0 npm dependencies)
 #   chrome / chromium     headless render of HTML5/CSS3/SVG plates
-#   ffmpeg + ffprobe 6.1+ ingest, render, loudness; the zoom self-test also needs ffmpeg
-#   matte model           u2netp or birefnet-portrait in ~/.rembg/models, or PFD_MATTE_MODEL=/path/model.onnx
-numpy>=1.26.0
-opencv-python>=4.9.0
-Pillow>=10.2.0
+#   ffmpeg + ffprobe 6.1+ ingest, render, loudness (encoders libx264, prores_ks, qtrle); the zoom self-test also needs ffmpeg
+#   matte model           u2netp (Look S studio cutouts) or birefnet-portrait in ~/.rembg/models, or PFD_MATTE_MODEL=/path/model.onnx
+# OpenCV stays on 4.x: OpenCV 5 has no CascadeClassifier and the Haar face gate silently falls back.
+# Install only the headless wheel (uninstall opencv-python first if present: both provide `cv2`).
+numpy>=1.26.0,<3
+opencv-python-headless>=4.9.0,<5
+Pillow>=10.2.0,<14
 onnxruntime>=1.17.0
 scipy>=1.12.0
-soundfile>=0.12.1
 faster-whisper>=1.0.0

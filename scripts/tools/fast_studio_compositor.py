@@ -2,6 +2,10 @@
 """
 Universal Studio Director v7.9.0 — Fast Studio Framing & C/AVX2 FFmpeg Compositor
 =================================================================================
+v7.9.0 audit fixes (7.9.1 driver): `probe_video` + `check_look_s_geometry` (ffprobe: video stream, dims, fps; Look S needs 9:16,
+drawn at 1080x1920) used by the CLI and `look_s_render.py` (the Look S CLI driver); the plate encoder never leaks ffmpeg or temp files;
+concat lists escape `'` and every temp name is unique (parallel safe); the full-width alpha cache is content-hashed and written atomically;
+Playfair lookup falls back to fontconfig with a loud WARNING; headline text is NFC-normalised.
 v7.9.0 (v4 review K2 / K4 / A1): `render_popout_studio_card` cleans dark source side bands (letterbox / dark wall edge) and small dark wall
 specks before the card is cut, refines the crown matte (guided filter on the photo + edge contrast, `crown_refine`), reports
 `source_bands_px`, `card_src_rect`, `crown_alpha`; `snap_punch` caps the flashed frame at mean luma 220 (photosensitivity). Gates: motion_gate.
@@ -30,8 +34,8 @@ Eliminates ALL 4 root causes of visual framing defects & slow CPU rendering:
      a 2x-supersampled dual-rim glass squircle + soft ambient elevation shadow.
    - Zero amputated sleeves, zero mid-air torso gap, zero muddy oval halo, ~2,000 fps!
 
-3. `get_or_build_fullwidth_neon_alpha(...)` + `apply_fullwidth_neon_rim_blackout(...)`:
-   - Full-width `x = 0..1080` speaker silhouette alpha cache (persistent SHA-keyed `.npz`)
+3. `get_or_build_fullwidth_person_alpha_seq(...)` + `apply_fullwidth_neon_rim_blackout(...)`:
+   - Full-width `x = 0..1080` speaker silhouette alpha cache (persistent `.npz` keyed by a SHA-256 of the sampled frames)
      with uncropped shoulders (`w = 1.0` across `0..1080` for `y_src >= 1125`) and explicit
      screen-border morphological gradient suppression so `VFX-02` Neon Rim-Contour wraps
      cleanly across the entire shoulder to `x = 1080` with ZERO vertical border laser lines!
@@ -51,6 +55,8 @@ import math
 import os
 import subprocess
 import sys
+import tempfile
+import unicodedata
 import warnings
 from pathlib import Path
 from typing import Any
@@ -81,6 +87,64 @@ class RenderGear:
     @classmethod
     def master(cls) -> "RenderGear":
         return cls(name="master", width=1080, height=1920, fps=60, crf=15, preset="veryfast")
+
+
+LOOK_S_W, LOOK_S_H = 1080, 1920   # every Look S constant (card / PiP rects, crown anchors, alpha cone) is in this portrait space
+_ASPECT_TOL = 0.01                # 9:16 within 1 % counts as portrait (e.g. 720x1280, 540x960, 2160x3840)
+_PROBE_TIMEOUT_S = 60
+
+
+def _parse_rate(txt: str | None) -> float:
+    try:
+        num, _, den = str(txt or "0/1").partition("/")
+        return float(num) / float(den or 1)
+    except (ValueError, ZeroDivisionError):
+        return 0.0
+
+
+def probe_video(path: Path | str) -> dict[str, Any]:
+    """ffprobe facts of a media file: {width, height, fps, duration, has_audio, codec}. Raises FileNotFoundError (no file) or
+    ValueError (ffprobe failed, no video stream, no width/height or no frame rate)."""
+    vp = Path(path)
+    if not vp.is_file():
+        raise FileNotFoundError(f"input not found: {vp}")
+    pr = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate:format=duration",
+         "-of", "json", str(vp)],
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=_PROBE_TIMEOUT_S,
+    )
+    if pr.returncode != 0:
+        raise ValueError(f"ffprobe cannot read {vp}: {pr.stderr.strip()[-300:]}")
+    doc = json.loads(pr.stdout or "{}")
+    streams = doc.get("streams") or []
+    video = next((s for s in streams if s.get("codec_type") == "video"), None)
+    if video is None:
+        raise ValueError(f"no video stream in {vp}")
+    w, h = int(video.get("width") or 0), int(video.get("height") or 0)
+    fps = _parse_rate(video.get("avg_frame_rate")) or _parse_rate(video.get("r_frame_rate"))
+    if w <= 0 or h <= 0:
+        raise ValueError(f"video stream of {vp} has no width/height")
+    if fps <= 0:
+        raise ValueError(f"video stream of {vp} has no frame rate")
+    try:
+        dur = float((doc.get("format") or {}).get("duration") or 0.0)
+    except ValueError:
+        dur = 0.0
+    return {"width": w, "height": h, "fps": round(fps, 4), "duration": round(dur, 4),
+            "has_audio": any(s.get("codec_type") == "audio" for s in streams), "codec": video.get("codec_name")}
+
+
+def check_look_s_geometry(width: int, height: int) -> dict[str, Any]:
+    """Look S input geometry verdict: `exact` (1080x1920), `scale` (other 9:16 portrait: resized to 1080x1920 once, a warning)
+    or `refuse` (not 9:16: card / PiP / crown geometry would be wrong; reframe to 9:16 first)."""
+    if (width, height) == (LOOK_S_W, LOOK_S_H):
+        return {"status": "exact", "message": f"{width}x{height} matches the Look S geometry"}
+    want = LOOK_S_W / LOOK_S_H
+    if height > 0 and abs(width / height - want) / want <= _ASPECT_TOL:
+        return {"status": "scale", "message": f"{width}x{height} is 9:16 but not 1080x1920: frames are scaled to 1080x1920 "
+                                              f"({'upscaled, softer' if width < LOOK_S_W else 'downscaled'})"}
+    return {"status": "refuse", "message": f"{width}x{height} is not 9:16 portrait: Look S geometry (cards, PiP, crown anchors) "
+                                           "assumes 1080x1920; reframe the A-roll to 9:16 first"}
 
 
 _FULL_CARD_RIG_CACHE: dict[tuple[Any, ...], dict[str, Any]] = {}
@@ -780,8 +844,23 @@ def _smooth01(e0: float, e1: float, x: np.ndarray) -> np.ndarray:
     return t * t * (3.0 - 2.0 * t)
 
 
+def _fontconfig_playfair_italic() -> Path | None:
+    """Playfair Display Italic via fontconfig (`fc-list`), or None (no fontconfig, no match, or only upright faces)."""
+    try:
+        pr = subprocess.run(["fc-list", ":family=Playfair Display", "file", "style"], capture_output=True, text=True,
+                            encoding="utf-8", errors="replace", timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    for line in sorted(pr.stdout.splitlines()):
+        path, _, style = line.partition(":")
+        if "italic" in style.lower() and Path(path.strip()).is_file():
+            return Path(path.strip())
+    return None
+
+
 def _find_playfair_italic() -> Path:
-    """Installed Playfair Display Italic only (env `PFD_FONT_DIR`, then the user font folders). Never a download."""
+    """Installed Playfair Display Italic only (env `PFD_FONT_DIR`, then the user font folders, then fontconfig with a loud
+    WARNING). Never a download, never a silent substitute font."""
     home = Path.home() / ".local" / "share" / "fonts"
     roots = ([Path(os.environ["PFD_FONT_DIR"]).expanduser()] if os.environ.get("PFD_FONT_DIR") else []) + [
         home, home / "PR_Fonts", home / "tnedit", home / "TNEDIT_DViet" / "Lien_ket_thu_vien_co_san"]
@@ -789,7 +868,13 @@ def _find_playfair_italic() -> Path:
         for name in _PLAYFAIR_IT_NAMES:
             if (root / name).is_file():
                 return root / name
-    raise FileNotFoundError(f"Playfair Display Italic not installed (looked for {_PLAYFAIR_IT_NAMES} in {[str(r) for r in roots]})")
+    fc = _fontconfig_playfair_italic()
+    if fc is not None:
+        print(f"WARNING: Playfair Display Italic not found in {[str(r) for r in roots]}; using the fontconfig match {fc} "
+              "(set PFD_FONT_DIR to pin the font file).", file=sys.stderr)
+        return fc
+    raise FileNotFoundError(f"Playfair Display Italic not installed (looked for {_PLAYFAIR_IT_NAMES} in {[str(r) for r in roots]} "
+                            "and via fontconfig `fc-list :family=\"Playfair Display\"`)")
 
 
 def render_lavender_paper(
@@ -840,9 +925,12 @@ def render_gradient_italic_headline(
     font_path: str | Path | None = None,
 ) -> np.ndarray:
     """Big Playfair Display Italic headline with a vertical colour gradient (`top_rgb` -> `bottom_rgb` after `fade_start`,
-    fraction of the glyph height) over the backdrop, plus an optional small `sub` word. Returns a new BGR uint8 frame."""
+    fraction of the glyph height) over the backdrop, plus an optional small `sub` word. Returns a new BGR uint8 frame.
+    Text is NFC-normalised first (Vietnamese diacritics from NFD sources would otherwise draw as detached combining marks)."""
     from PIL import ImageFont
 
+    text = unicodedata.normalize("NFC", text)
+    sub = unicodedata.normalize("NFC", sub) if sub else sub
     H, W = backdrop_bgr.shape[:2]
     fp = Path(font_path) if font_path else _find_playfair_italic()
     f = _fit_italic(fp, weight, text, target_w)
@@ -1282,7 +1370,7 @@ def verify_audio_voice_sync_guard(
 
     pr = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", str(vp)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", check=True, timeout=_PROBE_TIMEOUT_S,
     )
     voice_dur = float(pr.stdout.strip())
     drift = abs(voice_dur - float(target_duration_sec))
@@ -1294,7 +1382,7 @@ def verify_audio_voice_sync_guard(
 
     raw = subprocess.run(
         ["ffmpeg", "-v", "error", "-i", str(vp), "-ac", "1", "-ar", "16000", "-f", "s16le", "-"],
-        capture_output=True, check=True,
+        capture_output=True, check=True, timeout=_ENCODE_WAIT_S,
     ).stdout
     pcm = np.frombuffer(raw, dtype=np.int16).astype(np.float32) * (1.0 / 32768.0)
     win = 400
@@ -1339,6 +1427,17 @@ def verify_audio_voice_sync_guard(
 # ==============================================================================
 # 3. FULL-WIDTH (0..1080) NEON CONTOUR ALPHA & BORDER-SAFE NEON BLACKOUT
 # ==============================================================================
+def _alpha_seq_digest(frames: list[np.ndarray], pms: list[np.ndarray | None] | None, stride: int) -> str:
+    """SHA-256 (16 hex) of everything the full-width alpha depends on: count, stride, shape and the stride key frames' bytes."""
+    h = hashlib.sha256(f"v791|{len(frames)}|{stride}|{frames[0].shape if frames else ()}".encode("utf-8"))
+    keys = sorted(set(range(0, len(frames), max(1, stride))) | ({len(frames) - 1} if frames else set()))
+    for i in keys:
+        h.update(np.ascontiguousarray(frames[i]).tobytes())
+        pm = pms[i] if (pms is not None and i < len(pms)) else None
+        h.update(b"-" if pm is None else np.ascontiguousarray(pm).tobytes())
+    return h.hexdigest()[:16]
+
+
 def get_or_build_fullwidth_person_alpha_seq(
     cache_dir: Path,
     seg_tag: str,
@@ -1347,9 +1446,12 @@ def get_or_build_fullwidth_person_alpha_seq(
     *,
     stride: int = 3,
 ) -> np.ndarray:
+    """Full-width person alpha (half-res uint8, nf x H/2 x W/2) for a segment, cached as `.npz` in `cache_dir`.
+    The cache key is a SHA-256 of the frame count, stride, shape and the content of the stride key frames (+ the RVM mattes when
+    given), so new frames under the same `seg_tag` never hit a stale cache. Written to a temp file then `os.replace`d (atomic)."""
     cache_dir.mkdir(parents=True, exist_ok=True)
     nf = len(frames_clean_bgr)
-    npz_p = cache_dir / f"fullwidth_alpha_{seg_tag}_{nf}f_v73.npz"
+    npz_p = cache_dir / f"fullwidth_alpha_{seg_tag}_{nf}f_{_alpha_seq_digest(frames_clean_bgr, cached_pms_u8, stride)}.npz"
     if npz_p.is_file():
         return np.load(npz_p)["alpha_h"]
 
@@ -1428,7 +1530,14 @@ def get_or_build_fullwidth_person_alpha_seq(
             af = key_alphas[k0] * (1.0 - w1) + key_alphas[k1] * w1
         out_half[i, hy0:hh, 0:hw] = np.clip(af + 0.5, 0.0, 255.0).astype(np.uint8)
 
-    np.savez_compressed(npz_p, alpha_h=out_half)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{npz_p.stem}.", suffix=".tmp.npz", dir=cache_dir)
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            np.savez_compressed(fh, alpha_h=out_half)
+        os.replace(tmp_name, npz_p)
+    except BaseException:
+        Path(tmp_name).unlink(missing_ok=True)
+        raise
     return out_half
 
 
@@ -1503,6 +1612,22 @@ def compute_segment_config_hash(payload: dict[str, Any]) -> str:
     return hashlib.sha256(blob).hexdigest()[:16]
 
 
+_ENCODE_WAIT_S = 600       # ffmpeg drain after the last frame
+_COMPOSE_TIMEOUT_S = 3600  # one master compose (a 60 s 60 fps master takes ~90 s)
+
+
+def _unique_tmp(dst: Path, suffix: str | None = None) -> Path:
+    """A fresh hidden temp path next to `dst` (same folder, so `replace` is atomic); parallel runs never share a name."""
+    fd, name = tempfile.mkstemp(prefix=f".tmp_{dst.stem}.", suffix=suffix if suffix is not None else dst.suffix, dir=dst.parent)
+    os.close(fd)
+    return Path(name)
+
+
+def _concat_line(p: Path) -> str:
+    """One ffconcat `file` line; a `'` in the path is written as `'\\''` (close quote, escaped quote, reopen)."""
+    return "file '" + str(p.resolve()).replace("'", "'\\''") + "'"
+
+
 def pipe_encode_single_plate_fast(
     frame_iter,
     dst_mp4: Path,
@@ -1513,9 +1638,11 @@ def pipe_encode_single_plate_fast(
     """
     Encodes ONE clean plate stream (`_plate_seg_XX.mp4`) directly to H.264 — 50% less encoding
     work than dual-stream `pipe_encode_dual_bgr_fast`!
+    The output appears only on success (unique temp file + replace). If `frame_iter` raises, ffmpeg dies (BrokenPipe) or exits
+    non-zero, ffmpeg is killed and reaped and the temp file removed; iterator errors propagate, ffmpeg failures raise RuntimeError.
     """
     dst_mp4.parent.mkdir(parents=True, exist_ok=True)
-    tmp_mp4 = dst_mp4.parent / f".tmp_{dst_mp4.name}"
+    tmp_mp4 = _unique_tmp(dst_mp4)
     cmd = [
         "ffmpeg", "-y", "-v", "error", "-threads", str(threads),
         "-f", "rawvideo", "-pix_fmt", "bgr24",
@@ -1524,17 +1651,44 @@ def pipe_encode_single_plate_fast(
         "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", "-color_range", "tv",
         "-pix_fmt", "yuv420p", str(tmp_mp4),
     ]
-    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    assert proc.stdin is not None
-    for bgr in frame_iter:
-        if bgr.shape[1] != gear.width or bgr.shape[0] != gear.height:
-            bgr = cv2.resize(bgr, (gear.width, gear.height), interpolation=cv2.INTER_AREA)
-        proc.stdin.write(bgr.tobytes())
-    proc.stdin.close()
-    rc = proc.wait()
-    if rc != 0:
-        raise RuntimeError(f"FFmpeg plate encode failed for {dst_mp4} (rc={rc})")
-    tmp_mp4.replace(dst_mp4)
+    err_log = tempfile.TemporaryFile()   # a file, not a pipe: a chatty ffmpeg can never block on stderr while we feed stdin
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=err_log)
+    if proc.stdin is None:
+        raise RuntimeError("ffmpeg stdin pipe was not opened")
+
+    def _err_tail() -> str:
+        err_log.seek(0)
+        return err_log.read().decode("utf-8", "replace").strip()[-400:]
+
+    ok = False
+    try:
+        try:
+            for bgr in frame_iter:
+                if bgr.shape[1] != gear.width or bgr.shape[0] != gear.height:
+                    bgr = cv2.resize(bgr, (gear.width, gear.height), interpolation=cv2.INTER_AREA)
+                proc.stdin.write(bgr.tobytes())
+            proc.stdin.close()
+        except BrokenPipeError as exc:   # frame_iter errors (incl. OSError) propagate unchanged
+            proc.kill()
+            proc.wait()
+            raise RuntimeError(f"FFmpeg plate encode failed for {dst_mp4} (pipe closed: {exc}; rc={proc.returncode}): {_err_tail()}") from exc
+        rc = proc.wait(timeout=_ENCODE_WAIT_S)
+        if rc != 0:
+            raise RuntimeError(f"FFmpeg plate encode failed for {dst_mp4} (rc={rc}): {_err_tail()}")
+        tmp_mp4.replace(dst_mp4)
+        ok = True
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait()
+        if not proc.stdin.closed:
+            try:
+                proc.stdin.close()
+            except OSError:
+                pass
+        err_log.close()
+        if not ok:
+            tmp_mp4.unlink(missing_ok=True)
 
 
 def compose_master_mp4_via_ffmpeg(
@@ -1554,8 +1708,8 @@ def compose_master_mp4_via_ffmpeg(
     (`Flash-Out`, `Film-Burn`, `Light-Leak`), clamps broadcast BT.709 TV range, and muxes AAC!
     """
     out_mp4.parent.mkdir(parents=True, exist_ok=True)
-    concat_txt = out_mp4.parent / f".concat_{gear.name}.txt"
-    concat_txt.write_text("\n".join(f"file '{p.resolve()}'" for p in plate_segs), encoding="utf-8")
+    concat_txt = _unique_tmp(out_mp4, ".concat.txt")
+    concat_txt.write_text("\n".join(_concat_line(Path(p)) for p in plate_segs) + "\n", encoding="utf-8")
 
     cmd: list[str] = [
         "ffmpeg", "-y", "-v", "error", "-threads", str(threads),
@@ -1637,7 +1791,7 @@ def compose_master_mp4_via_ffmpeg(
         f"setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv[vout]"
     )
 
-    tmp_out = out_mp4.parent / f".tmp_{out_mp4.name}"
+    tmp_out = _unique_tmp(out_mp4)
     cmd.extend(
         [
             "-filter_complex", ";".join(filter_parts),
@@ -1649,9 +1803,14 @@ def compose_master_mp4_via_ffmpeg(
             "-movflags", "+faststart", "-shortest", str(tmp_out),
         ]
     )
-    subprocess.run(cmd, check=True)
-    tmp_out.replace(out_mp4)
-    concat_txt.unlink(missing_ok=True)
+    try:
+        pr = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=_COMPOSE_TIMEOUT_S)
+        if pr.returncode != 0:
+            raise RuntimeError(f"FFmpeg master compose failed for {out_mp4} (rc={pr.returncode}): {pr.stderr.strip()[-600:]}")
+        tmp_out.replace(out_mp4)
+    finally:
+        tmp_out.unlink(missing_ok=True)
+        concat_txt.unlink(missing_ok=True)
 
 
 # ==============================================================================
@@ -1664,14 +1823,16 @@ def _build_arg_parser() -> "argparse.ArgumentParser":
         prog="fast_studio_compositor.py",
         description=(
             "Universal Studio Director v7.9.0 — Fast Studio Framing & FFmpeg Compositor. This CLI is a plain re-encode "
-            "at the chosen gear; the studio look is the Python API, see the studio recipe (SKILL.md / references)."
+            "at the chosen gear; the studio look is the Python API or the Look S driver look_s_render.py (scenes.json -> master MP4)."
         ),
     )
     ap.add_argument("--list-options", action="store_true", help="Print render gears and matte-model resolution, then exit")
     gear = ap.add_mutually_exclusive_group()
     gear.add_argument("--draft", action="store_true", help="Draft gear: 540x960 @ 30 fps, CRF 20, ultrafast")
     gear.add_argument("--master", action="store_true", help="Master gear: 1080x1920 @ 60 fps, CRF 15, veryfast")
-    ap.add_argument("--input", help="Input video; the studio frame is validated against it (probe only)")
+    ap.add_argument("--input", help="Input video. Checked with ffprobe: it must exist and carry a video stream with width, height and a "
+                                    "frame rate (else exit 2); a non-9:16 or non-1080x1920 input is reported as a WARNING on stderr "
+                                    "and cover-scaled / centre-cropped to the gear")
     ap.add_argument("--out", help="Output .mp4 path (plain re-encode at the chosen gear: no cards, PiP, plates or matte; the studio look is the Python API, see studio recipe)")
     return ap
 
@@ -1694,16 +1855,26 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     gear = gears["master" if args.master else "draft"]
     src, dst = Path(args.input), Path(args.out)
-    if not src.is_file():
-        print(f"fast_studio_compositor: input not found: {src}", file=sys.stderr)
+    try:
+        info = probe_video(src)
+    except (FileNotFoundError, ValueError, subprocess.TimeoutExpired) as exc:
+        print(f"fast_studio_compositor: {exc}", file=sys.stderr)
         return 2
+    geo = check_look_s_geometry(info["width"], info["height"])
+    if geo["status"] != "exact":
+        print(f"fast_studio_compositor: WARNING: {geo['message']} (this re-encode cover-scales and centre-crops to "
+              f"{gear.width}x{gear.height})", file=sys.stderr)
     dst.parent.mkdir(parents=True, exist_ok=True)
     vf = f"scale={gear.width}:{gear.height}:force_original_aspect_ratio=increase,crop={gear.width}:{gear.height},fps={gear.fps}"
     cmd = [
         "ffmpeg", "-y", "-v", "error", "-i", str(src), "-vf", vf, "-c:v", "libx264", "-preset", gear.preset,
         "-crf", str(gear.crf), "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(dst),
     ]
-    return subprocess.run(cmd, check=False).returncode
+    try:
+        return subprocess.run(cmd, check=False, timeout=_COMPOSE_TIMEOUT_S).returncode
+    except subprocess.TimeoutExpired:
+        print(f"fast_studio_compositor: ffmpeg timed out after {_COMPOSE_TIMEOUT_S} s", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

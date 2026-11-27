@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -35,6 +36,7 @@ PRESETS = SKILL_ROOT / "presets"
 CONTRACT_PATH = PRESETS / "broll_lint_contract.json"
 PAIN_PATH = PRESETS / "pain_keywords.json"
 PROBE_AND_ALIGN = Path(__file__).resolve().parent / "probe_and_align.py"
+PROBE_TIMEOUT_S = float(os.environ.get("PFD_PROBE_TIMEOUT_S") or 3600)  # ASR of a long raw video; never hangs forever
 
 PAUSE_SPLIT_SEC = 0.45
 ACTION_CUES = (
@@ -394,6 +396,20 @@ def claim_triggers(text: str, contract: dict) -> list[str]:
     return found
 
 
+def prompt_rule_hits(prompt: str, contract: dict) -> dict[str, list[str]]:
+    """v7.9.1: the shared token matcher of the ONE B-roll lint (also used by visual_blocks.lint_broll_prompt).
+    {rule code: matched tokens} for TEXT_IN_IMAGE, BRAND, FACE (allowed_phrases removed first) and R200; empty lists dropped."""
+    low = unicodedata.normalize("NFC", str(prompt or "")).strip().lower()
+    rules = contract["rules"]
+    hits = {code: _hits(low, rules[code]["tokens"]) for code in ("TEXT_IN_IMAGE", "BRAND")}
+    face_low = low
+    for ok in rules["FACE"].get("allowed_phrases", []):
+        face_low = _phrase_re(ok).sub(" ", face_low)
+    hits["FACE"] = _hits(face_low, rules["FACE"]["tokens"])
+    hits["R200"] = _hits(low, rules["R200"]["evidence_terms"])
+    return {k: v for k, v in hits.items() if v}
+
+
 def lint_prompt(prompt: str, anchor_quote: str | None, slot_text: str | None, contract: dict) -> list[dict[str, str]]:
     """The ONE ingest-level B-roll lint. Returns [{code, message, hint}]; empty list = pass."""
     errs: list[dict[str, str]] = []
@@ -414,20 +430,14 @@ def lint_prompt(prompt: str, anchor_quote: str | None, slot_text: str | None, co
             add("WORDS", f"{n} words, need {contract['min_words']}-{contract['max_words']}")
         if VI_DIACRITICS_RE.search(text):
             add("NOT_ENGLISH", "contains Vietnamese letters; the prompt must be 100 percent English", "translate the scene, keep it concrete")
-        low = text.lower()
+        hits = prompt_rule_hits(text, contract)
         for code in ("TEXT_IN_IMAGE", "BRAND"):
-            hit = _hits(low, rules[code]["tokens"])
-            if hit:
-                add(code, f"banned words: {', '.join(hit)}", rules[code]["hint"])
-        face_low = low
-        for ok in rules["FACE"].get("allowed_phrases", []):
-            face_low = _phrase_re(ok).sub(" ", face_low)
-        face = _hits(face_low, rules["FACE"]["tokens"])
-        if face:
-            add("FACE", f"shows a face: {', '.join(face)}", rules["FACE"]["hint"])
-        ev = _hits(low, rules["R200"]["evidence_terms"])
-        if ev:
-            add("R200", f"would pass as claim evidence: {', '.join(ev)}", rules["R200"]["hint"])
+            if hits.get(code):
+                add(code, f"banned words: {', '.join(hits[code])}", rules[code]["hint"])
+        if hits.get("FACE"):
+            add("FACE", f"shows a face: {', '.join(hits['FACE'])}", rules["FACE"]["hint"])
+        if hits.get("R200"):
+            add("R200", f"would pass as claim evidence: {', '.join(hits['R200'])}", rules["R200"]["hint"])
     if contract.get("require_anchor_quote", True):
         anchor = nfc_lower(anchor_quote or "").strip()
         if not anchor:
@@ -502,8 +512,11 @@ def check_prompts_against_plan(plan: dict[str, Any], prompts: list[Any], contrac
 def _transcribe_with_probe(video: Path, work: Path) -> Path:
     """words_tl.json for a raw video via probe_and_align.py (faster-whisper inside); the brain reuses it afterwards."""
     probe_dir = work / "probe"
-    r = subprocess.run([sys.executable, str(PROBE_AND_ALIGN), "--input", str(video), "--work", str(probe_dir), "--tier", "fast"],
-                       capture_output=True, text=True)
+    try:
+        r = subprocess.run([sys.executable, str(PROBE_AND_ALIGN), "--input", str(video), "--work", str(probe_dir), "--tier", "fast"],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=PROBE_TIMEOUT_S)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"probe_and_align.py did not finish within {PROBE_TIMEOUT_S:.0f} s (env PFD_PROBE_TIMEOUT_S)") from exc
     found = sorted(probe_dir.rglob("words_tl.json"))
     if r.returncode != 0 or not found:
         raise RuntimeError(f"probe_and_align.py gave no words_tl.json (rc={r.returncode}): {(r.stderr or r.stdout)[-300:]}")

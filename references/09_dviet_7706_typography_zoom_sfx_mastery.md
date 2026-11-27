@@ -1,4 +1,4 @@
-# `@__dviet` `7706183278461570356` Master Blueprint: 7 Typography Entrances, Asymmetric Bezier Zoom & 53-Event Multi-Layer SFX
+# 09 — `@__dviet` `7706183278461570356` Master Blueprint: 7 Typography Entrances, Asymmetric Bezier Zoom & 53-Event Multi-Layer SFX
 
 Tài liệu này đúc kết toàn bộ công thức toán học từng frame (`24fps`/`60fps`) từ video chuẩn mực `7706183278461570356` và `7666801391284964628` của `@__dviet`, giải quyết triệt để 3 trụ cột của một Video Editor chuyên nghiệp:
 1. **Hiệu ứng xuất hiện của từng chữ (7 Typography Entrance & Build-Up Choreography)**

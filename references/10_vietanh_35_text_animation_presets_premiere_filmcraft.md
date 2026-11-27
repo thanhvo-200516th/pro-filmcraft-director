@@ -1,4 +1,4 @@
-# Giải Phẫu 35 Preset Text Animation (`@vietanh.videoeditor/video/7686349228712512788`) — Từ Adobe Premiere Pro sang FilmCraft (`.fcproj` v17 & Python Engine)
+# 10 — Giải Phẫu 35 Preset Text Animation (`@vietanh.videoeditor/video/7686349228712512788`) — Từ Adobe Premiere Pro sang FilmCraft (`.fcproj` v17 & Python Engine)
 
 Tài liệu này bóc tách chi tiết từng khung hình (`1080x1920 @ 30fps`, `470 frames`) của bộ **35 Preset Text Animation / Caption Typography** từ video mẫu `@vietanh.videoeditor/video/7686349228712512788` (*"PRESET CAPTION — Kéo thả là sử dụng"*), chỉ rõ:
 1. **Giải phẫu Chuyển động từng Frame (Frame-by-Frame Motion Anatomy)**

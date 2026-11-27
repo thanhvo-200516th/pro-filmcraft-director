@@ -1,4 +1,4 @@
-# 7 Quy Luật Nhịp Dựng Talking-Head Đương Đại (`60fps`) & Phong Cách Đạo Diễn Đặc Trưng (Signature Fluid Rhythm)
+# 11 — 7 Quy Luật Nhịp Dựng Talking-Head Đương Đại (`60fps`) & Phong Cách Đạo Diễn Đặc Trưng (Signature Fluid Rhythm)
 
 Tài liệu này đúc kết từ kết quả nghiên cứu và phản biện của 3 Agent chuyên gia trên bộ dữ liệu 13 video `@__dviet`, 66 video `@xuanart.visual`, cùng chuẩn dựng Talking-Head quốc tế (**Hayden Hillier-Smith, Devin Jatho, Iman Gadzhi, Ali Abdaal**), giải quyết triệt để hiện tượng **video bị cứng, đơ máy, hoặc cắt khúc rời rạc như slide PowerPoint**.
 
@@ -32,7 +32,9 @@ Tại mọi biên chuyển cảnh $t_{\text{cut}}$:
 Ở mọi frame $t$ trong cảnh có tổng thời lượng $T$:
 $$z(t) = z_{\text{bezier}}(t) + \underbrace{0.032\,t}_{\text{Continuous Dolly Creep}} + \underbrace{\sum_{k} 0.042\sin\!\left(\frac{t - t_{\text{emp},k}}{0.22}\pi\right)\mathbf{1}_{[0,0.22]}(t - t_{\text{emp},k})}_{\text{Vocal Prosody Micro-Punch}} + \underbrace{0.055\!\left(\frac{t - (T - 0.10)}{0.10}\right)^2\mathbf{1}_{[T-0.10, T]}(t)}_{\text{6f Pre-Cut Anticipation}}$$
 
-### 2.3. Kiến Trúc 4 Lớp Chiều Sâu (`4-Plane Z-Depth Speaker Cutout Sandwich`)
+### 2.3. Kiến Trúc 4 Lớp Chiều Sâu Trên Timeline (`Z-Depth Speaker Cutout Sandwich`)
+
+> Bốn lớp dưới đây là **thứ tự track trên timeline**. Bộ ghép trong mã có **3 mặt phẳng** (`LayeredFrameCompositor` trong `scripts/dviet_smooth_camera_engine.py`: plate, midground, foreground UI); lớp `V2.5` chữ sau vai là midground với cờ `z_plane: "behind_subject"`. Xem [tài liệu 13, Luật 4](./13_dviet_19_videos_smooth_zoom_and_pacing_mastery.md).
 1. **`V1` (Deep Living Canvas):** Full-bleed `1080x1920` 2.5D Parallax hoặc **Living Blurred Studio A-Roll** (`28%` độ sáng, `28px` Gaussian Blur, giữ nguyên chuyển động ánh sáng phòng quay + hạt Bokeh vàng trôi). Tuyệt đối không dùng nền đen chết `#000000` / `#0E0C10`.
 2. **`V2` (Mid-Ground Visual Proof & Bento Cards):** Thẻ Bento kính mờ (`Glassmorphism`), khung ngắm máy ảnh (`Camera Viewfinder HUD`), hoặc ảnh sản phẩm 2.5D.
 3. **`V2.5` (Behind-Shoulder Typography):** Các hiệu ứng chữ `@vietanh.videoeditor` (`#14 Golden Bokeh`, `#8 Error Laser Strikethrough`, `#4 Dual Cursor Bars`, `#29/#31 Horizon Gradient Rise`, `#15/#27 Overlapping Character Roll-Out`).

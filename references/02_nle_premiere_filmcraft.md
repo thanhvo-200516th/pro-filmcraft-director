@@ -1,4 +1,4 @@
-# Trụ cột 2, 3 & 5: Kỹ năng NLE Premiere Pro ↔ FilmCraft (`.fcproj v17`)
+# 02 — Trụ cột 2, 3 & 5: Kỹ năng NLE Premiere Pro ↔ FilmCraft (`.fcproj v17`)
 
 ## 1. Kiến trúc Track Chuẩn Studio (`8V + 8A`)
 - **Video Tracks (Bottom-Up):**

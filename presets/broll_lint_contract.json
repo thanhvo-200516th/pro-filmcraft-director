@@ -7,6 +7,10 @@
  "min_words": 8,
  "max_words": 60,
  "require_anchor_quote": true,
+ "single_source_v791": {
+  "_doc": "v7.9.1: this file is the ONE B-roll prompt lint (supersedes the 'supersedes' note above, which describes v7.4-v7.9.0). Both linters read min_words / max_words and every rule list from here and share broll_from_video.prompt_rule_hits: broll_from_video.py check-prompts (ingest; also needs anchor_quote) and visual_blocks.lint_broll_prompt (plate prompts; no anchor). visual_blocks.BROLL_BANNED_TOKENS is derived = TEXT_IN_IMAGE + BRAND tokens; FACE (with allowed_phrases) and R200 apply to both.",
+  "used_by": ["scripts/tools/broll_from_video.py", "scripts/tools/visual_blocks.py"]
+ },
  "plan": {
   "_doc": "Slot planning thresholds used by `analyze` (rules D1 and E2).",
   "min_broll_share": 0.25,

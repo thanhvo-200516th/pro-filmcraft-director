@@ -1,4 +1,4 @@
-# Forensics 4 Tầng Từng Frame: `@__dviet` & Video Mẫu (`7706183278461570356` & `7707599674923896070`)
+# 06 — Forensics 4 Tầng Từng Frame: `@__dviet` & Video Mẫu (`7706183278461570356` & `7707599674923896070`)
 
 Tài liệu tổng hợp dữ liệu đo kiểm định từng frame từ 2 video mẫu thực tế:
 - **`@__dviet` Story (`7706183278461570356`):** `1440×1080`, `24fps` (`41.67ms/frame`), `61.125s` (`1467 frames`), `-11.3 LUFS`, `LRA 1.7 LU`, `23` transitions.

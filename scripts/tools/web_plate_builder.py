@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Universal Studio Director v7.1 — Web-Cinema Studio Plate & Kinetic Typography Builder (`web_plate_builder.py`)
-==============================================================================================================
+Universal Studio Director v7.9.1 — Web-Cinema Studio Plate & Kinetic Typography Builder (`web_plate_builder.py`)
+================================================================================================================
 Replaces legacy PIL/OpenCV raster cards and static PNG hero stamps with:
   - 8 Studio UI / 3D Card Templates (upgraded with continuous 3D parallax breathing, sweeping specular
     glass sheen, real-second syllable triggers, and full-duration live typing)
@@ -38,9 +38,11 @@ rendered into 60fps ProRes 4444 (`yuva444p10le`) / `qtrle` `.mov` overlays and R
 Python API:
   - `KINETIC_TYPO_TEMPLATES`
   - `render_kinetic_typo_mov(template, props, out_path, ...)`
-  - `render_kinetic_typo_batch(jobs, concurrency=4, ...)`
+  - `render_kinetic_typo_batch(jobs, concurrency=None, workspace_context=None, work_dir=None, ...)`
   - `render_web_plate(template, props, out_path, ...)`
-  - `render_web_plates_batch(jobs, concurrency=4, ...)`
+  - `render_web_plates_batch(jobs, concurrency=None, workspace_context=None, work_dir=None, ...)`
+    (v7.9.1: Chrome tabs = `resolve_chrome_workers`: <= 4, env `PFD_CHROME_WORKERS`, workspace_context `max_chrome_workers`)
+  - `strip_media_metadata(path)` (v7.9.1 shared helper: strip-media-metadata skill, else ffmpeg / PIL, loud warning)
   - `render_studio_card_mov(template, props, out_path, ...)`
   - `render_dviet_typo_cluster_png(..., allow_static_thumbnail=False)`
   - `build_template_html(template, props, width=..., height=...)`
@@ -83,6 +85,8 @@ STRIP_METADATA_Candidates = [
 ]
 
 # v7.7.0: the TNEDIT font folder is a SEARCH LIST (first hit wins); env `PFD_FONT_DIR` is tried before it.
+# v7.9.1: these user folders are OPTIONAL extra search dirs: `PFD_FONT_DIR` (os.pathsep list) comes first and fontconfig
+# (`fc-list`, any installed file with the same name) is the last resort; a face that still resolves nowhere warns loudly.
 FONT_ROOTS_TNEDIT: tuple[Path, ...] = (
     Path.home() / ".local/share/fonts/tnedit",
     Path.home() / ".local/share/fonts/TNEDIT_DViet/Lien_ket_thu_vien_co_san",
@@ -474,17 +478,89 @@ def resolve_node_binary() -> str:
     )
 
 
-def strip_media_metadata_if_available(file_path: Path) -> None:
-    """Runs local lossless strip_metadata.py if available so deliverables remain clean."""
+IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff")
+METADATA_STRIP_TIMEOUT_S = 300.0
+
+
+def _resolve_ffmpeg_bin() -> str | None:
+    for cand in (os.environ.get("FFMPEG_BIN", ""), str(Path.home() / ".local/bin/ffmpeg"), shutil.which("ffmpeg") or ""):
+        if cand and os.path.isfile(cand) and os.access(cand, os.X_OK):
+            return cand
+    return None
+
+
+def _strip_image_with_pil(path: Path, keep_icc: bool) -> None:
+    """Re-save the pixels without EXIF / XMP / text chunks (JPEG keeps its quantisation tables, quality="keep")."""
+    from PIL import Image  # lazy: the HTML builders never need PIL
+
+    tmp = path.with_name(f".{path.name}.strip{path.suffix}")
+    with Image.open(path) as im:
+        im.load()
+        fmt = im.format
+        keep = {k: im.info[k] for k in ("transparency",) if k in im.info}
+        if keep_icc and im.info.get("icc_profile"):
+            keep["icc_profile"] = im.info["icc_profile"]
+        im.info = keep
+        im.save(tmp, format=fmt, **({"quality": "keep"} if fmt == "JPEG" else {}), **keep)
+    os.replace(tmp, path)
+
+
+def _strip_video_with_ffmpeg(path: Path) -> bool:
+    ff = _resolve_ffmpeg_bin()
+    if not ff:
+        return False
+    tmp = path.with_name(f".{path.stem}.strip{path.suffix}")
+    cmd = [ff, "-y", "-v", "error", "-i", str(path), "-map", "0:v?", "-map", "0:a?", "-map_metadata", "-1", "-map_chapters", "-1",
+           "-c", "copy", "-fflags", "+bitexact", "-flags:v", "+bitexact", "-flags:a", "+bitexact", str(tmp)]
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=METADATA_STRIP_TIMEOUT_S,
+                           check=False)
+    except (OSError, subprocess.SubprocessError):
+        tmp.unlink(missing_ok=True)
+        return False
+    if r.returncode != 0 or not tmp.is_file() or tmp.stat().st_size == 0:
+        tmp.unlink(missing_ok=True)
+        return False
+    os.replace(tmp, path)
+    return True
+
+
+def strip_media_metadata(file_path: str | Path, *, keep_icc: bool = True) -> str:
+    """v7.9.1 shared metadata strip for every deliverable (web_plate_builder, typography_composer, dviet_motion_canvas_engine,
+    visual_blocks). Order: the sibling skill strip-media-metadata (`STRIP_METADATA_Candidates`, lossless) -> built-in fallback
+    (images: PIL re-save without EXIF / text chunks; video: `ffmpeg -map_metadata -1 -c copy`). Returns the method that worked
+    ("strip-media-metadata", "pil", "ffmpeg") or "" after a LOUD warning when nothing could strip the file. Missing file -> ""."""
+    p = Path(file_path)
+    if not p.is_file():
+        return ""
     for script in STRIP_METADATA_Candidates:
         if script.is_file():
-            subprocess.run(
-                [sys.executable, str(script), "--keep-icc", str(file_path)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-            return
+            try:
+                r = subprocess.run([sys.executable, str(script), *(["--keep-icc"] if keep_icc else []), str(p)], capture_output=True,
+                                   text=True, encoding="utf-8", errors="replace", timeout=METADATA_STRIP_TIMEOUT_S, check=False)
+                if r.returncode == 0:
+                    return "strip-media-metadata"
+            except (OSError, subprocess.SubprocessError):
+                pass
+            break
+    if p.suffix.lower() in IMAGE_SUFFIXES:
+        try:
+            _strip_image_with_pil(p, keep_icc)
+            return "pil"
+        except Exception as exc:  # noqa: BLE001 - reported below, never silent
+            err = f"PIL re-save failed: {exc}"
+    else:
+        err = "ffmpeg -map_metadata -1 failed" if _resolve_ffmpeg_bin() else "ffmpeg not found"
+        if _strip_video_with_ffmpeg(p):
+            return "ffmpeg"
+    warnings.warn(f"METADATA NOT STRIPPED: {p} (strip-media-metadata skill not installed / failed; {err}). The file may still carry "
+                  "EXIF / XMP / C2PA / generator tags: strip it before delivery.", stacklevel=2)
+    return ""
+
+
+def strip_media_metadata_if_available(file_path: Path) -> None:
+    """Back-compat alias of `strip_media_metadata` (v7.9.1: never skips silently any more)."""
+    strip_media_metadata(file_path)
 
 
 # ---------------------------------------------------------------------------
@@ -627,28 +703,69 @@ def image_to_safe_data_url(
 # Deterministic Local @font-face CSS + Common Studio Motion Shell
 # ---------------------------------------------------------------------------
 
-def find_font_file(name: str) -> Path | None:
-    """First existing `name` in `$PFD_FONT_DIR`, then `FONT_ROOTS_TNEDIT`; None when not installed (never a download)."""
-    roots = ([Path(os.environ["PFD_FONT_DIR"]).expanduser()] if os.environ.get("PFD_FONT_DIR") else []) + list(FONT_ROOTS_TNEDIT)
-    for root in roots:
+def env_font_dirs() -> list[Path]:
+    """v7.9.1: `$PFD_FONT_DIR` as a list of dirs (os.pathsep-separated), read at call time; [] when unset."""
+    return [Path(d).expanduser() for d in os.environ.get("PFD_FONT_DIR", "").split(os.pathsep) if d.strip()]
+
+
+@functools.lru_cache(maxsize=1)
+def _fc_list_files() -> dict[str, str]:
+    """Basename -> path of every font fontconfig knows (`fc-list`); {} without fontconfig. Cached per process."""
+    try:  # Popen, not run(): callers that stub subprocess.run for the engine must not see this probe
+        with subprocess.Popen(["fc-list", "--format", "%{file}\n"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+                              encoding="utf-8", errors="replace") as proc:
+            try:
+                stdout, _ = proc.communicate(timeout=30)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                return {}
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    out: dict[str, str] = {}
+    for line in sorted((stdout or "").splitlines()):
+        f = line.strip()
+        if f:
+            out.setdefault(Path(f).name, f)
+    return out
+
+
+def find_font_file(name: str, extra_dirs: Sequence[Path] = ()) -> Path | None:
+    """First existing `name` in `$PFD_FONT_DIR`, then `FONT_ROOTS_TNEDIT`, then `extra_dirs`, then any fontconfig file with that
+    name (`fc-list`); None when not installed (never a download)."""
+    for root in [*env_font_dirs(), *FONT_ROOTS_TNEDIT, *extra_dirs]:
         cand = root / name
         if cand.is_file():
             return cand
-    return None
+    hit = _fc_list_files().get(name)
+    return Path(hit) if hit and Path(hit).is_file() else None
 
 
 def _tnedit_font(name: str) -> Path:
     """v7.9.0: a TNEDIT file that is not installed falls back to the same file in FONT_ROOT_BASE. Before, a missing folder left only the
     500 face (Inter-Medium) registered for 'Be Vietnam Pro', so every 600-800 line rendered as faux-bold Inter."""
-    found = find_font_file(name)
-    if found:
-        return found
-    base = FONT_ROOT_BASE / name
-    return base if base.is_file() else FONT_ROOTS_TNEDIT[0] / name
+    return find_font_file(name, (FONT_ROOT_BASE,)) or FONT_ROOTS_TNEDIT[0] / name
+
+
+def _font_file(root: Path, name: str) -> Path:
+    """v7.9.1: `name` in `$PFD_FONT_DIR`, then the optional user folder `root`, then `find_font_file` (TNEDIT dirs, fontconfig)."""
+    for d in (*env_font_dirs(), root):
+        if (d / name).is_file():
+            return d / name
+    return find_font_file(name) or root / name
+
+
+_WARNED_FONTS: set[str] = set()
 
 
 def _font_uri(path: Path) -> str:
-    return path.as_uri() if path.is_file() else ""
+    """file:// URI of an installed font; "" plus a loud (once per file) warning when it is missing."""
+    if path.is_file():
+        return path.as_uri()
+    if str(path) not in _WARNED_FONTS:
+        _WARNED_FONTS.add(str(path))
+        warnings.warn(f"FONT NOT FOUND: {path.name} (looked in $PFD_FONT_DIR, {path.parent} and fontconfig): its @font-face is "
+                      "skipped and Chrome falls back to another face. Install it or set PFD_FONT_DIR.", stacklevel=2)
+    return ""
 
 
 def build_font_face_css() -> str:
@@ -659,11 +776,11 @@ def build_font_face_css() -> str:
     rules: list[str] = []
 
     def add_face(family: str, file_path: Path, weight: str = "400", style: str = "normal") -> None:
-        if not file_path.is_file():
+        uri = _font_uri(file_path)
+        if not uri:
             return
         ext = file_path.suffix.lower()
         fmt = "opentype" if ext == ".otf" else "truetype"
-        uri = file_path.as_uri()
         rules.append(
             f"@font-face {{ font-family: '{family}'; src: url('{uri}') format('{fmt}'); "
             f"font-weight: {weight}; font-style: {style}; font-display: block; }}"
@@ -673,7 +790,7 @@ def build_font_face_css() -> str:
     add_face("Be Vietnam Pro", _tnedit_font("BeVietnamPro-ExtraLight.ttf"), "200", "normal")
     add_face("Be Vietnam Pro", _tnedit_font("BeVietnamPro-Light.ttf"), "300 400", "normal")
     add_face("Be Vietnam Pro", _tnedit_font("BeVietnamPro-Italic.ttf"), "400", "italic")
-    add_face("Be Vietnam Pro", FONT_ROOT_BASE / "Inter-Medium.ttf", "500", "normal")
+    add_face("Be Vietnam Pro", _font_file(FONT_ROOT_BASE, "Inter-Medium.ttf"), "500", "normal")
     # Also register dedicated Be Vietnam Pro Bold/ExtraBold/Black
     add_face("Be Vietnam Pro", _tnedit_font("BeVietnamPro-Bold.ttf"), "600 700", "normal")
     add_face("Be Vietnam Pro", _tnedit_font("BeVietnamPro-BoldItalic.ttf"), "600 700", "italic")
@@ -685,7 +802,7 @@ def build_font_face_css() -> str:
     # Playfair Display (Editorial Luxury Serif & Swash Italic)
     add_face("Playfair Display", _tnedit_font("PlayfairDisplay[wght].ttf"), "400 900", "normal")
     add_face("Playfair Display", _tnedit_font("PlayfairDisplay-Italic[wght].ttf"), "400 900", "italic")
-    add_face("Playfair Display", FONT_ROOT_BASE / "PlayfairDisplay-BoldItalic.ttf", "700", "italic")
+    add_face("Playfair Display", _font_file(FONT_ROOT_BASE, "PlayfairDisplay-BoldItalic.ttf"), "700", "italic")
 
     # SVN-Aaron Script (Signature Vietnamese Calligraphy)
     add_face("SVN-Aaron Script", _tnedit_font("SVN-Aaron Script.otf"), "400 700", "normal")
@@ -697,13 +814,13 @@ def build_font_face_css() -> str:
     # Inter & Montserrat
     add_face("Inter", _tnedit_font("Inter[opsz,wght].ttf"), "100 900", "normal")
     add_face("Inter", _tnedit_font("Inter-Italic[opsz,wght].ttf"), "100 900", "italic")
-    add_face("Montserrat", FONT_ROOT_MONT / "Montserrat-Medium.ttf", "400 500", "normal")
-    add_face("Montserrat", FONT_ROOT_MONT / "Montserrat-ExtraBold.ttf", "700 800", "normal")
-    add_face("Montserrat", FONT_ROOT_MONT / "Montserrat-Black.otf", "900", "normal")
+    add_face("Montserrat", _font_file(FONT_ROOT_MONT, "Montserrat-Medium.ttf"), "400 500", "normal")
+    add_face("Montserrat", _font_file(FONT_ROOT_MONT, "Montserrat-ExtraBold.ttf"), "700 800", "normal")
+    add_face("Montserrat", _font_file(FONT_ROOT_MONT, "Montserrat-Black.otf"), "900", "normal")
 
     # Studio Monospace
-    add_face("Studio Mono", FONT_ROOT_MONO / "LigaSFMonoNerdFont-Bold.otf", "600 700", "normal")
-    add_face("Studio Mono", FONT_ROOT_MONO / "LigaSFMonoNerdFont-LightItalic.otf", "400", "italic")
+    add_face("Studio Mono", _font_file(FONT_ROOT_MONO, "LigaSFMonoNerdFont-Bold.otf"), "600 700", "normal")
+    add_face("Studio Mono", _font_file(FONT_ROOT_MONO, "LigaSFMonoNerdFont-LightItalic.otf"), "400", "italic")
 
     return "\n".join(rules)
 
@@ -6788,7 +6905,7 @@ def _hex_to_rgb(c: Any) -> tuple[int, int, int]:
 
 def _hero_font(font_path: Path | None) -> Path:
     cand = [font_path] if font_path else []
-    cand += [FONT_ROOT_BASE / "BeVietnamPro-ExtraBold.ttf", Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")]
+    cand += [_font_file(FONT_ROOT_BASE, "BeVietnamPro-ExtraBold.ttf"), _font_file(Path("/usr/share/fonts/truetype/dejavu"), "DejaVuSans-Bold.ttf")]
     for c in cand:
         if c and Path(c).is_file():
             return Path(c)
@@ -6911,7 +7028,8 @@ def _registered_font_families() -> set[str]:
 
 def _system_has_font(family: str) -> bool:
     try:
-        r = subprocess.run(["fc-match", "-f", "%{family}", family], capture_output=True, text=True, timeout=5, check=False)
+        r = subprocess.run(["fc-match", "-f", "%{family}", family], capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           timeout=5, check=False)
     except (OSError, subprocess.SubprocessError):
         return False
     return family.lower() in {p.strip().lower() for p in (r.stdout or "").replace(",", "\n").split("\n")}
@@ -7288,21 +7406,83 @@ def build_template_html(
     return _BUILDERS[key](clean_props, w, h)
 
 
+ENGINE_TIMEOUT_BASE_S = 120.0     # Chrome launch + page loads
+ENGINE_TIMEOUT_PER_FRAME_S = 0.5  # [UOC] per rendered frame and worker (a 240-frame 60 fps kt plate takes ~20-40 s on one tab)
+
+
+def engine_timeout_s(engine_jobs: Sequence[dict[str, Any]], concurrency: int) -> float:
+    """v7.9.1: outer timeout of one engine run (env `PFD_ENGINE_TIMEOUT_S` overrides): base + frames x per-frame / workers."""
+    if os.environ.get("PFD_ENGINE_TIMEOUT_S"):
+        return max(10.0, float(os.environ["PFD_ENGINE_TIMEOUT_S"]))
+    frames = sum(max(1, int(j.get("frames") or 1)) for j in engine_jobs)
+    return ENGINE_TIMEOUT_BASE_S + ENGINE_TIMEOUT_PER_FRAME_S * frames / max(1, int(concurrency))
+
+
 def _run_engine_batch(engine_jobs: list[dict[str, Any]], tmp_root: Path, *, concurrency: int, alpha_codec: str, quiet: bool,
                       tag: str = "batch_jobs") -> list[dict[str, Any]]:
-    """One headless-Chrome run of `web_cinema_plate_engine.mjs` over `engine_jobs` -> the engine's per-job results."""
+    """One headless-Chrome run of `web_cinema_plate_engine.mjs` over `engine_jobs` -> the engine's per-job results.
+    v7.9.1: bounded by `engine_timeout_s` (the engine gets a deadline 15 s earlier so it tears Chrome down itself); an empty or
+    non-JSON output raises a clear RuntimeError; a job the engine could not render comes back as {ok: False, failed: True,
+    error} next to the good ones (a warning names it), and only a batch where EVERY job failed raises."""
     batch_json_path = tmp_root / f"{tag}.json"
     batch_json_path.write_text(json.dumps({"concurrency": concurrency, "alphaCodec": alpha_codec, "jobs": engine_jobs},
                                           ensure_ascii=False, indent=2), encoding="utf-8")
+    timeout_s = engine_timeout_s(engine_jobs, concurrency)
     cmd = [resolve_node_binary(), str(ENGINE_MJS), "--batch-json", str(batch_json_path), "--concurrency", str(concurrency),
-           "--alpha-codec", str(alpha_codec)]
+           "--alpha-codec", str(alpha_codec), "--batch-deadline-ms", str(int(max(5.0, timeout_s - 15.0) * 1000))]
     if quiet:
         cmd.append("--quiet")
-    proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, timeout=timeout_s)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"web_cinema_plate_engine.mjs timed out after {timeout_s:.0f} s on {len(engine_jobs)} job(s) "
+                           f"(env PFD_ENGINE_TIMEOUT_S raises the limit)") from exc
     if proc.returncode != 0:
         raise RuntimeError(f"web_cinema_plate_engine.mjs failed (exit {proc.returncode}):\n{proc.stderr}")
-    payload = json.loads(proc.stdout.strip().splitlines()[-1])
-    return payload.get("results", [])
+    lines = (proc.stdout or "").strip().splitlines()
+    if not lines:
+        raise RuntimeError(f"web_cinema_plate_engine.mjs exited 0 with no output (expected one JSON line):\n{(proc.stderr or '')[-2000:]}")
+    try:
+        payload = json.loads(lines[-1])
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"web_cinema_plate_engine.mjs printed no JSON result: {lines[-1][:300]!r}") from exc
+    results = list(payload.get("results", []))
+    failed = [r for r in results if r.get("ok") is False]
+    for r in failed:
+        r["failed"] = True
+    if failed and len(failed) == len(results):
+        raise RuntimeError("web_cinema_plate_engine.mjs rendered none of the jobs: " +
+                           "; ".join(f"{Path(str(r.get('out', '?'))).name}: {r.get('error')}" for r in failed))
+    if failed:
+        warnings.warn(f"PLATE RENDER FAILED for {len(failed)} of {len(results)} job(s), the others rendered: " +
+                      "; ".join(f"{Path(str(r.get('out', '?'))).name}: {r.get('error')}" for r in failed), stacklevel=2)
+    return results
+
+
+CHROME_WORKERS_MAX = 4  # CDP tabs the engine accepts
+
+
+def resolve_chrome_workers(requested: int | None = None, *, workspace_context: Any = None, work_dir: str | Path | None = None) -> int:
+    """v7.9.1: Chrome tab count for one engine run. `requested` (None = the cap) is limited by CHROME_WORKERS_MAX, env
+    `PFD_CHROME_WORKERS`, and `ram_governance.max_chrome_workers` of the workspace context (probe_and_align: studio tier = 2) when
+    one is given: a dict, a path to workspace_context.json, or `work_dir` holding workspace_context.json. Never below 1."""
+    cap = CHROME_WORKERS_MAX
+    env = os.environ.get("PFD_CHROME_WORKERS", "").strip()
+    if env:
+        try:
+            cap = min(cap, max(1, int(env)))
+        except ValueError:
+            warnings.warn(f"PFD_CHROME_WORKERS={env!r} is not an integer; ignored", stacklevel=2)
+    ctx = workspace_context
+    if ctx is None and work_dir is not None and (Path(work_dir).expanduser() / "workspace_context.json").is_file():
+        ctx = Path(work_dir).expanduser() / "workspace_context.json"
+    if isinstance(ctx, (str, Path)):
+        ctx = json.loads(Path(ctx).expanduser().read_text(encoding="utf-8"))
+    if isinstance(ctx, dict):
+        ctx_max = (ctx.get("ram_governance") or {}).get("max_chrome_workers")
+        if ctx_max is not None:
+            cap = min(cap, max(1, int(ctx_max)))
+    return max(1, min(cap, int(requested))) if requested is not None else cap
 
 
 KT_FIT_FPS = 60
@@ -7359,10 +7539,12 @@ def fit_kt_plate_heights(specs: Sequence[tuple[str, dict[str, Any], int, int]], 
 def render_web_plates_batch(
     jobs: Sequence[dict[str, Any]],
     *,
-    concurrency: int = 4,
+    concurrency: int | None = None,
     alpha_codec: str = "prores4444",
     strip_meta: bool = True,
     quiet: bool = False,
+    workspace_context: Any = None,
+    work_dir: str | Path | None = None,
 ) -> list[dict[str, Any]]:
     """
     Renders multiple Studio plates (`.png` RGBA stills and/or `.mov` ProRes 4444 / qtrle clips)
@@ -7376,6 +7558,9 @@ def render_web_plates_batch(
     the job is `decorative: true`, which only warns (severity "warn").
     Probe jobs (`mode: "probe"`, `probe_from` / `probe_to` frame range, optional `probe_ids`) write nothing and return the engine's
     per-frame `wordGaps` (see `probe_word_gaps`).
+    v7.9.1: `concurrency` (None = the cap) goes through `resolve_chrome_workers` (env PFD_CHROME_WORKERS, workspace context /
+    work dir `max_chrome_workers`). A job the engine fails to render comes back as {ok: False, failed: True, error} (warned) and
+    the others are kept; UndersizedTextError / TextPathOverflowError stay fatal for the whole batch.
     """
     if not jobs:
         return []
@@ -7383,7 +7568,7 @@ def render_web_plates_batch(
     if not ENGINE_MJS.is_file():
         raise FileNotFoundError(f"Engine script missing: {ENGINE_MJS}")
 
-    safe_concurrency = max(1, min(4, int(concurrency)))
+    safe_concurrency = resolve_chrome_workers(concurrency, workspace_context=workspace_context, work_dir=work_dir)
 
     with tempfile.TemporaryDirectory(prefix="usd-v71-plates-") as tmpdir:
         tmp_root = Path(tmpdir)
@@ -7500,9 +7685,9 @@ def render_web_plates_batch(
                 overflow)
 
         if strip_meta:
-            for p in out_paths:
-                if p.is_file():
-                    strip_media_metadata_if_available(p)
+            for p, res in zip(out_paths, results):
+                if p.is_file() and res.get("ok") is not False:
+                    strip_media_metadata(p)
 
         return results
 
@@ -7655,17 +7840,19 @@ def _extract_syllable_triggers(template: str, props: dict[str, Any]) -> list[dic
 def render_kinetic_typo_batch(
     jobs: Sequence[dict[str, Any]],
     *,
-    concurrency: int = 4,
+    concurrency: int | None = None,
     fps: int = 60,
     alpha_codec: str = "prores4444",
     device_scale_factor: float = 1.0,
     strip_meta: bool = True,
     quiet: bool = False,
+    workspace_context: Any = None,
+    work_dir: str | Path | None = None,
 ) -> list[dict[str, Any]]:
     """
     High-throughput `v7.1` parallel kinetic typography `.mov` renderer (`@60fps`).
-    Renders `kt01..kt12` jobs in parallel across up to 4 Chrome Headless CDP tabs, writes
-    `<out_path>.typo_meta.json` sidecars, and returns full metadata/clip dicts.
+    Renders `kt01..kt12` jobs in parallel across up to 4 Chrome Headless CDP tabs (v7.9.1: capped by `resolve_chrome_workers`),
+    writes `<out_path>.typo_meta.json` sidecars, and returns full metadata/clip dicts (a job the engine failed: `ok: False`, `error`).
     """
     if not jobs:
         return []
@@ -7773,6 +7960,8 @@ def render_kinetic_typo_batch(
         alpha_codec=alpha_codec,
         strip_meta=strip_meta,
         quiet=quiet,
+        workspace_context=workspace_context,
+        work_dir=work_dir,
     )
 
     final_items: list[dict[str, Any]] = []
@@ -7785,7 +7974,10 @@ def render_kinetic_typo_batch(
             "bytes": eng_res.get("bytes", 0),
             "elapsedMs": eng_res.get("elapsedMs", 0),
             "meta_path": str(meta_path),
+            "ok": eng_res.get("ok", True) is not False,
         }
+        if eng_res.get("ok") is False:
+            combined["error"] = str(eng_res.get("error", ""))
         meta_path.write_text(json.dumps(combined, ensure_ascii=False, indent=2), encoding="utf-8")
         final_items.append(combined)
 
@@ -7967,7 +8159,10 @@ def _verify_prores4444_mov(mov_path: Path) -> dict[str, Any]:
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=True,
+        timeout=120,
     )
     streams = json.loads(proc.stdout).get("streams", [])
     if not streams:
@@ -7980,7 +8175,7 @@ def _verify_prores4444_mov(mov_path: Path) -> dict[str, Any]:
     return st
 
 
-def run_self_test(out_dir: Path) -> dict[str, Any]:
+def run_self_test(out_dir: Path, concurrency: int | None = None) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Verify v7.1 STATIC_HERO_PNG_STAMP VETO guard + thumbnail opt-in
@@ -8086,7 +8281,7 @@ def run_self_test(out_dir: Path) -> dict[str, Any]:
         },
     ]
 
-    render_results = render_web_plates_batch(batch_jobs, concurrency=4, strip_meta=True)
+    render_results = render_web_plates_batch(batch_jobs, concurrency=concurrency, strip_meta=True)
     for res in render_results:
         p = Path(res["out"])
         if p.suffix.lower() == ".png":
@@ -8133,7 +8328,7 @@ def run_self_test(out_dir: Path) -> dict[str, Any]:
         for idx, (tpl, props) in enumerate(kt_samples)
     ]
 
-    kt_results = render_kinetic_typo_batch(kt_jobs, concurrency=4, fps=60, strip_meta=True)
+    kt_results = render_kinetic_typo_batch(kt_jobs, concurrency=concurrency, fps=60, strip_meta=True)
     verified_kt_meta: dict[str, Any] = {}
     required_meta_keys = {
         "engine",
@@ -8211,18 +8406,20 @@ def _load_props_arg(raw_props: str | None) -> dict[str, Any]:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Universal Studio Director v7.1 — Web-Cinema Studio RGBA Plate & 60fps Kinetic Typography Builder"
+        description="Universal Studio Director v7.9.1 — Web-Cinema Studio RGBA Plate & 60fps Kinetic Typography Builder"
     )
-    parser.add_argument("--list", action="store_true", help="List all 20 built-in Studio & Kinetic Typography templates")
+    parser.add_argument("--list", action="store_true",
+                        help=f"List all {len(TEMPLATE_DEFAULTS)} built-in Studio & Kinetic Typography templates "
+                             f"({len(TEMPLATE_DEFAULTS) - len(KINETIC_TYPO_TEMPLATES)} studio + {len(KINETIC_TYPO_TEMPLATES)} kinetic)")
     parser.add_argument(
         "--self-test",
         action="store_true",
-        help="Verify static PNG veto, all 8 Studio templates, and all 12 60fps Kinetic Typography templates",
+        help="Verify static PNG veto, the Studio templates, and all 12 60fps Kinetic Typography templates",
     )
     parser.add_argument(
         "--out-dir",
-        default="/tmp/test_v71_web_plates",
-        help="Target directory for --self-test (default: /tmp/test_v71_web_plates)",
+        default=None,
+        help="Target directory for --self-test (default: a new temp dir, printed at the end)",
     )
     parser.add_argument("--template", "-t", help="Template name (Studio card or kt01..kt12)")
     parser.add_argument("--props-json", "-p", help="JSON string or path to JSON props file")
@@ -8236,7 +8433,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--frame-idx", type=int, default=None)
     parser.add_argument("--scale", type=float, default=1.0)
     parser.add_argument("--alpha-codec", default="prores4444", choices=["prores4444", "qtrle"])
-    parser.add_argument("--concurrency", "-c", type=int, default=4)
+    parser.add_argument("--concurrency", "-c", type=int, default=None,
+                        help="Chrome tabs for --self-test (default: 4, capped by env PFD_CHROME_WORKERS)")
     parser.add_argument("--no-strip", action="store_true", help="Skip strip_metadata pass")
     parser.add_argument(
         "--demo",
@@ -8261,7 +8459,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if args.self_test:
-        run_self_test(Path(args.out_dir))
+        out_dir = Path(args.out_dir) if args.out_dir else Path(tempfile.mkdtemp(prefix="pfd_web_plates_selftest_"))
+        run_self_test(out_dir, concurrency=args.concurrency)
+        print(f"self-test output: {out_dir}")
         return 0
 
     if not args.template or not args.out:

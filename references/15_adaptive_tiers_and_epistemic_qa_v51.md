@@ -1,5 +1,7 @@
 # 15 — Adaptive Execution Tiers (`fast` vs `full`) & Epistemic QA Physics (`v5.1`)
 
+> **Historical reference (v5.1).** Kept as design history; the current spec is [reference 21](./21_craft_json_minimal_spec.md) and the current process is [`SKILL.md`](../SKILL.md). Where this file disagrees with them, they win. Rule A1 and its Look S MP4 exception are stated once, in `SKILL.md` section 3.8.1.
+
 `pro-filmcraft-director v5.1` distills the highest-signal linguistic, optical, acoustic, and epistemic invariants from `dung-video-talking-head@1.2.3` into **stateless helper functions and configurable QA tiers**—preserving 100% bespoke Creative Director Judgment (`BRAIN`) without locking videos into a rigid batch pipeline.
 
 ---
@@ -13,16 +15,16 @@ Configure tool depth in [`execution_tiers.json`](../presets/execution_tiers.json
 | **Runtime Target** | **~55–60s** end-to-end | **~68–75s** end-to-end |
 | **CLI Flags** | `probe_and_align.py --tier fast`<br>`compile_and_verify.py --tier fast` | `probe_and_align.py --tier full`<br>`compile_and_verify.py --tier full` |
 | **Ingest (`probe_and_align`)** | Media probe, Whisper word timestamps (`NFC`), slice alignment, `assets_contact_sheet.jpg` | + `textnorm` spoken-number/unit alignment, `20ms` RMS pause-end onset refinement (`-35/-45 dBFS`), `270×480` Viola-Jones `eye_band` & `mouth_band` tracking |
-| **Typography & Face Safety** | `text_vi.json` (`1,200` `glue` pairs + `leads`/`trails` via `split_phrase_2line`), `R209` bottom-edge drop (`Y >= 1360`), `R30` `>= 3f` last-word readability + `0.95` ink-width fit | + Projected `facesafe` Eye/Mouth vs Glyph Ink-Box (`0.30em` pad + `0.01em` margin, `8px` clearance), `R26` no-glow over face, `R208` `< 1.5s` hook exemption |
-| **B-Roll & Visual Hygiene** | On-demand `visual_blocks.py` generators + 16-frame QA contact sheet | + `clean_broll_plate` border stripper, 45-token `lint_broll_prompt` hygiene (`F2`), `V8` Frozen/Blank B-roll detector (`std >= 30/255`, diff `> 20/255`) |
+| **Typography & Face Safety** | `text_vi.json` (`1199` `glue` pairs + `leads`/`trails` via `split_phrase_2line`), `R209` bottom-edge drop (`Y >= 1360`), `R30` `>= 3f` last-word readability + `0.95` ink-width fit | + Projected `facesafe` Eye/Mouth vs Glyph Ink-Box (`0.30em` pad + `0.01em` margin, `8px` clearance), `R26` no-glow over face, `R208` `< 1.5s` hook exemption |
+| **B-Roll & Visual Hygiene** | On-demand `visual_blocks.py` generators + 16-frame QA contact sheet | + `clean_broll_plate` border stripper, `lint_broll_prompt` (46 tokens historically; since v7.9.1 it reads `presets/broll_lint_contract.json`) hygiene (`F2`), `V8` Frozen/Blank B-roll detector (`std >= 30/255`, diff `> 20/255`) |
 | **Audio & Loudness** | `5ms env5` `lag_ms` + `sync_frame` peak-on-cut SFX aligner, MD5 dedup, `R217` `match_at` normalized xcorr, closed-loop `-16/-14 LUFS` | + `0.5s`-step BGM offset optimizer (`LRA <= 5.0 LU`, `voice - bed >= 10 LU` short-term floor), `R35` `4x` True-Peak post-AAC encode-measure-ratchet guard |
-| **Epistemic & Handoff** | Rule A1 native `.fcproj` + `-sn` guard | + `R200` `claim_gate` audit + `EDITOR-REPORT.md` (`VERIFIED \| DONE_WITH_CONCERNS \| REJECTED`) |
+| **Epistemic & Handoff** | Rule A1 native `.fcproj` + `-sn` guard (Look S exception: `SKILL.md` section 3.8.1) | + `R200` `claim_gate` audit + `EDITOR-REPORT.md` (`VERIFIED \| DONE_WITH_CONCERNS \| REJECTED`) |
 | **Select When** | Daily opinion talking-heads, clean pre-sliced folders, philosophical essays, founder stories, rapid Option A/B/C drafts | Uncut raw camera takes (`soucre quay`), E-com / Real-Estate / Clinic / SaaS proof videos (`claim_gate: true`), defective `.fcproj` rebuilds, client handoffs |
 
 ### Rule Confidence Hierarchy (`high` vs `medium` vs `low`)
 Every entry in `execution_tiers.json -> rule_provenance` carries an empirical confidence tag:
 * **`high` (Immutable Physics & Ethics):** `wgpu 0.20.1` blend+shadow guard, Unicode `NFC` + `0.28em` pad, `text_vi.json` compound glue (`R55`), `R209` bottom-edge drop, `R30` 3-frame readability, `R217` normalized xcorr (`[-1f, +2f]`), BS.1770-4 + `R35` True-Peak, and `R200` `claim_gate`. **Never violate.**
-* **`medium` (Calibrated Empirical Invariants):** Projected `facesafe` eye/mouth clearance (`R26`/`R208`), 45-token B-roll prompt hygiene (`F2`), `V8` frame-delta liveness, and BGM `LRA <= 5.0 LU`. Override only with explicit justification logged in `EDITOR-REPORT.md`.
+* **`medium` (Calibrated Empirical Invariants):** Projected `facesafe` eye/mouth clearance (`R26`/`R208`), 46-token B-roll prompt hygiene (now `presets/broll_lint_contract.json`) (`F2`), `V8` frame-delta liveness, and BGM `LRA <= 5.0 LU`. Override only with explicit justification logged in `EDITOR-REPORT.md`.
 * **`low` (Bendable Aesthetic Heuristics):** Archetype ASL windows (`1.8–5.5s`), zoom amplitudes (`1.06–1.22x`), and SFX density presets (`calm`/`standard`/`punchy`). **Bend freely** whenever Walter Murch's Rule of Six #1 (**51% Emotion**) demands stillness or breath.
 
 ---
@@ -46,7 +48,7 @@ Classify every non-A-roll visual slot into one of two epistemic classes before g
      - Use real user-supplied footage (`screen_rec`, `real_output`), or present the spoken figures transparently as deterministic typographic/diagrammatic graphics via `visual_blocks.py` (`metric_kpi_hero`, `versus_split_card`, `code_terminal_window`, `flowchart_pipeline`).
      - Set `"claim_gate": true` and list exact quoted sentences in `"claim_reasons"` inside `.craft.json` metadata so `EDITOR-REPORT.md` flags **human verification required before publishing**.
 
-### 2.2 45-Token AI B-Roll Prompt Hygiene Banlist (`1.2.2 / 1.2.3 F2`)
+### 2.2 46-Token AI B-Roll Prompt Hygiene Banlist (historical; superseded by `presets/broll_lint_contract.json`) (`1.2.2 / 1.2.3 F2`)
 When authoring English prompts (8–60 words, realistic physical scene description) for `light` illustrative AI B-roll, pass every prompt through `visual_blocks.py --lint-prompt` (`lint_broll_prompt`). The following **46 lexical forms (45 stem families)** are strictly banned because diffusion/video models hallucinate garbled text, fake charts, copyrighted logos, or messy chat UIs:
 
 * **Text / Watermarks (4):** `logo`, `watermark`, `text`, `subtitle`
@@ -61,7 +63,7 @@ Always append neutral physical framing (`Vertical 9:16 realistic photo, natural 
 
 ## 3. Vietnamese Linguistic & Subtitle Micro-Physics
 
-1. **Compound Lexicon (`data/text_vi.json`, `R55`):** `typography_composer.py::split_phrase_2line` loads `1,200` inseparable Vietnamese compound `glue` pairs (e.g., *chuyển đổi*, *thương hiệu*, *khách hàng*) plus closed-class `leads` (prepositions/determiners forbidden at line end) and `trails` (particles forbidden at line start) so 2-line wraps read with native editorial phrasing.
+1. **Compound Lexicon (`data/text_vi.json`, `R55`):** `typography_composer.py::split_phrase_2line` loads `1199` inseparable Vietnamese compound `glue` pairs (e.g., *chuyển đổi*, *thương hiệu*, *khách hàng*) plus closed-class `leads` (prepositions/determiners forbidden at line end) and `trails` (particles forbidden at line start) so 2-line wraps read with native editorial phrasing.
 2. **`R209` Bottom-Edge Top-Down Anchor (`Y >= 1360`):** Anchor lower-third subtitles at `Y >= 1360` (`1080×1920`) and expand 2nd lines **downward** (`top-down`) within `Y <= 1436` (`sub_bottom_px = 484`), never pushing line 1 upward onto the speaker's chin/lips. Use `hook_drop_handoff` when transitioning from a center/upper Hook stomp into standard `R209` captions.
 3. **`R30` Last-Word Readability & `0.95` Ink Fit:** Every block's final spoken word must remain at `>= 90%` opacity for **`>= 3` consecutive frames** before exit; if the next cut/card gate is tight, switch from a `6f` ease-out to a **`2f` quick-exit** finishing cleanly on `gate`. Auto-scale font size when rendered glyph ink width (`0.30em` pad + `0.01em` margin) exceeds `0.95 * 800px` (`X in [140, 940]`).
 4. **Projected `facesafe` (`R26`, `R208` — `full` tier):** `probe_and_align.py --tier full` tracks faces via `data/haarcascade_frontalface_default.xml` (`5`-frame median, `0.2s` window). `compile_and_verify.py --tier full` projects `eye_band` (`[0.10, 0.30, 0.90, 0.50]`) and `mouth_band` (`[0.25, 0.70, 0.75, 0.90]`) through active `C²` zoom/pan keyframes to verify `>= 8px` clearance from non-exempt glyph ink boxes (`R208` exempts `< 1.5s` opening hooks; `R26` forbids optical glow overlapping the face).
