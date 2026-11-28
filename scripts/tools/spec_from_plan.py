@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-spec_from_plan.py (v7.9.0) — turn a `plan_dviet_kinetic_beat_schedule` plan into a compile-ready `.craft.json`.
+spec_from_plan.py (v8.1.0) — turn a `plan_dviet_kinetic_beat_schedule` plan into a compile-ready `.craft.json`.
 
     spec_from_plan.py --plan plan.json --words words_tl.json --media-dir DIR --out X.craft.json
                       [--fps 30] [--width 1080] [--height 1920] [--name NAME]
@@ -30,7 +30,7 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
-VERSION = "7.9.0"
+VERSION = "8.1.0"
 VIDEO_EXT = {".mp4", ".mov", ".mkv", ".webm"}
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg"}
 AROLL_RE = re.compile(r"a[-_ ]?roll", re.I)

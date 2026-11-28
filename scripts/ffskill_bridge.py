@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ffskill_bridge.py (v7.9.0) — OPTIONAL bridge between pro-filmcraft-director ('The Creative Brain')
+ffskill_bridge.py (v8.1.0) — OPTIONAL bridge between pro-filmcraft-director ('The Creative Brain')
 and kajisho5/ffmpeg-skill v4.5.3 ('The 42-Tool Deterministic FFmpeg Execution & Verification Engine').
 
 The sibling repo `../ffmpeg-skill` is optional: when it is absent every entry point raises

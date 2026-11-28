@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-env_status.py (v7.9.0) — preflight of everything `pro-filmcraft-director` needs on this host.
+env_status.py (v8.1.0) — preflight of everything `pro-filmcraft-director` needs on this host.
 
     env_status.py [--json] [--strict]
 
@@ -22,7 +22,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "7.9.0"
+VERSION = "8.1.0"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 HOME = Path.home()
 VENDOR = SKILL_ROOT / "scripts" / "vendor" / "ovs_core"

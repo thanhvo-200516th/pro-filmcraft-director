@@ -1,20 +1,29 @@
 ---
 name: pro-filmcraft-director
 description: >-
-  Use when the user wants to direct, edit, rebuild or polish talking-head footage (one raw video, a multi-slice folder or an existing FilmCraft .fcproj) into a studio-grade, non-template 9:16 video. v7.9.0 Universal Studio Director. Look S Studio is the default for product, brand and explainer video: Full-Head Studio Rounded Cards, Architectural Squircle PiP windows and Bottom-Flush cutouts with polarity paper, neon blackout, a silk numeral stage and a full-screen B-roll hook, delivered as a compositor MP4 master plus a .fcproj mirror. Look D (@__dviet screen-strip tutorials) only on explicit request. Covers 10 Format Modes x 8 Industry Skins, 60fps kinetic typography plates kt01..kt12, Vietnamese NFC typography, hook, pacing and text-legibility gates, and an 8-gate FilmCraft compiler. Six stateless core tools plus helper CLIs measure; the agent makes every creative decision.
+  Use when the user wants to direct, edit, rebuild or polish talking-head footage (one raw video, a multi-slice folder or an existing FilmCraft .fcproj) into a studio-grade, non-template 9:16 video (or 16:9 opt-in). v8.1.0 Universal Multi-Industry Cinema Director. Unifies 4 reference channel grammars (@tng.vinhomes8, @vuotaiai, @__dviet, @xuanart.visual) with Zero-Voice-Loss audio preservation, 100% Verbatim Caption Rail, L-Shaped TikTok Safe Zone, Typography v8.1 (FP1..FP6, PAL_*, sub_01..sub_10), 17-Industry 3D Asset Catalog (local_3d_props.py + flow_3d_assets.py), RVM/u2netp foreground matting for text-behind-subject, Full-Head Studio Rounded Cards & Squircle PiP, damped-spring parallax, and Dual-Deliverable FilmCraft .fcproj Bridge. Look S Studio is the default for product, brand and explainer video; Look D (@__dviet screen-strip tutorials) only on explicit request. Covers 10 Format Modes x 17 Universal Industry Skins (non-SaaS & creative craft), 60fps kinetic typography plates, Vietnamese NFC typography, hook, pacing and text-legibility gates, and an 8-gate FilmCraft compiler.
 ---
 
-# Pro FilmCraft Director (`v7.9.0`) — Universal Studio Director
+# Pro FilmCraft Director (`v8.1.0`) — Universal Multi-Industry Cinema Director
 
 ## 1. Overview
 
 ### 1.1. Purpose, inputs and outputs
 
-- **Purpose:** turn talking-head footage into a bespoke, studio-grade vertical video (`1080x1920`) and an editable FilmCraft project. The agent (the brain) makes every creative decision; the tools are stateless and only build, render and measure.
+- **Purpose:** turn talking-head footage into a bespoke, studio-grade vertical video (`1080x1920`, strict default; `1920x1080` `16:9` opt-in only when explicitly requested) and an editable FilmCraft project. The agent (the brain) makes every creative decision; the tools are stateless and only build, render and measure.
+- **Core v8 Invariant (Zero-Voice-Loss + Verbatim Rail + Co-Layered Craft):**
+  1. **Zero-Voice-Loss:** NEVER cut, drop, or mute spoken voice during B-roll or stage inserts (`abs(out_dur - in_dur) <= 0.15 s` enforced by `v8_compositor_fx.py`).
+  2. **100% Verbatim Caption Rail:** every spoken word is represented cleanly on the synced Vietnamese NFC caption rail (`verbatim_caption_rail.py`), co-existing without colliding with hero typography or face safe-boxes.
+  3. **Co-Layered 3D / Icon / B-Roll:** pair real/AI B-roll inserts, floating 3D badges (`flow_3d_assets.py`), glass/vector widgets (`cinema_widgets_v8.py`, `vector_shape_plates.py`), and behind-subject 3D titles (`extract_subject_matte`) over continuous speech.
+- **4-Channel Reference Grammar:**
+  - `@tng.vinhomes8`: warm architectural real-estate/property craft, price/spec odometers, clean B-roll inserts over continuous narration.
+  - `@vuotaiai`: dark studio stage, giant neon hollow backdrop text + `glowing_squircle_pip`, crisp glass step pills & kinetic beat sync.
+  - `@__dviet`: editorial talking-head pacing, `kt01..kt12` kinetic typography, polarity flips, optical bridges (`light_burst`, `film_burn`, `whip_blur`).
+  - `@xuanart.visual`: subject-tracked parallax (`subject_tracker.py`), text-behind-subject (`kt17`, `w06`), layered 3D badges & craft showcases.
 - **Inputs:** **1 raw video**, a **multi-slice footage folder**, or an **existing `.fcproj`**; optional script, B-roll, SFX folder, `<workspace>/feedback_log.jsonl`.
-- **Outputs:** the `.fcproj` (always), `EDITOR-REPORT.md` with the gate verdicts, a `1440x2560` QA contact sheet, and for Look S the compositor MP4 master (section 3.8.1).
+- **Outputs:** the `.fcproj` (always), `EDITOR-REPORT.md` with the gate verdicts, a `1440x2560` QA contact sheet, and for Look S / v8 Cinema the compositor MP4 master (section 3.8.1, metadata-stripped).
 - **Never:** static `mode="still"` hero `.png` stamps, `PIL/OpenCV` 3D plastic bevels, `— ALL CAPS KICKER` or duplicate pill spam (section 4.1).
-- **Release history** (what each of v7.4.0 .. v7.9.0 added): [`README.md`](./README.md) section 1 and [`docs/TIEN_DO_SKILL.md`](./docs/TIEN_DO_SKILL.md). This file states only the current rules.
+- **Release history** (what each of v7.4.0 .. v8.1.0 added): [`README.md`](./README.md) section 1 and [`docs/TIEN_DO_SKILL.md`](./docs/TIEN_DO_SKILL.md). This file states only the current rules.
 
 ### 1.2. Look S and Look D (the one canonical statement)
 
@@ -38,7 +47,7 @@ Three render lanes: **Lane A** NLE-native FilmCraft clips; **Lane B** [`web_plat
 #### 1.3.1. The brain (you)
 
 - Inspect `assets_contact_sheet.jpg`, read `words_tl.json` word by word, consult `feedback_log.jsonl` when present.
-- Pair **1 Format Mode (`F1..F10`) x 1 Industry Skin (`S1..S8`)** ([`format_modes_catalog.json`](./presets/format_modes_catalog.json)) + **1 Archetype** ([`visual_archetypes_catalog.json`](./presets/visual_archetypes_catalog.json)); 80 canonical cells, 240+ hybrids.
+- Pair **1 Format Mode (`F1..F10`) x 1 Industry Skin** ([`industry_profiles.json`](./presets/industry_profiles.json) v8.0.0: 17 flagship skins spanning 16 non-SaaS & creative craft verticals — `luxury_skincare`, `dental_clinic`, `nail_hair_salon`, `tactile_review`, `course_edtech`, `personal_brand`, `cinematic_vlog`, `real_estate_interior`, `fnb_culinary`, `fashion_lookbook`, `fitness_wellness`, `finance_legal_advisory`, `automotive_hardware`, `healthcare_medical`, `travel_hospitality`, `creative_media_agency`, plus `b2b_saas_realestate` for backwards compat) + **1 Archetype** ([`visual_archetypes_catalog.json`](./presets/visual_archetypes_catalog.json)).
 - Choose the look, profile, chromatic policy, scene modes, typography beats, bridges and SFX; enforce the iron laws (4.1) and call the plan-level gate functions (4.2) yourself.
 - A tool result is a measurement, not a decision: when a gate fails, fix the cause (never loosen the limit) or tell the user.
 
@@ -88,6 +97,14 @@ Check with `python3 ./scripts/env_status.py [--json] [--strict]` (section 3.1).
 | [`broll_from_video.py`](./scripts/tools/broll_from_video.py) `analyze\|check-prompts` | B-roll slot planner + the one prompt linter | 3.8.3 |
 | [`fc_export.py`](./scripts/tools/fc_export.py) `IN.fcproj OUT.mp4` | export (Rule A1 cases only); polls for the file | 3.8.1 |
 | [`filmcraft_cli.py`](./scripts/tools/filmcraft_cli.py) | drives a running FilmCraft through `filmcraft --control` on Xvfb; skips loudly, never fakes a render; the `filmcraft-cli` binary of old docs never existed ([`30_filmcraft_control_bridge.md`](./references/30_filmcraft_control_bridge.md)) | 3.7, 5.4 |
+| [`subject_tracker.py`](./scripts/tools/subject_tracker.py) | tracks speaker face, crown & shoulders per frame -> `subject_track.json` for damped-spring parallax | 3.3, 3.6 |
+| [`verbatim_caption_rail.py`](./scripts/tools/verbatim_caption_rail.py) | builds 100% verbatim synced Vietnamese NFC caption rail (never drops spoken words) | 3.6 |
+| [`cinema_widgets_v8.py`](./scripts/tools/cinema_widgets_v8.py) | renders multi-industry glass pills, price/metric odometers, charts & callout widgets | 3.6 |
+| [`vector_shape_plates.py`](./scripts/tools/vector_shape_plates.py) | renders crisp SVG/vector shape plates, frames & behind-subject geometric backdrops | 3.6 |
+| [`local_3d_props.py`](./scripts/tools/local_3d_props.py) | instant local 3D PBR turntable prop renderer (from [`assets_3d_catalog.json`](./presets/assets_3d_catalog.json), zero cloud wait) | 3.6 |
+| [`flow_3d_assets.py`](./scripts/tools/flow_3d_assets.py) | Google Flow photoreal 3D asset tier: generates & caches floating 3D badges/icons from [`assets_3d_catalog.json`](./presets/assets_3d_catalog.json) | 3.6, 3.8.3 |
+| [`v8_to_craft_spec.py`](./scripts/tools/v8_to_craft_spec.py) | converts `v8_edit_plan.json` -> strictly compliant `.craft.json` (7 rules of ref 21, non-overlapping `V4a/V4b` lanes, 48kHz PCM `.wav` voice) | 3.6, 3.8.1 |
+| [`v8_compositor_fx.py`](./scripts/tools/v8_compositor_fx.py) | v8.1 60fps multi-layer compositor (`9:16` default / `16:9` opt-in): RVM CUDA -> u2netp -> GrabCut matting, spring parallax, `light_burst`, `film_burn`, `whip_blur`, `glowing_squircle_pip`, `broll_insert`, Zero-Voice-Loss guard (`<= 0.15 s`), metadata stripping, and `--export-fcproj` / `--craft-spec` Dual-Deliverable FilmCraft Bridge | 3.5, 3.8.1 |
 
 ### 2.4. CLI cheat-sheet (numbers match section 3; run `--help` before the first call)
 
@@ -115,8 +132,9 @@ Timings and RAM come from [`execution_tiers.json`](./presets/execution_tiers.jso
 
 - Matrix, vetoes, bridges: [`format_modes_catalog.json`](./presets/format_modes_catalog.json) (`F1..F10`, `S1..S8`, `profile_vetoes`, `native_frame_14_micro_bridges`) · [`visual_archetypes_catalog.json`](./presets/visual_archetypes_catalog.json) (8 archetypes, Lane B contract, Gate 3C, archetype bridges) · [`industry_profiles.json`](./presets/industry_profiles.json) · interactive viewer [`edit_plan_viewer.html`](./templates/edit_plan_viewer.html)
 - Tiers: [`execution_tiers.json`](./presets/execution_tiers.json)
-- Typography: [`typography_hierarchy_presets.json`](./presets/typography_hierarchy_presets.json) (`kt01..kt12`, Gate 3C quotas, `S01..S18`, caption-`y` keys) · [`dviet_style_tokens.json`](./presets/dviet_style_tokens.json) (Look D palette, font roles, tiers, caption `y`, lock-up, canvases, audio; `measured` / `estimate` flags) · [`text_vi.json`](./data/text_vi.json)
-- Canvas and safe zones: [`canvas_presets.json`](./presets/canvas_presets.json) (`1080x1920@60|30`, `1440x1080@24|30`, `1332x720@30`; only `1080x1920@60` verified end to end) · [`platform_safe_zones.json`](./presets/platform_safe_zones.json)
+- Typography: [`typography_v81_presets.json`](./presets/typography_v81_presets.json) (v8.1: 6 font pairings `FP1..FP6`, 8 gradient+glow palettes `PAL_*`, 10 rotating multi-font/multi-color Text Phụ modes `sub_01..sub_10`, `max_consecutive = 1`, zero black strokes) · [`typography_hierarchy_presets.json`](./presets/typography_hierarchy_presets.json) (`kt01..kt12`, Gate 3C quotas, `S01..S18`, caption-`y` keys) · [`dviet_style_tokens.json`](./presets/dviet_style_tokens.json) (Look D palette, font roles, tiers, caption `y`, lock-up, canvases, audio; `measured` / `estimate` flags) · [`text_vi.json`](./data/text_vi.json)
+- 3D Assets: [`assets_3d_catalog.json`](./presets/assets_3d_catalog.json) (17-Industry 3D Asset Catalog for `local_3d_props.py` instant PBR turntables & `flow_3d_assets.py` Google Flow photoreal tier)
+- Canvas and safe zones: [`canvas_presets.json`](./presets/canvas_presets.json) (`9x16_1080_60` strict default; `9x16_1080_30`, `16x9_1920_60` / `16x9_1920_30` opt-in only via `v8_compositor_fx.py`, `1440x1080@24|30`, `1332x720@30`) · [`platform_safe_zones.json`](./presets/platform_safe_zones.json)
 - Motion: [`atomic_motion_library.json`](./presets/atomic_motion_library.json) (zoom presets, scoped `dviet` transitions with caps) · [`dviet_pattern_catalog.json`](./presets/dviet_pattern_catalog.json)
 - Look S: [`studio_scene_recipe.json`](./presets/studio_scene_recipe.json) (V21 grid, hook `0–5 s`, pacing, motion and text limits)
 - Audio and SFX: [`profile_overrides.json`](./presets/profile_overrides.json) (`platform`, `studio_14`, `tiktok_loud`) · [`sfx_catalog.json`](./presets/sfx_catalog.json) · [`sfx_micro_sync_rules.json`](./presets/sfx_micro_sync_rules.json) · [`pain_keywords.json`](./presets/pain_keywords.json)
@@ -173,7 +191,7 @@ Select `F1..F10` x `S1..S8` ([`format_modes_catalog.json`](./presets/format_mode
 #### 3.4.3. Safety, Dual-Rail and chromatic policy
 
 - **Domain `HARD VETO` guards:** `CRI-100 Tooth Lock` (`S2`: pure `D65`, no yellow LUT on enamel), `Skin-Tone Guard` (`S1..S7`: no swamp-green wall tint), `Hand Safe-Box` (`S3/S4`: no overlay on nails or the held product), `R200 Claim-Gate` (`S1/S2/S4/S5/S8`).
-- **Dual-Rail `9:16` + Cranial Lock (`0 %` face / hair contact):** text and plates go in the **Upper Editorial Stage** (`Y 220–520`, above the crown) or the **Chest Tactile Rail** (`Y 960–1340`, behind the person matte with `Sub-layer Feather = 29`, `0 px` hard stroke) plus whisper `G2` at `Y >= 1360`; `MAX_ZONES <= 2`; `>= 12 %` clean breathing frames (`20–30 %` emotional / vlog). Text *under* the person layer counts as sandwiched, not overlap (reference 23, decision c).
+- **Dual-Rail `9:16` + Cranial Lock (`0 %` face / hair contact) + L-Shaped TikTok Safe Zone (v8.1):** keep all hero text, widgets, 3D props and captions inside the **L-Shaped TikTok Safe Zone** at `1080×1920` — main safe box **`x: 120..840, y: 252..1216`** (clears TikTok right action rail `x > 840` and bottom caption/CTA chrome `y > 1216`), with top-right notch extension **`x: 120..960` for `y: 252..360`** where no right-rail icon sits. Place plates in the **Upper Editorial Stage** (`Y 252–520`, above the crown) or the **Chest Tactile Rail** (`Y 960–1216`, behind the person matte with `Sub-layer Feather = 29`, `0 px` hard stroke); `MAX_ZONES <= 2`; `>= 12 %` clean breathing frames (`20–30 %` emotional / vlog). Text *under* the person layer counts as sandwiched, not overlap (reference 23, decision c).
 - **Chromatic policy:** `color_world_polarity` (one signature hue `55–100 %` + `<= 45 %` pain hue + `#EEF4EA` / `#FAFAFA` flips) **or** `semantic_4act_jewel` (`#059669` / `#2563EB` / `#E11D48` / `#D97706` on `#FAFAFA`, `<= 1` jewel hue per beat). Look S: chapter colour wins; Look D: one token accent.
 
 #### 3.4.4. Micro-bridges and SFX
@@ -252,7 +270,9 @@ Look S is **mp4-first**: the `look_s_render.py --master` MP4 plus the `.fcproj` 
 1. **Schedule beats:** `typography_composer.plan_dviet_kinetic_beat_schedule(beats, words, ..., workspace_context=<work>/workspace_context.json, scenes=<work>/scenes.json)` (v7.9.3: the measured face, and per beat face-visible or not from the scene mode; a dropped `accent_text` raises unless the beat sets `allow_drop_accent: true`; dropped text is listed in `stats.dropped_text`) against `words_tl.json` (onsets `Δf = 8..16f @ 60fps`), `35 / 35 / 30` rhythm, `Swash-Initial Hybrid` (`[0]` ASCII swash `ℒ, 𝒩, 𝒬, ℋ, ℳ` + `[1..n]` NFC italic), no `— ALL CAPS KICKER`, no duplicate pills (`<= 30 %` pill share), `<= 2` consecutive identical silhouettes / entrances, `>= 4` distinct templates when `>= 8` beats.
 2. **Role text (Look D):** `dviet_text.py`: caption `y` by layout (`talking 52–58 %`, `panel 67 %`, `hero 27 %`, bilingual EN line `80–85 %` yellow italic), two-tier lock-ups, swash only for `script_accent`.
 3. **Render plates:** `web_plate_builder.render_kinetic_typo_batch(...)` (`kt01..kt12`, `60fps` RGBA `.mov`, never `mode="still"` `.png`), the 3D studio plates, the layout templates, and / or Lane C canvases. Every text obeys the `64 px` floor (4.2.3).
-4. **Assemble `<project>.craft.json`** (or start from `spec_from_plan.py`, [reference 21](./references/21_craft_json_minimal_spec.md); Look S: `spec_from_plan.py --fps 60`, its default is `30`): `.mov` overlays, single-stem bridges (`kt06`, no unspoken `0.5–4.8 s` spoilers, no bridge-plate collisions), `meta.format_mode`, `meta.industry_skin`, `meta.active_safety_guards`, `sub_layer_feather_px: 29`, unclipped SFX tails.
+4. **Typography v8.1 (`presets/typography_v81_presets.json`):** pair 1 of **6 font pairings (`FP1..FP6`)** with 1 of **8 gradient+glow palettes (`PAL_*`)** and rotate through **10 multi-font/multi-color Text Phụ modes (`sub_01..sub_10`)** enforcing **`max_consecutive = 1`** and **zero black strokes** (soft directional drop-shadow / multi-pass glow only), all clamped to the L-Shaped TikTok Safe Zone (`x: 120..840, y: 252..1216`; top-right notch `x: 120..960` for `y: 252..360`).
+5. **17-Industry 3D Asset Catalog (`presets/assets_3d_catalog.json`):** use [`local_3d_props.py`](./scripts/tools/local_3d_props.py) for instant local 3D PBR turntable props (RGBA `.mov`/`.png`) or [`flow_3d_assets.py`](./scripts/tools/flow_3d_assets.py) for the Google Flow photoreal 3D tier, mapped per industry skin and co-layered on `V4 · 3D & Widgets`.
+6. **Assemble `<project>.craft.json`** (via [`v8_to_craft_spec.py`](./scripts/tools/v8_to_craft_spec.py) for `v8_edit_plan.json`, or `spec_from_plan.py` for kinetic plans, [reference 21](./references/21_craft_json_minimal_spec.md); Look S: `--fps 60`): `.mov` overlays, non-overlapping lanes (`V4a`, `V4b`, ...), 48kHz stereo PCM `.wav` voice, single-stem bridges (`kt06`, no unspoken `0.5–4.8 s` spoilers, no bridge-plate collisions), `meta.format_mode`, `meta.industry_skin`, `meta.active_safety_guards`, `sub_layer_feather_px: 29`, unclipped SFX tails.
 
 ### 3.7. Compile and verify (`~55–95 s`)
 
@@ -265,7 +285,7 @@ Look S is **mp4-first**: the `look_s_render.py --master` MP4 plus the `.fcproj` 
 
 #### 3.8.1. Rule A1
 
-**Rule A1:** deliver the editable `.fcproj`; export an `.mp4` only when the user asks or in draft mode, via `python3 ./scripts/tools/fc_export.py IN.fcproj OUT.mp4` (FilmCraft + Xvfb; `-sn`, no metadata). **Look S exception (the only one):** deliver the `look_s_render.py` MP4 master (`1080x1920 @ 60fps`, `-14 LUFS`, `-sn`, no metadata) **and** the `.fcproj` mirror compiled from the same plan. Look D and every other run follow Rule A1. A failed gate means no delivery (5.4).
+**Rule A1:** deliver the editable `.fcproj`; export an `.mp4` only when the user asks or in draft mode, via `python3 ./scripts/tools/fc_export.py IN.fcproj OUT.mp4` (FilmCraft + Xvfb; `-sn`, no metadata). **Look S & v8.1 Dual-Deliverable FilmCraft Bridge:** deliver the `60fps` MP4 master (`1080x1920 @ 60fps`, `-14 LUFS`, `-sn`, no metadata) **and** the editable `.fcproj` mirror in one command via `v8_compositor_fx.py --plan v8_edit_plan.json --out master.mp4 --export-fcproj project.fcproj [--craft-spec project.craft.json]` (converts via `v8_to_craft_spec.py` and compiles via `compile_and_verify.py --tier fast --audio-profile studio_14`; if FilmCraft/Xvfb is unavailable, preserves `.craft.json` with `fcproj_status: "spec_ready_filmcraft_unavailable"` without failing the MP4 master). Look D and every other run follow Rule A1. A failed gate means no delivery (5.4).
 
 #### 3.8.2. Gate 7b (brain-triggered, shift once)
 
@@ -285,6 +305,7 @@ On an already exported MP4: `qa_sync.py --video EXPORTED.mp4 --spec X.craft.json
 4. **Micro-bridges, bimodal `C7`, no `f = 0` freeze:** never chop syllables in `[-130, -10] ms`, launch post-cut clips with `ds/dt != 0` (`player3_air_cushion_20f`), whisper `G2` at `Y >= 1360` (`R209`), `shutter_override: true` (`180–300°`) on whips and morphs.
 5. **Rule A1 and the wgpu guard:** hand-off per 3.8.1; whenever `opacity.blend != 0`, disable `drop_shadow` (FilmCraft `0.13.0`'s `wgpu 0.20.1` falls back to CPU otherwise).
 6. **Vietnamese NFC, `Swash-Initial Hybrid`, compound glue (`R55` / `R30`):** Unicode NFC; swash hybrid for Look S, condensed sans for Look D (swash only for `script_accent`); `padding_top >= 0.28–0.30 em` on `0.78` line-height; the `1199` glue pairs of [`text_vi.json`](./data/text_vi.json); `>= 3f` last-word hold (`R30`); banned fonts `Anton`, `Bebas Neue`, `Instrument Serif`, `Great Vibes` (`Instrument Serif` / `De Fonte` only for role `font_specimen` under profile `dviet`).
+7. **Zero-Voice-Loss + 100% Verbatim Caption Rail + Co-Layered Craft (v8):** never truncate or mute spoken voice across B-roll or stage inserts (`abs(out_dur - in_dur) <= 0.15 s`); keep every spoken word on the verbatim caption rail (`verbatim_caption_rail.py`); default to `9:16` (`1080x1920@60`) and use `16:9` (`1920x1080@60`) strictly on explicit user request; strip all EXIF/XMP/C2PA metadata on delivered MP4s.
 
 ### 4.2. Gates and where each is enforced
 

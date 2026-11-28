@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
-  "version": "7.4.0",
-  "_about": "Canvas presets seen in the 17 @__dviet videos (references/dviet_19/INDEX.md). platform_safe_zones.json is unchanged and remains the source for 9:16; the other canvases carry safe boxes scaled from it. Scaled boxes are derived estimates, not platform-published values.",
+  "version": "8.0.0",
+  "_about": "Canvas presets for Pro FilmCraft Director v8.0. 9x16_1080_60 is the strict default; 16x9_1920_60 and 16x9_1920_30 are opt-in only when explicitly requested by the user. Safe zones for 9:16 and 16:9 come directly from platform_safe_zones.json.",
   "default": "9x16_1080_60",
   "canvases": {
     "9x16_1080_60": {
@@ -126,6 +126,54 @@
         "flag": "derived_estimate"
       },
       "notes": "Text-first canvas of 7664835388476755220; constellation layout is defined on this canvas."
+    },
+    "16x9_1920_60": {
+      "width": 1920,
+      "height": 1080,
+      "fps": 60,
+      "aspect": "16:9",
+      "opt_in_only": true,
+      "flag": "v8_supported",
+      "safe_zone": {
+        "source": "platform_safe_zones.json aspect_ratios[16:9]",
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "core_safe_box_px": {
+          "x_min": 120,
+          "x_max": 1800,
+          "y_min": 80,
+          "y_max": 920
+        },
+        "subtitle_y_px": [
+          820,
+          920
+        ]
+      },
+      "notes": "Opt-in widescreen 60fps master (YouTube / LinkedIn / Web). Never selected automatically; use only when the user explicitly requests 16:9."
+    },
+    "16x9_1920_30": {
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "aspect": "16:9",
+      "opt_in_only": true,
+      "flag": "v8_supported",
+      "safe_zone": {
+        "source": "platform_safe_zones.json aspect_ratios[16:9]",
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "core_safe_box_px": {
+          "x_min": 120,
+          "x_max": 1800,
+          "y_min": 80,
+          "y_max": 920
+        },
+        "subtitle_y_px": [
+          820,
+          920
+        ]
+      },
+      "notes": "Opt-in widescreen 30fps canvas (halves 60fps frame counts). Use only when the user explicitly requests 16:9 at 30fps."
     }
   },
   "safe_zone_scaling_rule": {
@@ -134,5 +182,5 @@
     "fps": "fps does not change safe zones; it changes frame counts only.",
     "flag": "derived_estimate"
   },
-  "limits": "The compositor and compile_and_verify pipeline are written for 1080x1920; non-9:16 canvases are data here and are not verified end to end."
+  "limits": "9x16_1080_60 is the strict default for Look S, Look D and compile_and_verify. v8_compositor_fx.py supports both 9:16 (default) and 16:9 (opt-in only)."
 }

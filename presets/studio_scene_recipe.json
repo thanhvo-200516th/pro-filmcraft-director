@@ -1,6 +1,6 @@
 {
   "_doc": "Look S (Studio) scene recipe distilled from the V19..V21 reference masters (references/24_studio_look_recipe.md). Read by scripts/tools/studio_recipe.py. `grid` start times are seconds on the 40.633 s reference timeline: cut times come from the V19 walkthrough, scene starts S02/S08/S09/S12C from the V21 walkthrough; entries flagged approx are the recipe author's choice, not measured. The planner scales the grid to any duration and snaps each boundary to the nearest word gap. `chapters` follow the 4-act jewel table of the analysis doc dviet_19videos_complete_forensics_and_roundtable.md (act 3 split in 3A / 3B); `jewel` is the accent on dark worlds, `ink_on_light` the jewel ink on #FAFAFA paper. Chapter starts 15.05 and 34.0 are the V19 cut/drop times (the doc says 15.2 and 34.2). v7.7.0 adds `hook_0_5s` (hook recipe v3), `pacing` (max-hold, visual change per 5 s, dead-hold target) and `camera_punch_caps`; see references/28_hook_first_5s_and_pacing.md. Every number there carries its basis: basis ĐO = measured, basis ƯỚC = estimate (SFX times cannot be separated from voice and music, so all SFX times are ƯỚC).",
-  "version": "7.9.0",
+  "version": "8.1.0",
   "look": "S",
   "reference_duration_s": 40.633,
   "min_scene_s": 1.0,

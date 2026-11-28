@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-motion_gate.py (v7.9.0) — pixel-level hook gates on a rendered preview. Pure numpy / cv2, importable and CLI.
+motion_gate.py (v8.1.0) — pixel-level hook gates on a rendered preview. Pure numpy / cv2, importable and CLI.
 
 Why: the v3 hook sat static for 2.2-3.4 s (frame diff < 1.0), had a soft pop-out edge and text over the product. These gates measure
 the RENDERED pixels instead of trusting the plan.
@@ -14,7 +14,7 @@ the RENDERED pixels instead of trusting the plan.
   hero_product_overlap_px(frame, text_bbox, product_mask)  hero text pixels over the product silhouette (gate == 0)
   text_glyph_height_frac(bbox, H=1920)  glyph box height as a fraction of the frame (floor 3.3 %)
 
-v7.9.0 (v4 review K1-K4, A1, V-FLASH):
+v8.1.0 (v4 review K1-K4, A1, V-FLASH):
   popout_inner_edge_dark_strip_px(frame, card_rect)  dark band along the card's inner left / right edge (gate <= 4 px; v4 24-30 px)
   card_dark_speck_count(frame, card_rect, exclude_mask)  small dark blobs on the card wall (gate == 0; v4 a 17x14 px dot)
   crown_edge_metrics(alpha_crop)  pop-out crown top edge: jaggedness (gate <= 1.2 px) and 10-90 % rise (gate <= 4 px)
@@ -45,7 +45,7 @@ from typing import Any, Sequence
 import cv2
 import numpy as np
 
-VERSION = "7.9.0"
+VERSION = "8.1.0"
 FLASH_DIFF = 18.0          # [UOC] mean gray diff (0..255) above which a frame pair is a cut / white flash, not camera motion
 STATIC_DIFF = 1.0          # [UOC] frame diff below this is "static" (the v3 window measured 1.20 mean, many frames < 1.0)
 STATIC_MAX_S = 0.6         # [UOC] longest tolerated static run

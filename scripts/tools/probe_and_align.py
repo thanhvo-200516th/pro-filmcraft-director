@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-probe_and_align.py (v7.9.0) — Universal Stateless Ingest, Probe, Audit, Alignment,
+probe_and_align.py (v8.1.0) — Universal Stateless Ingest, Probe, Audit, Alignment,
 10x8 Multi-Industry Routing, Cranial Dual-Rail & Zero-Face Macro Safe-Zone Engine.
 
 100% format-agnostic, stateless atomic CLI & Python library for `pro-filmcraft-director`
@@ -71,7 +71,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
-VERSION = "7.9.0"
+VERSION = "8.1.0"
 SKILL_ROOT = Path(__file__).resolve().parents[2]
 HAAR_CASCADE_XML = SKILL_ROOT / "data" / "haarcascade_frontalface_default.xml"
 TEXT_VI_JSON = SKILL_ROOT / "data" / "text_vi.json"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-fc_export.py (v7.9.0) — thin glue: export a FilmCraft `.fcproj` to MP4 through the vendored `ovs_core` exporter.
+fc_export.py (v8.1.0) — thin glue: export a FilmCraft `.fcproj` to MP4 through the vendored `ovs_core` exporter.
 
     fc_export.py IN.fcproj OUT.mp4 [--crf N] [--lufs L] [--timeout S]
 

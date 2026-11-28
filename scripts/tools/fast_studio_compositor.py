@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Universal Studio Director v7.9.0 — Fast Studio Framing & C/AVX2 FFmpeg Compositor
+Universal Studio Director v8.1.0 — Fast Studio Framing & C/AVX2 FFmpeg Compositor
 =================================================================================
-v7.9.0 audit fixes (7.9.1 driver): `probe_video` + `check_look_s_geometry` (ffprobe: video stream, dims, fps; Look S needs 9:16,
+v8.1.0 audit fixes (7.9.1 driver): `probe_video` + `check_look_s_geometry` (ffprobe: video stream, dims, fps; Look S needs 9:16,
 drawn at 1080x1920) used by the CLI and `look_s_render.py` (the Look S CLI driver); the plate encoder never leaks ffmpeg or temp files;
 concat lists escape `'` and every temp name is unique (parallel safe); the full-width alpha cache is content-hashed and written atomically;
 Playfair lookup falls back to fontconfig with a loud WARNING; headline text is NFC-normalised.
-v7.9.0 (v4 review K2 / K4 / A1): `render_popout_studio_card` cleans dark source side bands (letterbox / dark wall edge) and small dark wall
+v8.1.0 (v4 review K2 / K4 / A1): `render_popout_studio_card` cleans dark source side bands (letterbox / dark wall edge) and small dark wall
 specks before the card is cut, refines the crown matte (guided filter on the photo + edge contrast, `crown_refine`), reports
 `source_bands_px`, `card_src_rect`, `crown_alpha`; `snap_punch` caps the flashed frame at mean luma 220 (photosensitivity). Gates: motion_gate.
 v7.8.0 (package S1): crisp pop-out defaults (edge 19-21 px -> 4-5 px [DO]; USM on the photo only, Lanczos4), `render_product_stage` +

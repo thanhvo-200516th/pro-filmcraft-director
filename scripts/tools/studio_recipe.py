@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-studio_recipe.py (v7.9.0): stateless Look S scene planner and pacing validator. The brain still decides; this only lays out the V21 pattern.
+studio_recipe.py (v8.1.0): stateless Look S scene planner and pacing validator. The brain still decides; this only lays out the V21 pattern.
 
 `plan_scenes(words_tl, duration, look="S")` scales the V21 scene grid of presets/studio_scene_recipe.json to `duration`,
 snaps each cut to the nearest word gap, assigns a mode per beat (hook=H, text=A1/P, B-roll=A2, tension=N, steps=S, CTA=B),
@@ -20,7 +20,7 @@ adds `text_voice_sync` (text onset 0-400 ms before the matching word, warn outsi
 `hero_safe_zone` (hero box vs `product_bbox` or the `stage` cap-top line; the rendered twin is `hero_product_overlap_px` of motion_gate.py), `text_min_size` (64 px, 3.3 %)
 and `hook_motion_floor` (a BACKGROUND reset in every 1.0 s of 0-3.4 s; PiP pops and text are overlay resets); `check_pacing` adds `bg_static_hold` for shots flagged
 `broll` with `moves`, and `plan_micro_moves(shots)` proposes the remedy. Resets are `{t, kind, layer: bg|overlay, mag}`; floats and tuples stay bg resets.
-v7.9.0 (v4 review): `check_text_legibility` (every overlay text / card label at font x plate scale), `text_coverage` (no text-free gap > 150 ms in 0-3 s), `flash_luma_cap` / `flash_rate` and `word_gap_collision` (motion_gate), `first_text_late` (`strict_first_text=True`, the default: text at or before the first word).
+v8.1.0 (v4 review): `check_text_legibility` (every overlay text / card label at font x plate scale), `text_coverage` (no text-free gap > 150 ms in 0-3 s), `flash_luma_cap` / `flash_rate` and `word_gap_collision` (motion_gate), `first_text_late` (`strict_first_text=True`, the default: text at or before the first word).
 
 CLI: studio_recipe.py --words W.json --duration D --out scenes.json [--look S|D]   (exit 0 ok, 2 bad input, 3 rule violated)
 """
@@ -36,7 +36,7 @@ import sys
 import unicodedata
 from pathlib import Path
 
-VERSION = "7.9.0"
+VERSION = "8.1.0"
 PRESET = Path(__file__).resolve().parent.parent.parent / "presets" / "studio_scene_recipe.json"
 
 

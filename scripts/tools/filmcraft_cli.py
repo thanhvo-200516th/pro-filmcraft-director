@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-filmcraft_cli.py (v7.9.0) — thin shim over the vendored `craftctl.Craft`; replaces the `filmcraft-cli` binary that never existed
+filmcraft_cli.py (v8.1.0) — thin shim over the vendored `craftctl.Craft`; replaces the `filmcraft-cli` binary that never existed
 (only the GUI `filmcraft` does, see references/30_filmcraft_control_bridge.md).
 
     filmcraft_cli.py [--project P.fcproj] [--display :N] [--allow-offline] [--timeout S] <cmd>

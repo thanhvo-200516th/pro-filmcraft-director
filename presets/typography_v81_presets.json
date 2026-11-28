@@ -1,0 +1,276 @@
+{
+  "schema_version": "8.1.0",
+  "description": "Typography v8.1 Presets: 6 Verified Local Vietnamese NFC Font Pairings, 8 Curated Gradient + Optical Glow Palettes (zero harsh black strokes), and 10 Distinct Subtitle Modes (sub_01..sub_10) for TikTok L-Safe-Zone 9:16.",
+  "font_pairings": {
+    "FP1_EDITORIAL_LUXE": {
+      "id": "FP1_EDITORIAL_LUXE",
+      "name": "Editorial Luxe",
+      "primary_font": "Be Vietnam Pro",
+      "primary_weight": 800,
+      "accent_font": "Playfair Display",
+      "accent_weight": 700,
+      "accent_style": "italic",
+      "css_primary": "\"Be Vietnam Pro\", \"Montserrat\", \"Inter\", sans-serif",
+      "css_accent": "\"Playfair Display\", \"Fraunces\", Georgia, serif",
+      "vietnamese_nfc_verified": true
+    },
+    "FP2_SCRIPT_CONTRAST": {
+      "id": "FP2_SCRIPT_CONTRAST",
+      "name": "Script Contrast",
+      "primary_font": "Montserrat",
+      "primary_weight": 800,
+      "accent_font": "SVN-Aaron Script",
+      "accent_weight": 600,
+      "accent_style": "normal",
+      "css_primary": "\"Montserrat\", \"Be Vietnam Pro\", sans-serif",
+      "css_accent": "\"SVN-Aaron Script\", \"Dancing Script\", \"Playfair Display\", cursive",
+      "vietnamese_nfc_verified": true
+    },
+    "FP3_CONDENSED_IMPACT": {
+      "id": "FP3_CONDENSED_IMPACT",
+      "name": "Condensed Impact",
+      "primary_font": "Barlow Condensed",
+      "primary_weight": 800,
+      "accent_font": "Be Vietnam Pro",
+      "accent_weight": 500,
+      "accent_style": "normal",
+      "css_primary": "\"Barlow Condensed\", \"Oswald\", \"Be Vietnam Pro\", sans-serif",
+      "css_accent": "\"Be Vietnam Pro\", \"Inter\", sans-serif",
+      "vietnamese_nfc_verified": true
+    },
+    "FP4_NEO_TECH_MONO": {
+      "id": "FP4_NEO_TECH_MONO",
+      "name": "Neo-Tech Mono",
+      "primary_font": "Space Grotesk",
+      "primary_weight": 700,
+      "accent_font": "JetBrains Mono",
+      "accent_weight": 500,
+      "accent_style": "normal",
+      "css_primary": "\"Space Grotesk\", \"Be Vietnam Pro\", sans-serif",
+      "css_accent": "\"JetBrains Mono\", \"Space Mono\", monospace",
+      "vietnamese_nfc_verified": true
+    },
+    "FP5_DISPLAY_CHUNKY": {
+      "id": "FP5_DISPLAY_CHUNKY",
+      "name": "Display Chunky",
+      "primary_font": "Unbounded",
+      "primary_weight": 800,
+      "accent_font": "Inter",
+      "accent_weight": 600,
+      "accent_style": "normal",
+      "css_primary": "\"Unbounded\", \"Paytone One\", \"Montserrat\", sans-serif",
+      "css_accent": "\"Inter\", \"Be Vietnam Pro\", sans-serif",
+      "vietnamese_nfc_verified": true
+    },
+    "FP6_SERIF_MODERN": {
+      "id": "FP6_SERIF_MODERN",
+      "name": "Serif Modern",
+      "primary_font": "Fraunces",
+      "primary_weight": 700,
+      "accent_font": "Lora",
+      "accent_weight": 600,
+      "accent_style": "italic",
+      "css_primary": "\"Fraunces\", \"Newsreader\", \"Playfair Display\", serif",
+      "css_accent": "\"Lora\", \"Playfair Display\", Georgia, serif",
+      "vietnamese_nfc_verified": true
+    }
+  },
+  "palettes": {
+    "PAL_ELECTRIC_CYAN": {
+      "id": "PAL_ELECTRIC_CYAN",
+      "name": "Electric Cyan",
+      "gradient": "linear-gradient(135deg, #F0F9FF 0%, #67E8F9 42%, #0EA5E9 100%)",
+      "primary_color": "#F8FAFC",
+      "accent_color": "#38BDF8",
+      "glow_color": "#0EA5E9",
+      "extrude_color": "#0C4A6E",
+      "diffused_shadow": "0 4px 18px rgba(0,0,0,0.75)",
+      "zero_black_stroke": true
+    },
+    "PAL_EMERALD_MINT": {
+      "id": "PAL_EMERALD_MINT",
+      "name": "Emerald Mint",
+      "gradient": "linear-gradient(135deg, #ECFDF5 0%, #6EE7B7 44%, #10B981 100%)",
+      "primary_color": "#F8FAFC",
+      "accent_color": "#34D399",
+      "glow_color": "#10B981",
+      "extrude_color": "#064E3B",
+      "diffused_shadow": "0 4px 18px rgba(0,0,0,0.75)",
+      "zero_black_stroke": true
+    },
+    "PAL_ROYAL_VIOLET": {
+      "id": "PAL_ROYAL_VIOLET",
+      "name": "Royal Violet",
+      "gradient": "linear-gradient(135deg, #F5F3FF 0%, #C4B5FD 42%, #8B5CF6 100%)",
+      "primary_color": "#F8FAFC",
+      "accent_color": "#A78BFA",
+      "glow_color": "#7C3AED",
+      "extrude_color": "#3B0764",
+      "diffused_shadow": "0 4px 18px rgba(0,0,0,0.75)",
+      "zero_black_stroke": true
+    },
+    "PAL_CORAL_CRIMSON": {
+      "id": "PAL_CORAL_CRIMSON",
+      "name": "Coral Crimson",
+      "gradient": "linear-gradient(135deg, #FFF1F2 0%, #FDA4AF 38%, #F43F5E 100%)",
+      "primary_color": "#FFF5F5",
+      "accent_color": "#FB7185",
+      "glow_color": "#E11D48",
+      "extrude_color": "#4C0519",
+      "diffused_shadow": "0 4px 18px rgba(0,0,0,0.75)",
+      "zero_black_stroke": true
+    },
+    "PAL_SOLAR_AMBER": {
+      "id": "PAL_SOLAR_AMBER",
+      "name": "Solar Amber",
+      "gradient": "linear-gradient(135deg, #FFFBEB 0%, #FDE047 42%, #F59E0B 100%)",
+      "primary_color": "#FFFBEB",
+      "accent_color": "#FBBF24",
+      "glow_color": "#F59E0B",
+      "extrude_color": "#78350F",
+      "diffused_shadow": "0 4px 18px rgba(0,0,0,0.75)",
+      "zero_black_stroke": true
+    },
+    "PAL_CHAMPAGNE_GOLD": {
+      "id": "PAL_CHAMPAGNE_GOLD",
+      "name": "Champagne Gold",
+      "gradient": "linear-gradient(180deg, #FFFDF0 0%, #FDE68A 34%, #D97706 72%, #FEF3C7 100%)",
+      "primary_color": "#FEF9C3",
+      "accent_color": "#FCD34D",
+      "glow_color": "#D97706",
+      "extrude_color": "#713F12",
+      "diffused_shadow": "0 4px 18px rgba(0,0,0,0.75)",
+      "zero_black_stroke": true
+    },
+    "PAL_SILVER_CHROME": {
+      "id": "PAL_SILVER_CHROME",
+      "name": "Silver Chrome",
+      "gradient": "linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 38%, #94A3B8 70%, #F8FAFC 100%)",
+      "primary_color": "#F8FAFC",
+      "accent_color": "#CBD5E1",
+      "glow_color": "#94A3B8",
+      "extrude_color": "#1E293B",
+      "diffused_shadow": "0 4px 18px rgba(0,0,0,0.75)",
+      "zero_black_stroke": true
+    },
+    "PAL_DUOTONE_BLUE_ORANGE": {
+      "id": "PAL_DUOTONE_BLUE_ORANGE",
+      "name": "Duotone Blue Orange",
+      "gradient": "linear-gradient(135deg, #38BDF8 0%, #F8FAFC 50%, #FB923C 100%)",
+      "primary_color": "#E0F2FE",
+      "accent_color": "#FB923C",
+      "glow_color": "#38BDF8",
+      "extrude_color": "#0F172A",
+      "diffused_shadow": "0 4px 18px rgba(0,0,0,0.75)",
+      "zero_black_stroke": true
+    }
+  },
+  "subtitle_modes": {
+    "sub_01": {
+      "id": "sub_01",
+      "name": "2-Tier Micro-Lead + Neon Keyword",
+      "description": "Upper compact lead words + lower oversized gradient neon keyword with diffused optical glow.",
+      "default_font_pair": "FP3_CONDENSED_IMPACT",
+      "default_palette": "PAL_ELECTRIC_CYAN",
+      "semantic_triggers": ["numbers", "steps"],
+      "l_safe_y_px": [1040, 1210]
+    },
+    "sub_02": {
+      "id": "sub_02",
+      "name": "Mixed-Font Inline Emphasis",
+      "description": "Clean sans-serif phrase with the key impact word set in Playfair Display BoldItalic with colored glow.",
+      "default_font_pair": "FP1_EDITORIAL_LUXE",
+      "default_palette": "PAL_CHAMPAGNE_GOLD",
+      "semantic_triggers": ["editorial", "insight"],
+      "l_safe_y_px": [1050, 1210]
+    },
+    "sub_03": {
+      "id": "sub_03",
+      "name": "Brushed Script Accent Word",
+      "description": "Hand-brushed script keyword (SVN-Aaron Script / Dancing Script) revealed via smooth left-to-right clip-path wipe.",
+      "default_font_pair": "FP2_SCRIPT_CONTRAST",
+      "default_palette": "PAL_SOLAR_AMBER",
+      "semantic_triggers": ["short_punch", "emotion"],
+      "l_safe_y_px": [1040, 1210]
+    },
+    "sub_04": {
+      "id": "sub_04",
+      "name": "Cursor-Pin Highlight Bar",
+      "description": "Two glowing vertical cursor pins parting outward around the active/highlighted phrase with soft translucent ribbon.",
+      "default_font_pair": "FP4_NEO_TECH_MONO",
+      "default_palette": "PAL_EMERALD_MINT",
+      "semantic_triggers": ["tech", "method"],
+      "l_safe_y_px": [1055, 1210]
+    },
+    "sub_05": {
+      "id": "sub_05",
+      "name": "3-Tier Asymmetric Sandwich",
+      "description": "Top-left lead, center giant gradient impact word, and bottom-right tail aligned asymmetrically inside L-safe box.",
+      "default_font_pair": "FP3_CONDENSED_IMPACT",
+      "default_palette": "PAL_DUOTONE_BLUE_ORANGE",
+      "semantic_triggers": ["numbers", "steps", "multi_word"],
+      "l_safe_y_px": [1010, 1210]
+    },
+    "sub_06": {
+      "id": "sub_06",
+      "name": "Overlap Feather Kiss",
+      "description": "Upper soft white feathered line kissed closely by a lower bold glowing gradient line with subtle negative margin overlap.",
+      "default_font_pair": "FP1_EDITORIAL_LUXE",
+      "default_palette": "PAL_ROYAL_VIOLET",
+      "semantic_triggers": ["contrast", "statement"],
+      "l_safe_y_px": [1035, 1210]
+    },
+    "sub_07": {
+      "id": "sub_07",
+      "name": "Soft Blur-Bloom Crystallize",
+      "description": "Italic editorial serif rack-focusing from soft gaussian bloom into crisp crystalline sharpness.",
+      "default_font_pair": "FP6_SERIF_MODERN",
+      "default_palette": "PAL_SILVER_CHROME",
+      "semantic_triggers": ["reflection", "story"],
+      "l_safe_y_px": [1050, 1210]
+    },
+    "sub_08": {
+      "id": "sub_08",
+      "name": "Elastic Wave Pop",
+      "description": "Chunky display words popping in with spring overshoot wave synchronized to word timestamps.",
+      "default_font_pair": "FP5_DISPLAY_CHUNKY",
+      "default_palette": "PAL_SOLAR_AMBER",
+      "semantic_triggers": ["short_punch", "energy"],
+      "l_safe_y_px": [1045, 1210]
+    },
+    "sub_09": {
+      "id": "sub_09",
+      "name": "Negation Laser Strike",
+      "description": "Crimson coral glow with animated horizontal laser slash slicing through warning/myth keywords.",
+      "default_font_pair": "FP3_CONDENSED_IMPACT",
+      "default_palette": "PAL_CORAL_CRIMSON",
+      "semantic_triggers": ["warning", "negation", "myth"],
+      "l_safe_y_px": [1045, 1210]
+    },
+    "sub_10": {
+      "id": "sub_10",
+      "name": "Quiet Whisper Karaoke Rail",
+      "description": "Minimal airy breathing-room karaoke subtitle with delicate glow and zero box clutter.",
+      "default_font_pair": "FP4_NEO_TECH_MONO",
+      "default_palette": "PAL_SILVER_CHROME",
+      "semantic_triggers": ["breathing", "quiet", "transition"],
+      "l_safe_y_px": [1080, 1212]
+    }
+  },
+  "rotation_rules": {
+    "max_consecutive_same_mode": 1,
+    "max_consecutive_same_palette": 1,
+    "max_consecutive_same_font_pair": 2,
+    "negation_keywords_vi": [
+      "giả", "nhựa", "lỗi", "sai", "đừng", "tránh", "rủi", "ro",
+      "hỏng", "mất", "tệ", "xấu", "cấm", "không", "chết", "phá", "bẫy", "lừa"
+    ],
+    "stop_words_vi": [
+      "và", "là", "của", "thì", "mà", "cái", "một", "các", "những", "ở",
+      "từ", "cho", "với", "để", "này", "đó", "khi", "như", "đã", "sẽ",
+      "đang", "rất", "quá", "lại", "cũng", "về", "trong", "ra", "vào",
+      "lên", "xuống", "tôi", "bạn", "mình", "ta", "nó", "họ", "anh", "em",
+      "chị", "hay", "hoặc", "nếu", "vì", "nên", "rằng", "thế", "vậy", "nhé", "nha"
+    ]
+  }
+}

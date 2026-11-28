@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-compile_and_verify.py (v7.9.0) — Dual-Tier Stateless FilmCraft (.craft.json -> .fcproj) Compiler,
+compile_and_verify.py (v8.1.0) — Dual-Tier Stateless FilmCraft (.craft.json -> .fcproj) Compiler,
 4-Cut Grammar & Bimodal C7 Adjudicator, Color-World Polarity, Spatial Density & 8-Gate Verifier.
 
 v7.4.0: gate dependencies are vendored in `scripts/vendor/ovs_core/` (override: env `PFD_OVS_DIR`); `--profile {default,dviet}`
@@ -93,7 +93,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy.signal import correlate
 
-COMPILER_VERSION = "7.9.0"
+COMPILER_VERSION = "8.1.0"
 TICKS_PER_SECOND = 254_016_000_000
 SR = 48000
 ENV5_WIN = 240  # 5.0 ms boxcar window at 48 kHz (matches thlib/sfxlib.py::_ENV5_WIN)

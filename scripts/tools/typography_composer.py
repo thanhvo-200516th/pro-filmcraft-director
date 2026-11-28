@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stateless Color-World & Multi-Hue Typography, Wall Micro-Words, Negative-Leading Kiss & 3-Cam Toolkit (`v6.0` core, packaged as `v7.9.0`)
+Stateless Color-World & Multi-Hue Typography, Wall Micro-Words, Negative-Leading Kiss & 3-Cam Toolkit (`v6.0` core, packaged as `v8.1.0`)
 ==============================================================================================================
 v7.4.0: `import os` crash fix (`--self-test` / `--self-test-v71` run clean); no API change.
 100% backward-compatible with `v5.1`/`v5.2` `opa-video-studio` & `craft-handoff` (`.craft.json` -> `fc_build.py` /

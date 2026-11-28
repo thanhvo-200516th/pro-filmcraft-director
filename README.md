@@ -1,12 +1,54 @@
-# Pro FilmCraft Director (`pro-filmcraft-director` · v7.9.0)
+# Pro FilmCraft Director (`pro-filmcraft-director` · v8.1.0)
 
-Bộ Skill Đạo diễn & Biên dịch Hậu kỳ Video Dọc `9:16` (`1080×1920 @ 60fps`) chuẩn Studio: tạo ra **Project FilmCraft gốc (`.fcproj`) chỉnh sửa trực tiếp trên timeline** và, với **Look S (Studio, mặc định)**, thêm **MP4 master** dựng bằng compositor. Quy tắc bàn giao (Rule A1 và ngoại lệ Look S) chỉ được viết một lần, ở `SKILL.md` mục 3.8.1: `.fcproj` luôn được giao; `.mp4` chỉ xuất khi người dùng yêu cầu hoặc ở chế độ draft (qua `scripts/tools/fc_export.py`), trừ Look S giao **MP4 master + `.fcproj` song song**. Bộ biên dịch có **8 Cổng Kiểm Định (`Gates 1–8`)**; các cổng hook / nhịp / chữ ở mức kế hoạch là hàm thư viện mà agent phải tự gọi (`SKILL.md` mục 4.2).
-
-`SKILL.md` (đợt sửa v7.9.1; nhãn phiên bản trong mã và frontmatter vẫn `v7.9.0`) đã được sắp lại theo luồng **1. Tổng quan → 2. Yêu cầu & tài nguyên → 3. Quy trình từng bước → 4. Luật / rào chắn → 5. QA & xử lý lỗi**, đánh số `1.` / `1.1.` / `1.1.1.`; mỗi luật chỉ còn một bản chính, nơi khác trỏ tới đó.
+Bộ Skill Đạo diễn & Biên dịch Hậu kỳ Video Dọc `9:16` (`1080×1920 @ 60fps`, hỗ trợ `16:9` opt-in) chuẩn Studio đa ngành (17 ngành nghề phi-SaaS & sáng tạo): tạo ra **Project FilmCraft gốc (`.fcproj`) chỉnh sửa trực tiếp trên timeline** song song với **MP4 master 60fps** dựng bằng compositor. Quy tắc bàn giao (Rule A1 và ngoại lệ Look S / v8) chỉ được viết một lần ở `SKILL.md` mục 3.8.1. Bộ biên dịch có **8 Cổng Kiểm Định (`Gates 1–8`)** kết hợp bảo vệ 100% lời thoại (**Zero-Voice-Loss**), **100% Verbatim Caption Rail**, **Vùng An Toàn chữ L chuẩn TikTok**, **Typography v8.1 đa font/đa màu**, **46 vật thể 3D theo 17 ngành nghề**, tách nền **RVM CUDA / `u2netp`** và tracking bám người **YuNet 60fps**.
 
 ---
 
-## 1. Điểm Nổi Bật Phiên Bản `v7.9.0` và bản sửa kiểm định `v7.9.1`
+## 0. Điểm Nổi Bật Phiên Bản `v8.0.0` → `v8.1.0` (Universal Multi-Industry Cinema Director)
+
+### `v8.1.0` — Typography Đa Font/Đa Màu, Vùng An Toàn TikTok chữ L, Kho 3D PBR 17 Ngành & Cầu nối FilmCraft `.fcproj`
+- **Vùng An Toàn chữ L chuẩn TikTok (`presets/platform_safe_zones.json`)**:
+  - Khóa cứng đa giác an toàn hình chữ L ở `1080×1920`: góc trên `x: 120..960` (`y: 252..360`), thân chính `x: 120..840` (`y: 360..1216`) + hàm `clamp_to_l_safe_zone()` trong `cinema_widgets_v8.py`, tránh tuyệt đối thanh icon bên phải và vùng caption/CTA dưới đáy TikTok.
+- **Hệ Typography v8.1 cho Text Chính & Text Phụ (`presets/typography_v81_presets.json`, `verbatim_caption_rail.py`, `cinema_widgets_v8.py`)**:
+  - **6 cặp font Việt NFC đã kiểm trên host (`FP1..FP6`)**: `Be Vietnam Pro + Playfair BoldItalic`, `Montserrat + Script`, `Barlow Condensed + Sans`, `Space Grotesk + JetBrains Mono`, `Unbounded + Inter`, `Fraunces + Lora Italic`.
+  - **8 bảng màu Gradient + Optical Glow (`PAL_*`)**: loại bỏ hoàn toàn viền đen cứng, thay bằng bóng khuếch tán mềm + quầng sáng màu.
+  - **10 chế độ Text Phụ luân phiên (`sub_01..sub_10`)**: `verbatim_caption_rail.py --style-rotate` xoay vòng 10 kiểu bố cục/chuyển động (`max_consecutive = 1`, phủ **100.0% từ nói**), kết hợp `rail_dynamic_typo` và nâng cấp Text Chính (`kt13..kt18`) với **Ghost Watermark** chiều sâu.
+- **Kho 46 Vật thể 3D cho 17 Ngành nghề & Bộ render 3D PBR Offline (`presets/assets_3d_catalog.json`, `scripts/tools/local_3d_props.py`)**:
+  - **28 vật thể `local_3d`** render trực tiếp bằng shader WebGL2 Cook-Torrance PBR 3 điểm sáng + xoay turntable `45°/s` + nhún lò xo (0 giây chờ API) + lệnh `match` tự khớp từ khóa tiếng Việt/Anh theo ngành.
+  - **18 vật thể `google_flow`** photoreal qua `scripts/tools/flow_3d_assets.py`.
+- **Cầu nối Bàn giao Kép FilmCraft `.fcproj` (`scripts/tools/v8_to_craft_spec.py`, `v8_compositor_fx.py --export-fcproj`)**:
+  - Xuất song song **MP4 master 60fps** và **dự án FilmCraft `.fcproj` 7 track** (tự đóng gói không trùng track `V4a/V4b`, tách audio WAV 48kHz, qua toàn bộ 8 cổng `compile_and_verify.py`).
+
+### `v8.0.0` — Hợp nhất 4 Kênh Mẫu, Zero-Voice-Loss, Bám Người YuNet & RVM CUDA, 17 Ngành Phi-SaaS
+- **Hợp nhất ngữ pháp 4 kênh tham khảo**: `@tng.vinhomes8` (text 3D sau người + bám chuyển động + icon/badge nổi), `@vuotaiai` (sân khấu neon PiP + chữ vòng đỉnh đầu + checklist/biểu đồ), `@__dviet` (optical glow chậm + lowercase nén + từng ký tự ngẫu nhiên + typewriter glitch), `@xuanart.visual` (glass pills đánh số + highlight từng từ + chuyển cảnh quang học `light_burst`, `film_burn`, `whip_blur`).
+- **Bảo vệ lời nói tuyệt đối (`silence_cut.py --whisper-guard --protect-short-words`)**: khóa cứng mốc từng từ Whisper, không cắt mất âm tiết ngắn tiếng Việt; kiểm định độ lệch audio `<= 0.15s`.
+- **Bám chuyển động 60fps & Tách nền sau người (`subject_tracker.py`, `v8_compositor_fx.py`)**: YuNet ONNX (`data/face_detection_yunet_2023mar.onnx`) + lọc mượt zero-lag EMA hai chiều + RVM CUDA (fallback `u2netp`) + parallax lò xo (`follow_speaker`).
+- **Mở rộng 17 skin ngành nghề phi-SaaS (`presets/industry_profiles.json`)** và hỗ trợ **`9:16` mặc định / `16:9` opt-in** (`presets/canvas_presets.json`).
+- **Bổ sung `scripts/tools/vector_shape_plates.py`** (hình khối vector động `arrow`, `circle`, `underline`, `spiral`, `zigzag`, `graph`, `highlight_box`) và **`scripts/tools/flow_3d_assets.py`** (`references/flow-3d-assets.md`).
+
+### Chạy nhanh quy trình `v8.1.0` (MP4 60fps + FilmCraft `.fcproj`)
+```bash
+PY=~/.venvs/video-skills/bin/python3
+# 1. Tracking khuôn mặt & đỉnh đầu 60fps (YuNet ONNX)
+$PY scripts/tools/subject_tracker.py --input raw.mp4 --out work/subject_track.json --sample-fps 15 --out-fps 60
+
+# 2. Phụ đề phủ 100% lời thoại xoay vòng 10 chế độ Text Phụ + 6 cặp font + 8 bảng màu
+$PY scripts/tools/verbatim_caption_rail.py --words work/words_tl.json --out work/caption_rail_v81.json --style-rotate
+
+# 3. Render vật thể 3D PBR WebGL2 offline & plate Typography/Widgets 60fps
+$PY scripts/tools/local_3d_props.py render --manifest work/props_manifest.json --out-dir work/props3d
+$PY scripts/tools/cinema_widgets_v8.py --manifest work/plates_manifest.json --out-dir work/plates
+
+# 4. Compositor v8.1 xuất song song MP4 60fps + dự án FilmCraft .fcproj
+$PY scripts/tools/v8_compositor_fx.py --plan work/v81_edit_plan.json \
+  --out out/master_60fps.mp4 --export-fcproj out/project.fcproj --aspect 9:16 --fps 60
+```
+
+---
+
+## 1. Lịch Sử Các Phiên Bản Trước (`v7.9.x` → `v7.4.0`)
+
+`SKILL.md` được sắp theo luồng **1. Tổng quan → 2. Yêu cầu & tài nguyên → 3. Quy trình từng bước → 4. Luật / rào chắn → 5. QA & xử lý lỗi**, đánh số `1.` / `1.1.` / `1.1.1.`; mỗi luật chỉ còn một bản chính, nơi khác trỏ tới đó.
 
 ### `v7.9.1` (sửa tài liệu và mã theo kiểm định)
 
@@ -97,9 +139,9 @@ pro-filmcraft-director/
 ├── requirements.txt                           # Gói Python (ghim opencv-python-headless 4.x) + ghi chú node/chrome/ffmpeg/matte
 ├── docs/
 │   └── TIEN_DO_SKILL.md                       # Nhật ký tiến độ & kiểm kê (tiếng Việt), mục v7.9.1
-├── data/                                      # text_vi.json (1199 cặp glue NFC) & Haar Cascade nhận diện mặt
-├── presets/                                   # 16 catalog JSON (Archetypes, Motion, Safe Zones, SFX, Tiers, Tokens @__dviet, Canvas, Look S, broll_lint_contract...)
-├── references/                                # Tài liệu 01..30 (nhóm theo SKILL.md mục 2.7; 15–18 là lịch sử, 21 là spec hiện hành)
+├── data/                                      # text_vi.json (1199 cặp glue NFC), YuNet ONNX (60fps face track) & Haar Cascade
+├── presets/                                   # 18 catalog JSON (17 Industry Skins, Typography v8.1, 46 3D Assets, TikTok L-Safe-Zone, Canvas 9:16/16:9...)
+├── references/                                # Tài liệu 01..30 + flow-3d-assets.md
 │   └── dviet_19/                              # INDEX.md + 17 file phân tích từng video (tên thư mục cũ, chứa 17 video)
 ├── scripts/
 │   ├── env_status.py                          # Preflight: node >=22, Chrome, ffmpeg, FilmCraft >=0.13.0 + Xvfb, matte, font (bước 3.1)
@@ -112,7 +154,15 @@ pro-filmcraft-director/
 │   ├── vendor/
 │   │   └── ovs_core/                          # Bản vendor của opa-video-studio (PROVENANCE.md, rules.json): edit_rules, spec_lint,
 │   │                                          #   audio_levels, audit_sfx, apps/craft-handoff/tools/{fc_build, fc_build_fast, fc_export, craftctl}.py
-│   └── tools/                                 # 6 công cụ lõi + CLI hỗ trợ:
+│   └── tools/                                 # 29 CLI (bộ lõi + bộ v8.0/v8.1):
+│       ├── subject_tracker.py                 # (v8.0) Tracking mặt & đỉnh đầu YuNet ONNX 60fps + 8 điểm neo parallax
+│       ├── verbatim_caption_rail.py           # (v8.0/8.1) Phụ đề 100% lời thoại NFC + xoay vòng 10 chế độ sub_01..sub_10
+│       ├── cinema_widgets_v8.py               # (v8.0/8.1) Render RGBA 60fps Chrome WebGL2: kt13..kt18, w01..w06, rail_dynamic_typo
+│       ├── local_3d_props.py                  # (v8.1) Render 28 vật thể 3D PBR WebGL2 offline + khớp từ khóa 17 ngành
+│       ├── flow_3d_assets.py                  # (v8.0) Tạo & tách nền 3D photoreal qua Google Flow MCP
+│       ├── vector_shape_plates.py             # (v8.0) Vẽ hình khối vector động (arrow, circle, underline, spiral, graph...)
+│       ├── v8_compositor_fx.py                # (v8.0/8.1) Compositor 60fps: RVM CUDA matte, parallax, optical FX, --export-fcproj
+│       ├── v8_to_craft_spec.py                # (v8.1) Cầu nối v8_edit_plan.json -> .craft.json -> FilmCraft .fcproj
 │       ├── probe_and_align.py                 # Ingest, transcript, khoảng lặng (--tier fast|studio|full|auto)
 │       ├── web_plate_builder.py               # Plate chữ động kt01..kt12, thẻ kính 3D và layout screen_strip / card_916 / profile_card
 │       ├── typography_composer.py             # Vùng an toàn chữ Dual-Rail, lịch kinetic beat
@@ -123,7 +173,7 @@ pro-filmcraft-director/
 │       ├── studio_recipe.py                   # Trình lập cảnh Look S + hàm kiểm hook / nhịp / chữ / nguồn B-roll
 │       ├── motion_gate.py                     # Cổng đo trên MP4 đã kết xuất: chuyển động nền, flash + hàm đo thẻ pop-out / chữ
 │       ├── dviet_text.py                      # Sự kiện chữ theo vai trò -> track chữ (token @__dviet)
-│       ├── silence_cut.py / speed_media.py    # Cắt lặng và tốc độ trước khi ingest (--fps 60 cho Look S)
+│       ├── silence_cut.py / speed_media.py    # Cắt lặng (--whisper-guard --protect-short-words) và tốc độ trước ingest
 │       ├── sfx_auto.py / qa_sync.py / sfx_shift.py  # Kế hoạch SFX, đo đồng bộ, Gate 7b dịch một lần
 │       ├── spec_from_plan.py / broll_from_video.py  # Plan -> .craft.json, kế hoạch B-roll & lint prompt (broll_lint_contract.json)
 │       ├── filmcraft_cli.py                   # Shim điều khiển FilmCraft qua `filmcraft --control` (v7.5.0)

@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "aspect_ratios": {
     "9:16": {
       "width": 1080,
@@ -10,7 +10,26 @@
       "eye_target_y_px": [480, 720],
       "subtitle_y_px": [1220, 1420],
       "hero_text_upper_y_px": [260, 520],
-      "hero_text_lower_y_px": [960, 1200]
+      "hero_text_lower_y_px": [960, 1200],
+      "tiktok_l_safe_zone": {
+        "description": "Verified L-shaped TikTok 9:16 safe zone clearing top header (y<252), right action column (x>840 for y>360), and bottom 3-line caption/CTA zone (y>1216).",
+        "top_right_notch_rect": { "x_min": 120, "x_max": 960, "y_min": 252, "y_max": 360 },
+        "main_body_rect": { "x_min": 120, "x_max": 840, "y_min": 360, "y_max": 1216 },
+        "dead_zones_strict_px": {
+          "top_header": [0, 252],
+          "left_margin": [0, 120],
+          "right_notch_margin": [960, 1080],
+          "right_action_icons": { "x": [840, 1080], "y": [360, 1920] },
+          "bottom_caption_cta": [1216, 1920]
+        }
+      },
+      "functional_rails_1080x1920": {
+        "eye_line_anchor_y": 640,
+        "top_hook_title": { "x_min": 120, "x_max": 840, "y_min": 252, "y_max": 480 },
+        "chest_hero_title": { "x_min": 120, "x_max": 840, "y_min": 940, "y_max": 1160 },
+        "subtitle_strict_l_safe": { "x_min": 120, "x_max": 840, "y_min": 1040, "y_max": 1216 },
+        "subtitle_extended_whisper": { "x_min": 120, "x_max": 840, "y_min": 1220, "y_max": 1440 }
+      }
     },
     "16:9": {
       "width": 1920,

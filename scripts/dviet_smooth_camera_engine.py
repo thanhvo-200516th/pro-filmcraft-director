@@ -51,7 +51,7 @@ import numpy as np
 from PIL import Image
 
 
-ENGINE_VERSION = "7.9.0"
+ENGINE_VERSION = "8.1.0"
 DEFAULT_W = 1080
 DEFAULT_H = 1920
 DEFAULT_FPS = 60.0

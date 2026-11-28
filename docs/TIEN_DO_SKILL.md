@@ -1,6 +1,6 @@
 # TIẾN ĐỘ SKILL `pro-filmcraft-director` (kiểm kê chỉ đọc)
 
-Ngày kiểm kê: 2026-11-26. Nhánh `upgrade/v7.4`, cây làm việc ghi nhãn `v7.9.0` (bản sửa theo kiểm định video v4; trước đó `v7.8.0` gói S2: học thuyết và bộ lập kế hoạch), chưa commit.
+Ngày cập nhật: 2026-11-28. Phiên bản hiện hành: **`v8.1.0`** (Universal Multi-Industry Cinema Director — hợp nhất 4 kênh mẫu `@tng.vinhomes8`, `@vuotaiai`, `@__dviet`, `@xuanart.visual` + báo cáo Typography `@vietanh.videoeditor` & 3D Assets `@hoangsangcreator`, 17 skin đa ngành phi-SaaS, Vùng An Toàn TikTok chữ L, Typography v8.1 `sub_01..sub_10` / `FP1..FP6` / `PAL_*`, 46 vật thể 3D + `local_3d_props.py` WebGL2 PBR, YuNet 60fps tracking, RVM CUDA matte, và cầu nối `--export-fcproj`). Ghi chú kiểm kê gốc 2026-11-26 (`upgrade/v7.4`, `v7.9.0`) giữ nguyên bên dưới để đối chiếu lịch sử.
 Nhãn: **[ĐO]** = đã chạy lệnh và thấy kết quả; **[ƯỚC]** = suy luận từ đọc mã/tài liệu, chưa chạy.
 Python dùng để chạy: `/home/vmiz/.venvs/video-skills/bin/python3`.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-flicker_schedule.py (v7.9.0) — stateless helpers for the @__dviet "silhouette flicker" opener and its siblings.
+flicker_schedule.py (v8.1.0) — stateless helpers for the @__dviet "silhouette flicker" opener and its siblings.
 
 Pure functions only (no global state, inputs are never mutated, every call returns new objects):
 
@@ -28,7 +28,7 @@ from typing import Any, Callable, Iterable, Sequence
 
 import numpy as np
 
-VERSION = "7.9.0"
+VERSION = "8.1.0"
 SILHOUETTE_HEX = "FFFBF0"
 # (state, frames): the 8 frames measured on 7664447 at 60 fps.
 DEFAULT_OPENER_STATES: tuple[tuple[str, int], ...] = (
